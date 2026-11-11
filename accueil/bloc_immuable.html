@@ -1,0 +1,175 @@
+<!-- IMMUABLE:DEBUT : cagnotte, Discord et code de conduite. Aucun build ne doit toucher ce bloc (voir garde_immuable.py) -->
+<style>
+.links { display: flex; flex-direction: column; gap: 0.75rem; }
+.links a {
+  display: block; padding: 0.8rem 1rem; color: var(--red); text-decoration: none;
+  border: 1px solid var(--red-dim); text-align: left; transition: all 0.2s ease;
+}
+.links a:hover, .links a:focus { background: var(--red); color: #000; box-shadow: 0 0 20px var(--red); }
+
+.prompt { opacity: 0.6; margin-right: 0.5rem; }
+.links button.lien-conduite { display: block; width: 100%; padding: .55rem 1rem; font: inherit; font-size: .85rem; color: var(--red-light); background: none; border: 1px dashed var(--red-dim); cursor: pointer; transition: all .2s ease; }
+.links button.lien-conduite:hover, .links button.lien-conduite:focus-visible { background: var(--red); color: #000; box-shadow: 0 0 20px var(--red); }
+.conduite {
+  position: fixed; inset: 0; margin: auto;
+  width: min(760px, calc(100vw - 2rem)); height: fit-content; max-height: calc(100vh - 2rem);
+  overflow: auto; padding: 1.8rem 1.6rem 1.4rem; box-sizing: border-box;
+  background: #0a0000; color: var(--red-light); border: 1px solid var(--red);
+  box-shadow: 0 0 30px color-mix(in srgb, var(--red) 50%, transparent), inset 0 0 20px color-mix(in srgb, var(--red) 10%, transparent);
+  font-family: inherit; font-size: .92rem; line-height: 1.55; text-align: left;
+}
+.conduite::backdrop { background: rgba(0, 0, 0, .8); }
+.conduite h2 { font-size: clamp(1.1rem, 2.6vw, 1.5rem); text-transform: uppercase; color: #fff; text-shadow: 0 0 8px var(--red); margin: 0 2.4rem .8rem 0; }
+.conduite h3 { font-size: 1rem; color: #fff; text-shadow: 0 0 6px var(--red); margin: 1.4rem 0 .5rem; padding-bottom: .25rem; border-bottom: 1px solid var(--red-dim); }
+.conduite p { margin: 0 0 .7rem; }
+.conduite ul { margin: 0 0 .8rem 1.3rem; }
+.conduite li { margin-bottom: .3rem; }
+.conduite li::marker { color: var(--red); }
+.conduite strong { color: #fff; }
+.conduite .note { font-style: italic; text-decoration: underline; text-decoration-color: var(--red-dim); text-underline-offset: 3px; }
+.conduite blockquote { margin: .6rem 0 .9rem; padding: .6rem .9rem; border-left: 3px solid var(--red); background: rgba(255, 255, 255, .08); color: #fff; font-style: italic; }
+.conduite-fermer { position: absolute; top: .5rem; right: .5rem; width: 2rem; height: 2rem; border: 1px solid var(--red-dim); background: #000; color: var(--red); font: inherit; font-size: 1.2rem; cursor: pointer; }
+.conduite-fermer:hover, .conduite-fermer:focus-visible { background: var(--red); color: #000; }
+.panel .links { margin-top: 1.2rem; }
+.links a { text-align: center; }
+.cagnotte {
+  --trans-bleu: #5bcefa;
+  --trans-rose: #f5a9b8;
+  display: block;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 1.5rem 0 0;
+  padding: 1.1rem 1rem 1rem;
+  background: #140000;
+  border: 2px solid transparent;
+  border-image: linear-gradient(90deg, var(--trans-bleu), var(--trans-rose), #fff, var(--trans-rose), var(--trans-bleu)) 1;
+  box-shadow: 0 0 22px rgba(245, 169, 184, 0.35), inset 0 0 18px rgba(91, 206, 250, 0.12);
+  color: #fff;
+  text-decoration: none;
+  text-align: center;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+.cagnotte:hover,
+.cagnotte:focus-visible {
+  box-shadow: 0 0 32px rgba(91, 206, 250, 0.55), 0 0 40px rgba(245, 169, 184, 0.45);
+  transform: translateY(-2px);
+  outline: none;
+}
+.cagnotte-titre {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #fff;
+  text-shadow: 0 0 6px var(--trans-rose), 0 0 14px var(--trans-bleu);
+  margin: 0.4rem 0;
+}
+.cagnotte-texte {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--trans-rose);
+  margin-bottom: 0.4rem;
+}
+.cagnotte-coeurs {
+  display: block;
+  font-size: 1.1rem;
+  letter-spacing: 0.25em;
+  animation: battement 1.6s ease-in-out infinite;
+}
+.cagnotte-coeurs:last-child { animation-delay: 0.8s; }
+@keyframes battement {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cagnotte-coeurs { animation: none; }
+}
+@media (max-width: 480px) {
+  .cagnotte-titre { font-size: 0.95rem; }
+  .cagnotte-coeurs { letter-spacing: 0.12em; }
+}
+</style>
+
+<!-- BAS:DEBUT -->
+<a class="cagnotte" href="https://www.onparticipe.fr/c/rij439hb" target="_blank" rel="noopener">
+<span class="cagnotte-coeurs" aria-hidden="true">🩵 🩷 🤍 🩷 🩵</span>
+<span class="cagnotte-titre">Liberez notre camarade</span>
+<span class="cagnotte-titre">Participez à la cagnotte</span>
+<span class="cagnotte-texte">😢 chaque don compte 🖤</span>
+<span class="cagnotte-coeurs" aria-hidden="true">🩵 🩷 🤍 🩷 🩵</span>
+</a>
+
+<div class="links">
+<a href="https://discord.gg/QSCfR2NHJ" target="_blank" rel="noopener"><span class="prompt">&gt;</span>Rejoindre le Discord</a>
+<button type="button" class="lien-conduite" popovertarget="code-conduite"><span class="prompt">&gt;</span>Code de conduite du Discord</button>
+</div>
+<!-- BAS:FIN -->
+
+<!-- ==== CODE DE CONDUITE DU DISCORD : texte du panneau ouvert par le bouton sous le lien Discord ==== -->
+<div id="code-conduite" class="conduite" popover>
+<button type="button" class="conduite-fermer" popovertarget="code-conduite" popovertargetaction="hide" aria-label="Fermer">×</button>
+<h2>Code de conduite du Discord</h2>
+
+<h3>Règles de la communauté</h3>
+<p><strong>Respect des identités</strong><br>Utilise les pronoms, noms et termes choisis par les personnes. Ne remets pas en question l’identité de quelqu’un et ne demande pas de justification concernant son genre, son corps ou son parcours.</p>
+<p><strong>Aucune transphobie ou queerphobie</strong><br>Les propos transphobes, homophobes, lesbophobes, biphobes, intersexophobes, validistes, racistes, sexistes ou discriminatoires ne sont pas acceptés, même sous couvert d’humour ou de débat.</p>
+<p><strong>Pas de harcèlement</strong><br>Sont interdits : les insultes répétées, menaces, raids, campagnes de ciblage, acharnement en messages privés, outing et diffusion de rumeurs.</p>
+<p><strong>Respect du consentement</strong><br>Demande avant d’aborder des sujets sensibles, d’envoyer un message privé ou de partager du contenu potentiellement déclencheur. Un « non », un silence ou une demande d’arrêt doivent être respectés immédiatement.</p>
+<p><strong>Protection de la vie privée</strong><br>Ne partage jamais les informations personnelles, captures d’écran, photos, messages ou identités d’une personne sans son accord explicite. Le doxxing et l’outing entraînent une intervention immédiate.</p>
+<p><strong>Pas de sexualisation non sollicitée</strong><br>Les avances insistantes, commentaires sur le corps, fétichisation des personnes trans et contenus sexuels non consentis sont interdits. Respecte les limites et les espaces prévus pour les discussions adultes.</p>
+<p><strong>Discussions et désaccords</strong><br>Les désaccords sont possibles, mais ils doivent rester respectueux. Attaque les idées, pas les personnes. Le débat ne justifie ni l’agression ni l’invalidation de vécus.</p>
+<p><strong>Attention aux sujets sensibles</strong><br>Utilise les avertissements de contenu lorsque c’est nécessaire, par exemple : TW : violence, TW : dysphorie, TW : suicide.</p>
+
+<h3>Fonctionnement de la modération</h3>
+<p><strong>La modération cherche d’abord à prévenir les conflits, réparer les torts et protéger les personnes ciblées. Selon la situation, elle peut :</strong></p>
+<ul>
+<li>demander l’arrêt d’un comportement ;</li>
+<li>supprimer un message problématique ;</li>
+<li>proposer une médiation ou une discussion accompagnée ;</li>
+<li>donner un avertissement ;</li>
+<li>limiter temporairement l’accès à certains salons ;</li>
+<li>exclure temporairement ou définitivement une personne en cas de danger, de harcèlement ou de récidive.</li>
+</ul>
+<p class="note">Les personnes victimes ou témoins peuvent contacter la modération en privé. Elles ne sont pas obligées de confronter directement la personne concernée.</p>
+<p class="note">Principe essentiel : personne ne doit avoir à prouver son identité, son parcours ou son oppression pour être respecté·e. L’autodétermination, le consentement et la sécurité collective passent avant le confort des personnes qui refusent ces principes.</p>
+
+<h3>Charte communautaire</h3>
+<p>Nous avons également une charte communautaire, non contraignante, pour faire en sorte que chacun·e se sente bien et puisse jouer le jeu sans frustrations, autant que possible.</p>
+<p>Notre communauté repose sur la solidarité, l’entraide et le plaisir de collectionner ensemble. Cette charte est indicative et non contraignante. Elle ne vise pas à sanctionner, mais à encourager la réflexion, la coopération et des pratiques respectueuses.</p>
+<p><strong>Nos principes :</strong></p>
+<ul>
+<li>Nous privilégions l’échange, le don et l’entraide plutôt que l’accumulation ou la spéculation.</li>
+<li>Nous considérons les autres membres comme des camarades, pas comme des concurrent·es à battre à tout prix.</li>
+<li>Nous évitons de faire monter artificiellement les prix.</li>
+<li>Nous acceptons qu’une carte puisse avoir une valeur différente selon les personnes : valeur de collection, valeur sentimentale, utilité en jeu ou simple envie.</li>
+</ul>
+<p><strong>Sur le marché :</strong></p>
+<ul>
+<li>Dans la mesure du possible, nous évitons de surenchérir sur un·e autre membre pour lui prendre une carte.</li>
+<li>Avant de placer une offre, nous prenons le temps de nous demander :</li>
+</ul>
+<blockquote>« Est-ce que je suis réellement intéressé·e par cette carte, ou est-ce que je cherche seulement à ne pas laisser quelqu’un·e d’autre l’obtenir ? »</blockquote>
+<p>À partir de 1 000 wikikis, nous nous engageons particulièrement à faire une pause et à vérifier que nous ne sommes pas en train de surenchérir sur un·e camarade par réflexe, compétition ou volonté de faire monter le prix.</p>
+<p>Lorsque le vendeur ou la vendeuse est un·e autre membre de la communauté, la participation à l’enchère reste pleinement légitime : elle contribue directement à soutenir cette personne. Même dans ce cas, nous veillons à rester raisonnables et à ne pas pousser les prix au-delà de ce que nous sommes réellement prêt·es à payer.</p>
+<p><strong>Privilégier l’échange :</strong> lorsqu’une carte recherchée est détenue par un·e camarade, nous pouvons privilégier :</p>
+<ul>
+<li>une proposition d’échange équitable ;</li>
+<li>un échange avec complément raisonnable ;</li>
+<li>un don, si la personne le souhaite ;</li>
+<li>une discussion avant de participer à une enchère ;</li>
+<li>la possibilité de laisser la carte à quelqu’un·e qui la recherche depuis longtemps.</li>
+</ul>
+<p>Les échanges ne doivent pas devenir une obligation ni créer de pression. Chacun·e reste libre d’accepter, de refuser ou de prendre le temps de réfléchir.</p>
+<p><strong>En résumé, avant d’acheter ou de surenchérir, nous nous demandons :</strong></p>
+<ul>
+<li>Est-ce que je veux vraiment cette carte ?</li>
+<li>Est-ce que je peux privilégier un échange ?</li>
+<li>Est-ce que je suis en train de surenchérir sur un·e camarade ?</li>
+<li>Si l’offre atteint 1 000 wikikis ou plus, ai-je pris le temps de réfléchir ?</li>
+<li>Est-ce que mon comportement contribue à une communauté plus solidaire ?</li>
+</ul>
+<p><strong>Collectionner ensemble, c’est aussi faire en sorte que chacun·e puisse trouver sa place, compléter sa collection et prendre plaisir au jeu.</strong></p>
+</div>
+<!-- IMMUABLE:FIN -->
