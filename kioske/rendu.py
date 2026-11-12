@@ -78,6 +78,56 @@ def render_card(item: dict, preview: dict, ident: str, prev_ident: str | None = 
     return carte, panneau
 
 
+def render_galerie(items: list[dict], previews: dict[str, dict]) -> tuple[str, list[str]]:
+    """Galerie horizontale des 10 derniers articles avec image. Renvoie (html_galerie, panneaux)."""
+    cartes_galerie = []
+    panneaux_galerie = []
+    gal_idx = 0
+
+    for item in items:
+        if gal_idx >= 10:
+            break
+        title = previews.get(item["link"], {}).get("title") or item["title"]
+        image = previews.get(item["link"], {}).get("image") or item["image"] or ""
+
+        # Sauter les articles sans image
+        if not image:
+            continue
+
+        cible = f"gal-{gal_idx}"
+        media = f'<img src="{esc(image)}" alt="{esc(title)}" loading="lazy" referrerpolicy="no-referrer">'
+
+        cartes_galerie.append(
+            f'<button type="button" class="galerie-carte" data-article-id="{cible}" title="{esc(title)}">'
+            f'{media}</button>'
+        )
+
+        # Panneau identique aux autres articles
+        contenu = item.get("content") or item["summary"] or previews.get(item["link"], {}).get("description", "")
+        date = item["date"]
+        host = urlparse(item["link"]).netloc.removeprefix("www.")
+        date_html = f'<time datetime="{date.isoformat()}">{date:%d/%m/%Y}</time> · ' if date else ""
+
+        panneau = (
+            f'<div class="article-container" id="container-{cible}" hidden>'
+            f'<div class="article-backdrop" data-close-article="{cible}"></div>'
+            f'<div id="{cible}" class="article-panneau" aria-labelledby="{cible}-titre">'
+            f'<button type="button" class="categorie-fermer" data-article-id="{cible}" aria-label="Fermer">×</button>'
+            f'<div class="article-image">{media}</div>'
+            f'<p class="meta">{date_html}{esc(host)}</p>'
+            f'<h2 id="{cible}-titre">{esc(title)}</h2>'
+            f'<p class="article-texte">{esc(contenu)}</p>'
+            f'<p><a class="article-lien" href="{esc(item["link"])}" target="_blank" rel="noopener noreferrer">'
+            f'Lire l\'article sur {esc(host)} →</a></p>'
+            f'</div></div>'
+        )
+        panneaux_galerie.append(panneau)
+        gal_idx += 1
+
+    html = f'<section class="galerie" aria-label="10 derniers articles">{"".join(cartes_galerie)}</section>'
+    return html, panneaux_galerie
+
+
 def render_page(items: list[dict], previews: dict[str, dict],
                 categories: dict[str, str] | None = None) -> str:
     """La page d'accueil complète (le KiosKe) : bloc immuable, étiquettes par catégorie, fenêtres et articles."""
@@ -148,6 +198,7 @@ def render_page(items: list[dict], previews: dict[str, dict],
 
     generated = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
     bloc, bas = immuable.parties()
+    galerie_html, panneaux_galerie = render_galerie(items, previews)
     # Référencement : le titre et la description décrivent le contenu réel (sources et catégories du jour).
     titre_page = f"{NOM_SITE} ({DOMAINE}) : {SLOGAN}"
     description = (f"{NOM_SITE} : {SLOGAN}. Articles et vidéos de {len(groupes)} sources, par catégorie : "
@@ -193,13 +244,16 @@ def render_page(items: list[dict], previews: dict[str, dict],
   <p class="sub">{len(items)} éléments · {len(groupes)} sources</p>
   <p class="sub-petit">Mis à jour le {generated}</p>
   {bloc}
+  {galerie_html}
   {nuage}
   {bas}
 </main>
 <section class="cartes" aria-label="Fenêtres des sources">
+{"".join(panneaux_galerie)}
 {"".join(fenetres)}
 </section>
 <p class="mentions">Chaque article renvoie vers sa source d'origine. Textes, images et vidéos : leurs auteur.ice.s et sites respectifs.</p>
+<p class="mentions"><a href="https://github.com/Zarissa92/kioske.fr" target="_blank" rel="noopener noreferrer">GitHub du projet (GPL v3)</a></p>
 <script>
 let openPopover = null;
 let scrollPositions = {{}};
@@ -214,7 +268,7 @@ function showPopover(id) {{
     scrollPositions[openPopover.id] = openPopover.scrollTop;
   }}
   closePopover();
-  if (id.startsWith('art-')) {{
+  if (id.startsWith('art-') || id.startsWith('gal-')) {{
     const container = document.getElementById('container-' + id);
     if (container) {{
       container.hidden = false;
@@ -234,6 +288,11 @@ function showPopover(id) {{
 }}
 function closeArticleAndShowSource(articleId) {{
   if (!articleId) return;
+  // Articles de la galerie : pas de source associée, juste fermer
+  if (articleId.startsWith('gal-')) {{
+    closePopover();
+    return;
+  }}
   const match = articleId.match(/^art-(\\d+)-/);
   if (match) {{
     const sourceId = 'cat-' + match[1];
