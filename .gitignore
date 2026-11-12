@@ -21,6 +21,7 @@ old/
 export/
 *.bak
 index.avant_*.html
+occurence.txt
 
 # ---------- Éditeurs ----------
 .vscode/
