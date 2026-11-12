@@ -27,10 +27,11 @@ ICONE_RSS = (
 )
 
 
-def render_card(item: dict, preview: dict, ident: str) -> tuple[str, str]:
-    """Une carte (bouton) et le panneau de l'article qu'elle ouvre (popover, sans JavaScript).
+def render_card(item: dict, preview: dict, ident: str, prev_ident: str | None = None, next_ident: str | None = None) -> tuple[str, str]:
+    """Une carte (bouton) et le panneau de l'article qu'elle ouvre.
     Renvoie (carte, panneau) : le panneau reste hors de la grille, à côté de la fenêtre de catégorie.
-    Le bouton ne contient que des <span> : un <button> n'accepte pas de <div>, <p> ou <h3>."""
+    Le bouton ne contient que des <span> : un <button> n'accepte pas de <div>, <p> ou <h3>.
+    prev_ident et next_ident permettent la navigation au sein de la source."""
     title = preview.get("title") or item["title"]
     summary = item["summary"] or preview.get("description", "")
     contenu = item.get("content") or summary
@@ -46,21 +47,33 @@ def render_card(item: dict, preview: dict, ident: str) -> tuple[str, str]:
     cible = f"art-{ident}"
 
     carte = (
-        f'<button type="button" class="carte" popovertarget="{cible}">'
+        f'<button type="button" class="carte" data-article-id="{cible}">'
         f'<span class="carte-image" aria-hidden="true">{media}</span>'
         f'<span class="carte-corps"><span class="meta">{date_html}{esc(host)}</span>'
         f'<span class="carte-titre">{esc(title)}</span><span class="carte-extrait">{esc(summary)}</span></span>'
         f'<span class="carte-plus" aria-hidden="true">+</span></button>'
     )
+    nav_buttons = ""
+    if prev_ident or next_ident:
+        nav_buttons = '<div class="article-nav">'
+        if prev_ident:
+            nav_buttons += f'<button type="button" class="nav-btn nav-prev" data-article-id="art-{prev_ident}" aria-label="Article precedent">Precedent</button>'
+        if next_ident:
+            nav_buttons += f'<button type="button" class="nav-btn nav-next" data-article-id="art-{next_ident}" aria-label="Article suivant">Suivant</button>'
+        nav_buttons += '</div>'
+
     panneau = (
-        f'<div id="{cible}" class="article-panneau" popover aria-labelledby="{cible}-titre">'
-        f'<button type="button" class="categorie-fermer" popovertarget="{cible}" popovertargetaction="hide" aria-label="Fermer">×</button>'
+        f'<div class="article-container" id="container-{cible}" hidden>'
+        f'<div class="article-backdrop" data-close-article="{cible}"></div>'
+        f'<div id="{cible}" class="article-panneau" aria-labelledby="{cible}-titre">'
+        f'<button type="button" class="categorie-fermer" data-article-id="{cible}" aria-label="Fermer">×</button>'
         f'<div class="article-image">{media}</div>'
         f'<p class="meta">{date_html}{esc(host)}</p>'
         f'<h2 id="{cible}-titre">{esc(title)}</h2>'
         f'<p class="article-texte">{esc(contenu)}</p>'
         f'<p><a class="article-lien" href="{esc(item["link"])}" target="_blank" rel="noopener noreferrer">'
-        f'Lire l’article sur {esc(host)} ↗</a></p></div>'
+        f'Lire l\'article sur {esc(host)} →</a></p>'
+        f'{nav_buttons}</div></div>'
     )
     return carte, panneau
 
@@ -94,20 +107,26 @@ def render_page(items: list[dict], previews: dict[str, dict],
     for categorie in ordre_categories:
         for cle in par_categorie[categorie]:
             source = noms[cle]
-            rendus = [render_card(i, previews.get(i["link"], {}), f"{n}-{k}")
-                      for k, i in enumerate(groupes[cle])]
+            articles = groupes[cle]
+            rendus = []
+            for k, i in enumerate(articles):
+                prev_ident = f"{n}-{k-1}" if k > 0 else None
+                next_ident = f"{n}-{k+1}" if k < len(articles) - 1 else None
+                rendus.append(render_card(i, previews.get(i["link"], {}), f"{n}-{k}", prev_ident, next_ident))
             cartes = "".join(carte for carte, _ in rendus)
             panneaux_articles = "".join(panneau for _, panneau in rendus)
-            nb = len(groupes[cle])
+            nb = len(articles)
             tags_par_categorie[categorie].append(
-                f'<button type="button" class="tag" popovertarget="cat-{n}">'
+                f'<button type="button" class="tag" data-article-id="cat-{n}">'
                 f'{esc(source)} <span class="nb">×{nb}</span></button>'
             )
             fenetres.append(
-                f'<div id="cat-{n}" class="categorie-panneau" popover>'
-                f'<button type="button" class="categorie-fermer" popovertarget="cat-{n}" popovertargetaction="hide" aria-label="Fermer">×</button>'
+                f'<div class="categorie-container" id="container-cat-{n}" hidden>'
+                f'<div class="categorie-backdrop" data-close-source="cat-{n}"></div>'
+                f'<div id="cat-{n}" class="categorie-panneau">'
+                f'<button type="button" class="categorie-fermer" data-article-id="cat-{n}" aria-label="Fermer">×</button>'
                 f'<h2>{esc(source)} <span class="compte">({nb})</span></h2>'
-                f'<div class="grille">{cartes}</div></div>'
+                f'<div class="grille">{cartes}</div></div></div>'
             )
             fenetres.append(panneaux_articles)
             n += 1
@@ -179,6 +198,89 @@ def render_page(items: list[dict], previews: dict[str, dict],
 {"".join(fenetres)}
 </section>
 <p class="mentions">Chaque article renvoie vers sa source d'origine. Textes, images et vidéos : leurs auteur.ice.s et sites respectifs.</p>
+<script>
+let openPopover = null;
+let scrollPositions = {{}};
+function closePopover() {{
+  if (openPopover) {{
+    openPopover.hidden = true;
+    openPopover = null;
+  }}
+}}
+function showPopover(id) {{
+  if (openPopover && !openPopover.classList.contains('article-container') && !openPopover.classList.contains('categorie-container')) {{
+    scrollPositions[openPopover.id] = openPopover.scrollTop;
+  }}
+  closePopover();
+  if (id.startsWith('art-')) {{
+    const container = document.getElementById('container-' + id);
+    if (container) {{
+      container.hidden = false;
+      openPopover = container;
+    }}
+  }} else if (id.startsWith('cat-')) {{
+    const container = document.getElementById('container-' + id);
+    if (container) {{
+      container.hidden = false;
+      openPopover = container;
+      const panel = document.getElementById(id);
+      if (panel && scrollPositions[id] !== undefined) {{
+        setTimeout(() => {{ panel.scrollTop = scrollPositions[id]; }}, 0);
+      }}
+    }}
+  }}
+}}
+function closeArticleAndShowSource(articleId) {{
+  if (!articleId) return;
+  const match = articleId.match(/^art-(\\d+)-/);
+  if (match) {{
+    const sourceId = 'cat-' + match[1];
+    closePopover();
+    showPopover(sourceId);
+  }}
+}}
+document.querySelectorAll('[data-article-id]').forEach(btn => {{
+  btn.addEventListener('click', (e) => {{
+    const target = btn.getAttribute('data-article-id');
+    if (btn.classList.contains('nav-btn')) {{
+      showPopover(target);
+    }} else if (btn.classList.contains('categorie-fermer')) {{
+      if (btn.closest('.article-panneau')) {{
+        closeArticleAndShowSource(target);
+      }} else {{
+        closePopover();
+      }}
+    }} else {{
+      showPopover(target);
+    }}
+  }});
+}});
+document.querySelectorAll('.article-backdrop').forEach(backdrop => {{
+  backdrop.addEventListener('click', (e) => {{
+    if (e.target === backdrop) {{
+      const articleId = backdrop.getAttribute('data-close-article');
+      closeArticleAndShowSource(articleId);
+    }}
+  }});
+}});
+document.querySelectorAll('.categorie-backdrop').forEach(backdrop => {{
+  backdrop.addEventListener('click', (e) => {{
+    if (e.target === backdrop) {{
+      closePopover();
+    }}
+  }});
+}});
+document.addEventListener('keydown', e => {{
+  if (e.key === 'Escape') {{
+    if (openPopover && openPopover.classList.contains('article-container')) {{
+      const articleId = openPopover.querySelector('.article-panneau').id;
+      closeArticleAndShowSource(articleId);
+    }} else {{
+      closePopover();
+    }}
+  }}
+}});
+</script>
 </body>
 </html>
 """
