@@ -164,6 +164,7 @@ Tant que l'empreinte n'est pas réenregistrée après une modification, rien n'e
 - **Galerie horizontale** : sous le bloc immuable, les 10 derniers articles ayant une image, affichés en
   ligne avec images seulement (80 × 80 px). Scroll horizontal pour plus d'articles. Clic sur une image
   ouvre la fiche complète de l'article.
+- **Lien GitHub** : en bas de la page, lien vers le dépôt du projet avec mention de la licence (GPL v3).
 - **Étiquettes** : une par source, dans un bloc par catégorie, avec l'icône du flux RSS de la catégorie.
   Clic sur une étiquette → fenêtre de source avec backdrop cliquable pour fermer.
 - **Cartes d'articles** : format «carte à jouer» (ratio 2.5:3.5) avec image fixe en haut (35% de la hauteur), contenu scrollable au milieu, boutons de navigation en bas. Structure flexbox uniforme pour tous les articles.
