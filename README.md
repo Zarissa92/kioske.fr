@@ -161,6 +161,9 @@ Tant que l'empreinte n'est pas réenregistrée après une modification, rien n'e
   celles qui correspondent restent opaques (100%) et cliquables, les autres deviennent semi-transparentes
   (30%) et non-cliquables. Cherche dans les titres, descriptions, sources et dates. La page scroll
   automatiquement vers les résultats.
+- **Galerie horizontale** : sous le bloc immuable, les 10 derniers articles ayant une image, affichés en
+  ligne avec images seulement (80 × 80 px). Scroll horizontal pour plus d'articles. Clic sur une image
+  ouvre la fiche complète de l'article.
 - **Étiquettes** : une par source, dans un bloc par catégorie, avec l'icône du flux RSS de la catégorie.
   Clic sur une étiquette → fenêtre de source avec backdrop cliquable pour fermer.
 - **Cartes d'articles** : format «carte à jouer» (ratio 2.5:3.5) avec image fixe en haut (35% de la hauteur), contenu scrollable au milieu, boutons de navigation en bas. Structure flexbox uniforme pour tous les articles.
@@ -278,6 +281,9 @@ déclaré dans l'en-tête.
   (ex. `blog.zarisse.fr` depuis le réseau local) : Chrome demande alors l'accès au réseau local.
 
 ## Licences
+
+**kioske.fr** : GNU General Public License v3 (`LICENSE`). Vous pouvez copier, modifier et distribuer ce projet
+sous les termes de la GPL v3.
 
 Articles et vidéos de la veille : leurs auteur.ice.s et sites respectifs. Police Russo One : SIL Open
 Font License (`static/fonts/OFL.txt`).

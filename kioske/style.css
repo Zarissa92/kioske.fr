@@ -169,7 +169,8 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .carte:hover .carte-plus, .carte:focus-visible .carte-plus { background: var(--red); color: #000; box-shadow: 0 0 14px var(--red); }
 
 .mentions { position: relative; z-index: 1; max-width: 1200px; width: calc(100% - 32px); margin: 0 auto 2rem; font-size: .75rem; opacity: .7; text-align: center; }
-.mentions a { color: var(--red-light); }
+.mentions a { color: var(--red-light); text-decoration: none; transition: all .2s; }
+.mentions a:hover, .mentions a:focus-visible { color: var(--red); text-decoration: underline; opacity: 1; outline: none; }
 /* ----- nuage des sources (même principe que la page principale) ----- */
 .nuage { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem; margin: 1.2rem 0 0; padding: .7rem;
   background: #0a0000; border: 1px solid var(--red); box-shadow: 0 0 18px color-mix(in srgb, var(--red) 25%, transparent); }
@@ -222,6 +223,16 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .nav-btn { padding: .5rem .8rem; border: 1px solid var(--red-dim); background: #000; color: var(--red-light); font: inherit; font-size: .9rem; cursor: pointer; transition: all .2s; }
 .nav-btn:hover, .nav-btn:focus-visible { background: var(--red); color: #000; border-color: var(--red); box-shadow: 0 0 12px var(--red); outline: none; }
 .nav-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Galerie horizontale des 10 derniers articles */
+.galerie { display: flex; gap: 0.6rem; overflow-x: auto; overflow-y: hidden; padding: 1.2rem 0; margin: 1.2rem auto; scroll-behavior: smooth; scrollbar-width: thin; scrollbar-color: var(--red-dim) transparent; justify-content: center; width: 100%; }
+.galerie::-webkit-scrollbar { height: 6px; }
+.galerie::-webkit-scrollbar-track { background: transparent; }
+.galerie::-webkit-scrollbar-thumb { background: var(--red-dim); border-radius: 3px; }
+.galerie-carte { flex: 0 0 80px; aspect-ratio: 1; padding: 0; border: 1px solid var(--red-dim); background: #0a0000; cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.galerie-carte img { width: 100%; height: 100%; object-fit: cover; }
+.galerie-carte .lettre { font: 700 2rem "Courier New", monospace; color: #fff; text-shadow: 0 0 6px var(--red), 0 0 12px var(--red); }
+.galerie-carte:hover, .galerie-carte:focus-visible { border-color: var(--red); box-shadow: 0 0 14px var(--red); outline: none; }
 
 @media (min-width: 1100px) {
   .panel { width: min(1100px, calc((100vw - 2rem) / 1.25)); max-width: none; }
