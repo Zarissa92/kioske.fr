@@ -32,75 +32,9 @@
 .conduite-fermer:hover, .conduite-fermer:focus-visible { background: var(--red); color: #000; }
 .panel .links { margin-top: 1.2rem; }
 .links a { text-align: center; }
-.cagnotte {
-  --trans-bleu: #5bcefa;
-  --trans-rose: #f5a9b8;
-  display: block;
-  position: relative;
-  width: 100%;
-  box-sizing: border-box;
-  margin: 1.5rem 0 0;
-  padding: 1.1rem 1rem 1rem;
-  background: #140000;
-  border: 2px solid transparent;
-  border-image: linear-gradient(90deg, var(--trans-bleu), var(--trans-rose), #fff, var(--trans-rose), var(--trans-bleu)) 1;
-  box-shadow: 0 0 22px rgba(245, 169, 184, 0.35), inset 0 0 18px rgba(91, 206, 250, 0.12);
-  color: #fff;
-  text-decoration: none;
-  text-align: center;
-  transition: box-shadow 0.25s ease, transform 0.25s ease;
-}
-.cagnotte:hover,
-.cagnotte:focus-visible {
-  box-shadow: 0 0 32px rgba(91, 206, 250, 0.55), 0 0 40px rgba(245, 169, 184, 0.45);
-  transform: translateY(-2px);
-  outline: none;
-}
-.cagnotte-titre {
-  display: block;
-  font-size: 1.05rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #fff;
-  text-shadow: 0 0 6px var(--trans-rose), 0 0 14px var(--trans-bleu);
-  margin: 0.4rem 0;
-}
-.cagnotte-texte {
-  display: block;
-  font-size: 0.9rem;
-  color: var(--trans-rose);
-  margin-bottom: 0.4rem;
-}
-.cagnotte-coeurs {
-  display: block;
-  font-size: 1.1rem;
-  letter-spacing: 0.25em;
-  animation: battement 1.6s ease-in-out infinite;
-}
-.cagnotte-coeurs:last-child { animation-delay: 0.8s; }
-@keyframes battement {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.12); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .cagnotte-coeurs { animation: none; }
-}
-@media (max-width: 480px) {
-  .cagnotte-titre { font-size: 0.95rem; }
-  .cagnotte-coeurs { letter-spacing: 0.12em; }
-}
 </style>
 
 <!-- BAS:DEBUT -->
-<a class="cagnotte" href="https://www.onparticipe.fr/c/rij439hb" target="_blank" rel="noopener">
-<span class="cagnotte-coeurs" aria-hidden="true">🩵 🩷 🤍 🩷 🩵</span>
-<span class="cagnotte-titre">Liberez notre camarade</span>
-<span class="cagnotte-titre">Participez à la cagnotte</span>
-<span class="cagnotte-texte">😢 chaque don compte 🖤</span>
-<span class="cagnotte-coeurs" aria-hidden="true">🩵 🩷 🤍 🩷 🩵</span>
-</a>
-
 <div class="links">
 <a href="https://discord.gg/QSCfR2NHJ" target="_blank" rel="noopener"><span class="prompt">&gt;</span>Rejoindre le Discord</a>
 <button type="button" class="lien-conduite" popovertarget="code-conduite"><span class="prompt">&gt;</span>Code de conduite du Discord</button>

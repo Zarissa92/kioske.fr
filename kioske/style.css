@@ -50,6 +50,9 @@ html, body {
 .choix-theme label:hover { background: var(--red); color: #000; }
 .theme-input:checked + label { background: var(--red); color: #000; box-shadow: 0 0 12px var(--red); }
 .theme-input:focus-visible + label { outline: 2px solid #fff; outline-offset: 2px; }
+.recherche { display: block; width: 100%; max-width: 400px; margin: 0 auto 1.5rem; padding: .6rem .8rem; font-family: inherit; font-size: .9rem; color: #fff; background: #0a0000; border: 1px solid var(--red-dim); box-sizing: border-box; transition: all .2s; }
+.recherche:focus { outline: none; border-color: var(--red); box-shadow: 0 0 12px color-mix(in srgb, var(--red) 50%, transparent); }
+.recherche::placeholder { color: var(--red-light); opacity: .6; }
 h1 { font-size: clamp(1.8rem, 6vw, 2.8rem); line-height: 1.2; margin-bottom: 1.5rem; text-transform: uppercase; }
 .glow {
   color: #fff;
@@ -101,7 +104,14 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 /* conteneur pour le backdrop et le panneau */
 .article-container, .categorie-container { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 100; }
 .article-backdrop, .categorie-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .7); cursor: pointer; }
-.article-panneau, .categorie-panneau { position: relative; z-index: 1;
+.article-panneau { position: relative; z-index: 1;
+  width: min(900px, 85vw); height: auto; max-height: 85vh;
+  aspect-ratio: 2.5 / 3.5; padding: 0; box-sizing: border-box;
+  background: #0a0000; color: var(--red-light); border: 2px solid var(--red);
+  box-shadow: 0 0 50px color-mix(in srgb, var(--red) 60%, transparent), inset 0 0 20px color-mix(in srgb, var(--red) 10%, transparent);
+  font-size: .85rem; line-height: 1.4; text-align: left; pointer-events: auto;
+  display: flex; flex-direction: column; }
+.categorie-panneau { position: relative; z-index: 1;
   width: min(1000px, 95vw); height: auto; max-height: 95vh;
   overflow: auto; padding: 2.2rem 1.4rem 1.4rem; box-sizing: border-box;
   background: #0a0000; color: var(--red-light); border: 2px solid var(--red);
@@ -110,14 +120,19 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 @media (max-width: 640px) {
   .article-panneau { width: 98vw; max-height: 90vh; padding: 1.5rem 1rem 1rem; }
 }
-.article-panneau h2 { font-size: clamp(1.05rem, 2.6vw, 1.35rem); line-height: 1.25; color: #fff; margin: .4rem 2.4rem .8rem 0; overflow-wrap: anywhere; }
-.article-panneau .meta { font-size: .8rem; opacity: .8; margin-bottom: .2rem; }
-.article-panneau .article-image { border: 1px solid var(--red-dim); background: #140000; margin-bottom: .9rem; max-height: 40vh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-.article-panneau .article-image img { display: block; width: 100%; height: auto; max-height: 40vh; object-fit: cover; }
-.article-panneau .article-image .lettre { font: 700 3.5rem "Courier New", monospace; color: #fff; text-shadow: 0 0 6px var(--red), 0 0 22px var(--red); padding: 1.2rem 0; }
-.article-texte { margin: 0 0 1.1rem; overflow-wrap: anywhere; color: var(--red-light); }
-.article-lien { display: inline-block; padding: .5rem .8rem; color: var(--red-light); border: 1px solid var(--red-dim); text-decoration: none; overflow-wrap: anywhere; }
+.article-panneau .categorie-fermer { position: absolute; top: 0.5rem; right: 0.5rem; z-index: 10; width: 1.8rem; height: 1.8rem; border: 1px solid var(--red-dim); background: #000; color: var(--red); font: inherit; font-size: 1rem; cursor: pointer; }
+.article-panneau .categorie-fermer:hover { background: var(--red); color: #000; }
+.article-panneau .article-image { flex: 0 0 35%; border: 1px solid var(--red-dim); background: #140000; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.article-panneau .article-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.article-panneau .article-image .lettre { font: 700 2.5rem "Courier New", monospace; color: #fff; text-shadow: 0 0 6px var(--red), 0 0 22px var(--red); }
+.article-panneau > div:not(.article-image):not(.article-backdrop), .article-panneau > p:not(.article-texte) { padding: 0 0.8rem; }
+.article-panneau .meta { font-size: .75rem; opacity: .8; margin: 0.8rem 0.8rem 0.2rem; }
+.article-panneau h2 { font-size: 0.95rem; line-height: 1.2; color: #fff; margin: 0.2rem 0.8rem 0.6rem; overflow-wrap: anywhere; }
+.article-texte { flex: 1; margin: 0 0.8rem; overflow-wrap: anywhere; color: var(--red-light); overflow-y: auto; }
+.article-panneau > p:last-of-type { margin: 0.8rem 0.8rem 0 !important; }
+.article-lien { display: block; padding: 0.4rem 0.8rem; color: var(--red-light); border: 1px solid var(--red-dim); text-decoration: none; overflow-wrap: anywhere; text-align: center; font-size: 0.8rem; }
 .article-lien:hover, .article-lien:focus-visible { background: var(--red); color: #000; outline: none; box-shadow: 0 0 20px var(--red); }
+.article-nav { flex: 0 0 auto; display: flex; gap: 0.4rem; justify-content: center; padding: 0.8rem; border-top: 1px solid var(--red-dim); }
 
 /* taille des cartes : 75 % de l'ancienne ; tout (cadre, textes, marges, bouton) est réduit du même facteur */
 .carte {

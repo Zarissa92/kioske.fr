@@ -1,7 +1,7 @@
 # kioske.fr
 
 Le **KiosKe** : une veille automatique des médias indépendants, des luttes et des voix LGBTQIA+.
-Une seule page statique (HTML5 et CSS, **sans JavaScript**), reconstruite toutes les 30 minutes sur
+Une seule page statique (HTML5, CSS et JavaScript minimal), reconstruite toutes les 30 minutes sur
 le serveur à partir de flux RSS et de chaînes Twitch. Les images sont hébergées par le site : la page
 ne charge rien d'un autre site, sans publicité ni pistage.
 
@@ -157,9 +157,16 @@ Tant que l'empreinte n'est pas réenregistrée après une modification, rien n'e
 - **Thème au choix du visiteur** : deux boutons au-dessus de « // kioske.fr automatique ». Boutons
   radio cachés et règles `:root:has(#theme-<id>:checked)` : CSS seul, sans JavaScript ni cookie. Le
   choix ne dure que la visite. Sans `:has()` (vieux navigateurs), seul le thème par défaut s'affiche.
+- **Barre de recherche** : champ texte sous les thèmes. Appuyez sur Entrée pour filtrer les cartes :
+  celles qui correspondent restent opaques (100%) et cliquables, les autres deviennent semi-transparentes
+  (30%) et non-cliquables. Cherche dans les titres, descriptions, sources et dates. La page scroll
+  automatiquement vers les résultats.
 - **Étiquettes** : une par source, dans un bloc par catégorie, avec l'icône du flux RSS de la catégorie.
-- **Fenêtres et articles** : `popover` HTML, sans JavaScript. La carte est un bouton ; le panneau de
-  l'article affiche image, date, source, texte complet du flux et lien vers le site d'origine.
+  Clic sur une étiquette → fenêtre de source avec backdrop cliquable pour fermer.
+- **Cartes d'articles** : format «carte à jouer» (ratio 2.5:3.5) avec image fixe en haut (35% de la hauteur), contenu scrollable au milieu, boutons de navigation en bas. Structure flexbox uniforme pour tous les articles.
+- **Navigation** : boutons Précédent/Suivant pour naviguer dans les articles d'une même source, sans recharger la page. Position de scroll préservée au retour.
+- **Fermeture** : croix (×) ou clic en dehors du panneau pour revenir à la fenêtre source. Clic en dehors de la fenêtre source → retour à l'accueil.
+- **Backdrops** : fond noir semi-transparent (70%) autour des panneaux, cliquable pour fermer et revenir au niveau précédent. Évite les clics accidentels.
 - **Téléphone** (640 px et moins) : une carte par ligne, image en haut, seul le titre est affiché ; les
   étiquettes passent à la ligne ; les fenêtres ont la largeur du panneau principal.
 - **Grand écran** (1100 px et plus) : `zoom: 1.25`, fenêtres de catégorie sur trois colonnes, blocs de

@@ -186,7 +186,9 @@ def render_page(items: list[dict], previews: dict[str, dict],
 </head>
 <body>
 {pluie}<main class="panel">
-  {choix}<p class="kicker">// {DOMAINE} automatique ✨</p>
+  {choix}
+  <input type="text" id="recherche" class="recherche" placeholder="Chercher..." aria-label="Barre de recherche">
+  <p class="kicker">// {DOMAINE} automatique ✨</p>
   <h1><span class="titre-ligne"><span class="drapeau" aria-hidden="true">🏳️‍⚧️</span><span class="glow">{DOMAINE}</span><span class="drapeau" aria-hidden="true">🏳️‍⚧️</span><span class="cursor" aria-hidden="true">▌</span></span></h1>
   <p class="sub">{len(items)} éléments · {len(groupes)} sources</p>
   <p class="sub-petit">Mis à jour le {generated}</p>
@@ -278,6 +280,30 @@ document.addEventListener('keydown', e => {{
     }} else {{
       closePopover();
     }}
+  }}
+}});
+// Barre de recherche
+const rechercheInput = document.getElementById('recherche');
+rechercheInput.addEventListener('keydown', (e) => {{
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  const query = rechercheInput.value.toLowerCase().trim();
+  if (!query) return;
+  const cards = document.querySelectorAll('[data-article-id^="art-"]');
+  let found = false;
+  cards.forEach(card => {{
+    const text = card.textContent.toLowerCase();
+    if (text.includes(query)) {{
+      card.style.opacity = '1';
+      card.style.pointerEvents = 'auto';
+      found = true;
+    }} else {{
+      card.style.opacity = '0.3';
+      card.style.pointerEvents = 'none';
+    }}
+  }});
+  if (found) {{
+    document.querySelector('.cartes').scrollIntoView({{behavior: 'smooth'}});
   }}
 }});
 </script>

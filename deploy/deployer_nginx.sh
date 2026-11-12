@@ -28,6 +28,10 @@ set -euo pipefail
 DOSSIER="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$DOSSIER/deploy/lib_config.sh"  # cfg <section> <clé> : valeurs de kioske.cfg
 DOMAINE="$(cfg site domaine)"
+# Vérification de sécurité : ce script est destiné à kioske.fr seulement
+if [[ "$DOMAINE" != "kioske.fr" ]]; then
+    erreur "ERREUR : Ce script est configuré pour kioske.fr, pas pour $DOMAINE. Arrêt pour éviter les mélanges de domaines."
+fi
 RACINE="$(cfg serveur racine_web)"  # racine servie : la même que la publication
 DISPO="/etc/nginx/sites-available/$DOMAINE"
 ACTIF="/etc/nginx/sites-enabled/$DOMAINE"
@@ -39,7 +43,7 @@ SANS_CERT=0
 
 # Politique de contenu : le site ne charge rien d'un autre site (images du KiosKe comprises,
 # qui sont téléchargées par le build et servies depuis img/veille/ dans la racine web). Aucun script.
-CSP="default-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+CSP="default-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
 
 info()    { printf '\033[1;34m[info]\033[0m %s\n' "$*"; }
 avert()   { printf '\033[1;33m[attention]\033[0m %s\n' "$*"; }

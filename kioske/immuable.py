@@ -1,6 +1,6 @@
 """Garde du bloc immuable de la page d'accueil.
 
-Le bloc entre <!-- IMMUABLE:DEBUT --> et <!-- IMMUABLE:FIN --> (cagnotte, lien Discord, code de
+Le bloc entre <!-- IMMUABLE:DEBUT --> et <!-- IMMUABLE:FIN --> (lien Discord, code de
 conduite) est écrit une fois pour toutes dans accueil/bloc_immuable.html. Le build l'insère tel
 quel dans la page : il ne le modifie jamais.
 
@@ -20,7 +20,7 @@ from .config import EMPREINTE
 DEBUT = "<!-- IMMUABLE:DEBUT"
 FIN = "<!-- IMMUABLE:FIN -->"
 # Éléments qui doivent être présents dans la zone
-ATTENDUS = ['class="cagnotte"', "discord.gg", 'id="code-conduite"']
+ATTENDUS = ["discord.gg", 'id="code-conduite"']
 
 
 def zone(texte: str) -> str:
@@ -56,7 +56,7 @@ def verifier_zone(texte: str) -> None:
 
 def parties() -> tuple[str, str]:
     """Le bloc immuable, vérifié, en deux morceaux insérés tels quels dans la page : (haut, bas).
-    Le bas (cagnotte et lien Discord, entre BAS:DEBUT et BAS:FIN) s'affiche en bas du panneau."""
+    Le bas (lien Discord et code de conduite, entre BAS:DEBUT et BAS:FIN) s'affiche en bas du panneau."""
     texte = SOURCE.read_text(encoding="utf-8")
     verifier_zone(texte)
     bas = re.search(r"<!-- BAS:DEBUT -->(.*?)<!-- BAS:FIN -->", texte, re.S)
