@@ -22,7 +22,7 @@ from .config import (ARTICLES_PAR_SOURCE, BUILD, CHAINES_TWITCH, DOMAINE, DOSSIE
 from .flux import load_feed
 from .historique import Historique
 from .images import appliquer_images, purger_images, telecharger_images
-from .rendu import render_page
+from .rendu import render_page, render_rss_page
 from .rss import render_rss
 from .sources import AUTRES, ordre_des_categories, read_categories, read_feeds, read_local, read_twitch
 from .texte import slugs_categories
@@ -131,6 +131,17 @@ def ecrire_flux_rss(items: list[dict], categories: dict[str, str]) -> None:
             print(f"supprimé (catégorie disparue) : {ancien.relative_to(ROOT)}")
 
 
+def ecrire_page_rss(categories: dict[str, str]) -> None:
+    """Écrit build/rss.html : page de découverte des flux RSS par catégorie."""
+    BUILD.mkdir(parents=True, exist_ok=True)
+    page = render_rss_page(categories)
+    sortie = BUILD / "rss.html"
+    tmp = sortie.with_name(sortie.name + ".tmp")
+    tmp.write_text(page, encoding="utf-8")
+    tmp.replace(sortie)
+    print(f"OK : page RSS écrite dans {sortie.relative_to(ROOT)}")
+
+
 def migrer_ancienne_structure() -> None:
     """Transition (réorganisation du 2026-11-11) : les images étaient dans img/ à la racine du projet.
     Elles sont déplacées une fois dans build/img/, pour ne pas tout retélécharger."""
@@ -189,6 +200,7 @@ def construire(args: argparse.Namespace) -> None:
         categories = read_categories(args.rss, args.tw)
         print(f"{len(set(categories.values()))} catégorie(s) lue(s) dans les fichiers de sources")
         ecrire_page(items, previews, categories)
+        ecrire_page_rss(categories)
         if not args.simple:
             ecrire_flux_rss(items, categories)
         copier_statiques()

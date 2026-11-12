@@ -125,10 +125,12 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .article-container, .categorie-container { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 100; }
 .article-backdrop, .categorie-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .7); cursor: pointer; }
 .article-panneau { position: relative; z-index: 1;
-  width: min(900px, 85vw); height: auto; max-height: 85vh;
+  width: var(--largeur-carte-ouverte); height: auto; max-height: 85vh;
   aspect-ratio: 2.5 / 3.5; padding: 0; box-sizing: border-box;
   background: #0a0000; color: var(--red-light); border: 2px solid var(--red);
-  box-shadow: 0 0 50px color-mix(in srgb, var(--red) 60%, transparent), inset 0 0 20px color-mix(in srgb, var(--red) 10%, transparent);
+  border-radius: 0.8rem;
+  scale: var(--hauteur-carte-ouverte);
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--red) 80%, transparent), 0 0 50px color-mix(in srgb, var(--red) 60%, transparent), inset 0 0 20px color-mix(in srgb, var(--red) 10%, transparent);
   font-size: .85rem; line-height: 1.4; text-align: left; pointer-events: auto;
   display: flex; flex-direction: column; }
 .categorie-panneau { position: relative; z-index: 1;
@@ -142,7 +144,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 }
 .article-panneau .categorie-fermer { position: absolute; top: 0.5rem; right: 0.5rem; z-index: 10; width: 1.8rem; height: 1.8rem; border: 1px solid var(--red-dim); background: #000; color: var(--red); font: inherit; font-size: 1rem; cursor: pointer; }
 .article-panneau .categorie-fermer:hover { background: var(--red); color: #000; }
-.article-panneau .article-image { flex: 0 0 35%; border: 1px solid var(--red-dim); background: #140000; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.article-panneau .article-image { flex: 0 0 35%; border: 1px solid var(--red-dim); background: #140000; overflow: hidden; display: flex; align-items: center; justify-content: center; border-radius: 0.6rem; }
 .article-panneau .article-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .article-panneau .article-image .lettre { font: 700 2.5rem "Courier New", monospace; color: #fff; text-shadow: 0 0 6px var(--red), 0 0 22px var(--red); }
 .article-panneau > div:not(.article-image):not(.article-backdrop), .article-panneau > p:not(.article-texte) { padding: 0 0.8rem; }
@@ -188,7 +190,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 }
 .carte:hover .carte-plus, .carte:focus-visible .carte-plus { background: var(--red); color: #000; box-shadow: 0 0 14px var(--red); }
 
-.mentions { position: relative; z-index: 1; max-width: 1200px; width: calc(100% - 32px); margin: 0 auto 1rem; font-size: .75rem; opacity: .7; text-align: center; }
+.mentions { position: relative; z-index: 0; max-width: 1200px; width: calc(100% - 32px); margin: 0 auto 1rem; font-size: .75rem; opacity: .7; text-align: center; pointer-events: auto; }
 .mentions a { color: var(--red-light); text-decoration: none; transition: all .2s; }
 .mentions a:hover, .mentions a:focus-visible { color: var(--red); text-decoration: underline; opacity: 1; outline: none; }
 /* ----- nuage des sources (même principe que la page principale) ----- */

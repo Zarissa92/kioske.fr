@@ -5,7 +5,7 @@ Une seule page statique (HTML5, CSS et JavaScript minimal), reconstruite toutes 
 le serveur à partir de flux RSS et de chaînes Twitch. Les images sont hébergées par le site : la page
 ne charge rien d'un autre site, sans publicité ni pistage.
 
-**Mots-clés** : kioske, veille, médias indépendants, LGBTQIA+, Mélenchon, RSS, Twitch, informatique libre.
+**Mots-clés** : kioske, veille, médias indépendants, LGBTQIA+, RSS, Twitch, informatique libre.
 
 En haut de la page, le **bloc immuable** (cagnotte, lien Discord, code de conduite) n'est jamais
 modifié par le build.
@@ -14,7 +14,15 @@ modifié par le build.
 > dans le paquet `kioske/`, site généré dans `build/`, réglages dans `kioske.cfg`.
 > **À vérifier :** l'`origin` du dépôt git pointe encore vers `kit-gauchiasses.fr`.
 >
-> **Modifications (2026-11-12)** : menu "+" en haut à gauche avec barre de recherche, choix des thèmes, lien Discord et charte. Layout compacté. Étiquettes tronquées (20 chars max). Navigation Précédent/Suivant en galerie. Zoom PC supprimé.
+> **Modifications récentes** :
+> - Menu "+" avec barre de recherche, choix des thèmes, sliders de taille, lien Discord, lien RSS et charte (2026-11-12 matin).
+> - Page `rss.html` : découverte des flux RSS par catégories avec icônes aux couleurs du drapeau trans (2026-11-12 soir).
+> - Toutes les heures affichées en **heure de Paris** (CET/CEST selon la saison).
+> - Layout compacté. Étiquettes tronquées (20 chars max). Navigation Précédent/Suivant en galerie. Zoom PC supprimé.
+> - **Barre de recherche refonte** : crée un panneau de résultats indépendant avec les cartes trouvées. Menu "+" se ferme à l'ouverture (2026-11-12 après-midi).
+> - **Navigation : fermeture nette** — quand on ferme un article, retour à l'index (pas au panneau de la source).
+> - **Galerie — hover sur PC** : survol d'une carte l'ouvre temporairement ; clic la garde ouverte (2026-11-12 après-midi).
+> - **Preview nettoyé** : SVG et PNG de partage social régénérés, sans trace d'ancienne version (2026-11-12 soir).
 
 <p align="center"><img src="docs/img/kioske-accueil.png" width="640" alt="Page d'accueil : choix du thème, titre, et étiquettes des sources rangées par catégorie"></p>
 
@@ -49,7 +57,7 @@ carte ouvre l'article dans la page (texte du flux, lien vers l'original).
 | `bin/` | Points d'entrée : `build_site.py`, `publier_public.py`, `garde_immuable.py`. Quelques lignes chacun. |
 | `deploy/` | Scripts du serveur : `kioske.sh` (point d'entrée), `installer_serveur.sh`, `deployer_nginx.sh`, `verifier_serveur.sh`, `lib_config.sh`, `systemd/`, `fail2ban/`. |
 | `data/` | `immuable.json` (empreinte du bloc, suivie par git) ; `historique.db`, `cache/`, `build.lock` (locaux, jamais publiés). |
-| `build/` | **Le site généré**, complet : `index.html`, `rss.xml`, `rss/`, `img/veille/`, copie de `static/`, `robots.txt`, `sitemap.xml`. Hors git, jamais édité à la main, jamais envoyé au serveur. |
+| `build/` | **Le site généré**, complet : `index.html` (page d'accueil), `rss.html` (découverte des flux RSS), `rss.xml`, `rss/` (flux par catégories), `img/veille/`, copie de `static/`, `robots.txt`, `sitemap.xml`. Hors git, jamais édité à la main, jamais envoyé au serveur. |
 | `requirements.txt` | Dépendances Python (`feedparser`, `yt-dlp`, `legacy-cgi`). |
 | `apercu/preview.svg` | Source de `static/preview.png` (image de partage social) : générer avec `rsvg-convert -w 1200 -h 630 apercu/preview.svg -o static/preview.png`. |
 | `docs/img/` | Captures de ce README. |
@@ -76,7 +84,7 @@ Format INI, commenté dans le fichier. Une valeur manquante ou invalide arrête 
 
 | Section | Clés |
 | --- | --- |
-| `[site]` | `domaine`, `nom`, `slogan` (titre de l'onglet et référencement), `theme` (thème par défaut), `taille_defaut` (zoom initial en %, min 75, max 125, défaut 100). |
+| `[site]` | `domaine`, `nom`, `slogan` (titre de l'onglet et référencement), `theme` (thème par défaut), `taille_defaut` (zoom en %, min 75, max 125, défaut 115), `largeur_carte_ouverte` (largeur max du panneau article, ex: `min(600px, 85vw)`), `hauteur_carte_ouverte` (zoom de la hauteur des cartes, min 75, max 125, défaut 115). |
 | `[veille]` | `articles_flux_rss` (100), `videos_par_chaine` (15), `articles_par_source` (0 = tous), `delai_nouvel_essai_heures` (24). |
 | `[serveur]` | `racine_web` (`/var/www/kioske.fr`), `ip_publique`, `intervalle_timer` (`30min`). |
 | `[theme.<nom>]` | `nom`, `fond` (`etoiles` ou `noir`), `pluie` (`oui` ou `non`), `opacite_panneau` (0 à 100, en %). |
@@ -161,16 +169,22 @@ Tant que l'empreinte n'est pas réenregistrée après une modification, rien n'e
 - **Thème au choix du visiteur** : deux boutons au-dessus de « // kioske.fr automatique ». Boutons
   radio cachés et règles `:root:has(#theme-<id>:checked)` : CSS seul, sans JavaScript ni cookie. Le
   choix ne dure que la visite. Sans `:has()` (vieux navigateurs), seul le thème par défaut s'affiche.
-- **Barre de recherche** : champ texte sous les thèmes. Appuyez sur Entrée pour filtrer les cartes :
-  celles qui correspondent restent opaques (100%) et cliquables, les autres deviennent semi-transparentes
-  (30%) et non-cliquables. Cherche dans les titres, descriptions, sources et dates. La page scroll
-  automatiquement vers les résultats.
+- **Barre de recherche** : champ texte sous les thèmes. Appuyez sur Entrée pour chercher : crée un
+  panneau de résultats indépendant avec les cartes qui correspondent. Cherche dans les titres,
+  descriptions, sources et dates. Les cartes du panneau restent cliquables. Fermer le panneau avec ×
+  ou en cliquant dehors revient à l'index.
 - **Galerie horizontale** : sous le bloc immuable, les 10 derniers articles ayant une image, affichés en
-  ligne avec images seulement (80 × 80 px). Scroll horizontal pour plus d'articles. Clic sur une image
-  ouvre la fiche complète de l'article. Boutons Précédent/Suivant pour naviguer entre articles de la galerie.
+  ligne avec images seulement (80 × 80 px). Scroll horizontal pour plus d'articles. **Sur PC (écran ≥ 1100px)** :
+  survoler une carte l'ouvre temporairement ; quitter le survol la ferme. **Clic sur une image** : ouvre
+  la fiche de l'article de façon permanente. Boutons Précédent/Suivant pour naviguer entre articles.
+- **Heures en Paris** : tous les timestamps affichés (dates des articles, heure de mise à jour du panel)
+  sont en heure de Paris (CET/CEST selon la saison). L'attribut HTML `datetime` reste en UTC (standard).
 - **Lien GitHub** : en bas de la page, lien vers le dépôt du projet avec mention de la licence (GPL v3).
 - **Étiquettes** : une par source, dans un bloc par catégorie.
   Clic sur une étiquette → fenêtre de source avec backdrop cliquable pour fermer. Les flux RSS (par catégorie et global) restent découvrables dans le code source pour les agrégateurs.
+- **Page de découverte des flux** : `rss.html` liste le flux principal et tous les flux par catégorie,
+  avec icônes RSS aux couleurs du drapeau trans. Accessible depuis le lien « Découvrir les flux RSS »
+  dans le menu "+" (bloc immuable).
 
 - **Cartes d'articles** : format «carte à jouer» (ratio 2.5:3.5) avec image fixe en haut (35% de la hauteur), contenu scrollable au milieu, boutons de navigation en bas. Structure flexbox uniforme pour tous les articles.
 - **Navigation** : boutons Précédent/Suivant pour naviguer dans les articles d'une même source, ou entre articles de la galerie, sans recharger la page. Position de scroll préservée au retour à une source.
