@@ -83,6 +83,7 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> tuple[str, l
     cartes_galerie = []
     panneaux_galerie = []
     gal_idx = 0
+    gal_indices = []  # Indice réels des articles avec image pour la navigation
 
     for item in items:
         if gal_idx >= 10:
@@ -94,7 +95,15 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> tuple[str, l
         if not image:
             continue
 
-        cible = f"gal-{gal_idx}"
+        gal_indices.append(gal_idx)
+        gal_idx += 1
+
+    # Créer les cartes et panneaux avec navigation
+    for display_idx, real_idx in enumerate(gal_indices):
+        item = items[real_idx]
+        title = previews.get(item["link"], {}).get("title") or item["title"]
+        image = previews.get(item["link"], {}).get("image") or item["image"] or ""
+        cible = f"gal-{real_idx}"
         media = f'<img src="{esc(image)}" alt="{esc(title)}" loading="lazy" referrerpolicy="no-referrer">'
 
         cartes_galerie.append(
@@ -102,7 +111,19 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> tuple[str, l
             f'{media}</button>'
         )
 
-        # Panneau identique aux autres articles
+        # Boutons de navigation pour la galerie
+        nav_buttons = ""
+        if display_idx > 0:
+            prev_idx = gal_indices[display_idx - 1]
+            nav_buttons += f'<button type="button" class="nav-btn nav-prev" data-article-id="gal-{prev_idx}" aria-label="Article precedent">Precedent</button>'
+        if display_idx < len(gal_indices) - 1:
+            next_idx = gal_indices[display_idx + 1]
+            nav_buttons += f'<button type="button" class="nav-btn nav-next" data-article-id="gal-{next_idx}" aria-label="Article suivant">Suivant</button>'
+
+        if nav_buttons:
+            nav_buttons = f'<div class="article-nav">{nav_buttons}</div>'
+
+        # Panneau avec navigation
         contenu = item.get("content") or item["summary"] or previews.get(item["link"], {}).get("description", "")
         date = item["date"]
         host = urlparse(item["link"]).netloc.removeprefix("www.")
@@ -119,10 +140,9 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> tuple[str, l
             f'<p class="article-texte">{esc(contenu)}</p>'
             f'<p><a class="article-lien" href="{esc(item["link"])}" target="_blank" rel="noopener noreferrer">'
             f'Lire l\'article sur {esc(host)} →</a></p>'
-            f'</div></div>'
+            f'{nav_buttons}</div></div>'
         )
         panneaux_galerie.append(panneau)
-        gal_idx += 1
 
     html = f'<section class="galerie" aria-label="10 derniers articles">{"".join(cartes_galerie)}</section>'
     return html, panneaux_galerie
@@ -183,8 +203,6 @@ def render_page(items: list[dict], previews: dict[str, dict],
 
     blocs = "".join(
         f'<section class="groupe">'
-        f'<a class="rss-categorie" href="{DOSSIER_RSS_CATEGORIES}/{slugs[c]}.xml" '
-        f'title="Flux RSS : {esc(c)}" aria-label="Flux RSS de la catégorie {esc(c)}">{ICONE_RSS}</a>'
         f'<h2>{esc(c)} <span class="compte">({len(par_categorie[c])})</span></h2>'
         f'<div class="nuage" aria-label="{esc(c)}">{"".join(tags_par_categorie[c])}</div></section>'
         for c in ordre_categories
