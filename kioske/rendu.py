@@ -5,9 +5,9 @@ from datetime import datetime, timezone
 from urllib.parse import urlparse
 
 from . import immuable
-from .config import DOMAINE, DOSSIER_RSS_CATEGORIES, NOM_SITE, SLOGAN, URL_SITE
+from .config import DOMAINE, DOSSIER_RSS_CATEGORIES, NOM_SITE, SLOGAN, URL_SITE, CFG
 from .sources import AUTRES, ordre_des_categories
-from .texte import cle_alphabetique, esc, slugs_categories
+from .texte import cle_alphabetique, esc, slugs_categories, truncate_label
 from .themes import charger_themes, choix_theme_html, css_des_themes, rain
 
 # Icône des flux RSS par catégorie, aux couleurs du drapeau trans.
@@ -188,7 +188,7 @@ def render_page(items: list[dict], previews: dict[str, dict],
             nb = len(articles)
             tags_par_categorie[categorie].append(
                 f'<button type="button" class="tag" data-article-id="cat-{n}">'
-                f'{esc(source)} <span class="nb">×{nb}</span></button>'
+                f'{esc(truncate_label(source))} <span class="nb">×{nb}</span></button>'
             )
             fenetres.append(
                 f'<div class="categorie-container" id="container-cat-{n}" hidden>'
@@ -225,6 +225,7 @@ def render_page(items: list[dict], previews: dict[str, dict],
     css = css_des_themes(themes, defaut)
     pluie = rain() if any(t["pluie"] for t in themes) else ""
     choix = choix_theme_html(themes, defaut)
+    taille_defaut = CFG.getint("site", "taille_defaut", fallback=90)
     return f"""<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -256,17 +257,39 @@ def render_page(items: list[dict], previews: dict[str, dict],
 </head>
 <body>
 {pluie}<main class="panel">
-  {choix}
-  <input type="text" id="recherche" class="recherche" placeholder="Chercher..." aria-label="Barre de recherche">
+  <button type="button" class="btn-infos" data-article-id="bloc-infos" aria-label="Infos et liens">+</button>
   <p class="kicker">// {DOMAINE} automatique ✨</p>
   <h1><span class="titre-ligne"><span class="drapeau" aria-hidden="true">🏳️‍⚧️</span><span class="glow">{DOMAINE}</span><span class="drapeau" aria-hidden="true">🏳️‍⚧️</span><span class="cursor" aria-hidden="true">▌</span></span></h1>
   <p class="sub">{len(items)} éléments · {len(groupes)} sources</p>
   <p class="sub-petit">Mis à jour le {generated}</p>
-  {bloc}
   {galerie_html}
   {nuage}
-  {bas}
 </main>
+<div id="bloc-infos-container" class="infos-container" hidden>
+  <div class="infos-backdrop" data-close-infos="bloc-infos"></div>
+  <div id="bloc-infos" class="popover-infos">
+    <button type="button" class="infos-fermer" data-close-infos="bloc-infos" aria-label="Fermer">×</button>
+    <div class="popover-contenu">
+    <div class="popover-section">
+      <input type="text" id="recherche" class="recherche" placeholder="Chercher..." aria-label="Barre de recherche">
+    </div>
+    <div class="popover-section">
+      {choix}
+    </div>
+    <div class="popover-section">
+      <div class="taille-controle">
+        <label for="taille-site">Taille du site</label>
+        <input type="range" id="taille-site" class="taille-slider" min="75" max="125" value="{taille_defaut}" aria-label="Taille du site (75% à 125%)">
+        <span class="taille-valeur">{taille_defaut}%</span>
+      </div>
+    </div>
+    <div class="popover-section">
+      {bloc}
+      {bas}
+    </div>
+  </div>
+  </div>
+</div>
 <section class="cartes" aria-label="Fenêtres des sources">
 {"".join(panneaux_galerie)}
 {"".join(fenetres)}
@@ -319,6 +342,43 @@ function closeArticleAndShowSource(articleId) {{
     showPopover(sourceId);
   }}
 }}
+// Taille du site (zoom global)
+const tailleSlider = document.getElementById('taille-site');
+const tailleValeur = document.querySelector('.taille-valeur');
+if (tailleSlider) {{
+  // Charger la taille sauvegardée ou utiliser la valeur par défaut
+  const tailleSauvegardee = localStorage.getItem('kioske-taille');
+  if (tailleSauvegardee) {{
+    tailleSlider.value = tailleSauvegardee;
+    document.documentElement.style.zoom = (tailleSauvegardee / 100);
+    tailleValeur.textContent = tailleSauvegardee + '%';
+  }}
+  tailleSlider.addEventListener('input', (e) => {{
+    const valeur = e.target.value;
+    document.documentElement.style.zoom = (valeur / 100);
+    tailleValeur.textContent = valeur + '%';
+    localStorage.setItem('kioske-taille', valeur);
+  }});
+}}
+// Gestion du bouton d'infos (+)
+const btnInfos = document.querySelector('.btn-infos');
+if (btnInfos) {{
+  btnInfos.addEventListener('click', (e) => {{
+    const container = document.getElementById('bloc-infos-container');
+    if (container) {{
+      container.hidden = false;
+    }}
+  }});
+}}
+// Fermeture du conteneur d'infos
+document.querySelectorAll('[data-close-infos]').forEach(elem => {{
+  elem.addEventListener('click', (e) => {{
+    const container = document.getElementById('bloc-infos-container');
+    if (container) {{
+      container.hidden = true;
+    }}
+  }});
+}});
 document.querySelectorAll('[data-article-id]').forEach(btn => {{
   btn.addEventListener('click', (e) => {{
     const target = btn.getAttribute('data-article-id');
