@@ -10,8 +10,8 @@
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCGvjUWz3mGV9cssraATuEsw"
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCYxsgv2jlCcMLq8pNlwrJSQ"
 [Militance et luttes]
+"https://portail.basta.media/spip.php?page=backend"
 "https://www.infolibertaire.net/feed"
-"https://paris-luttes.info/spip.php?page=backend"
 "https://rezo.net/backend/"
 "https://contre-attaque.net/feed/"
 "https://frustrationmagazine.fr/feed"

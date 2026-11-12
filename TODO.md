@@ -5,7 +5,8 @@ Tâches à implémenter dans les prochaines sessions.
 ## JavaScript/Interactions
 
 - **Fermeture du menu "+" avec Échap** : actuellement, seuls les panneaux d'articles/catégories se ferment avec Échap. Le menu "+" devrait aussi répondre à cette touche.
-- **Recherche en temps réel** : la barre de recherche filtre les cartes uniquement à l'appui d'Entrée. Implémenter un filtrage dynamique au fur et à mesure de la saisie.
+- **Recherche en temps réel** : la barre de recherche crée un panneau de résultats (2026-11-12). Implémenter un filtrage dynamique au fur et à mesure de la saisie en option.
+- **Hover galerie satisfaisant** : survol des cartes de galerie sur PC (2026-11-12). À améliorer : gestion des cas limites (souris rapide, multi-toucher).
 
 ## Configuration (kioske.cfg)
 
@@ -35,6 +36,11 @@ Le site est déjà 90% compatible. Travail estimé :
 - Web app shortcuts (accès rapide à la recherche)
 - Notifications (nouvelles sources)
 - Installation prompt personnalisé
+
+## Découverte des flux RSS
+
+- **Page rss.html** ✅ terminée (2026-11-12) : page de découverte avec lien vers le flux principal et tous les flux par catégorie (icônes RSS aux couleurs du drapeau trans).
+- **Lien vers rss.html** ✅ terminé (2026-11-12) : ajouté au bloc immuable, visible dans le popover d'infos et sur toutes les pages.
 
 ## Documentation
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from urllib.parse import urlparse
+from zoneinfo import ZoneInfo
 
 from . import immuable
 from .config import DOMAINE, DOSSIER_RSS_CATEGORIES, NOM_SITE, SLOGAN, URL_SITE, CFG
@@ -43,7 +44,8 @@ def render_card(item: dict, preview: dict, ident: str, prev_ident: str | None = 
         media = f'<img src="{esc(image)}" alt="" loading="lazy" referrerpolicy="no-referrer">'
     else:
         media = f'<span class="lettre">{esc((item["source"][:1] or "•").upper())}</span>'
-    date_html = f'<time datetime="{date.isoformat()}">{date:%d/%m/%Y}</time> · ' if date else ""
+    date_paris = date.astimezone(ZoneInfo("Europe/Paris")) if date else None
+    date_html = f'<time datetime="{date.isoformat()}">{date_paris:%d/%m/%Y}</time> · ' if date_paris else ""
     cible = f"art-{ident}"
 
     carte = (
@@ -127,7 +129,8 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> tuple[str, l
         contenu = item.get("content") or item["summary"] or previews.get(item["link"], {}).get("description", "")
         date = item["date"]
         host = urlparse(item["link"]).netloc.removeprefix("www.")
-        date_html = f'<time datetime="{date.isoformat()}">{date:%d/%m/%Y}</time> · ' if date else ""
+        date_paris = date.astimezone(ZoneInfo("Europe/Paris")) if date else None
+        date_html = f'<time datetime="{date.isoformat()}">{date_paris:%d/%m/%Y}</time> · ' if date_paris else ""
 
         panneau = (
             f'<div class="article-container" id="container-{cible}" hidden>'
@@ -214,7 +217,7 @@ def render_page(items: list[dict], previews: dict[str, dict],
     )
     nuage = f'<div class="groupes">{blocs}</div>'
 
-    generated = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
+    generated = datetime.now(ZoneInfo("Europe/Paris")).strftime("%d/%m/%Y %H:%M %Z")
     bloc, bas = immuable.parties()
     galerie_html, panneaux_galerie = render_galerie(items, previews)
     # Référencement : le titre et la description décrivent le contenu réel (sources et catégories du jour).
@@ -226,8 +229,10 @@ def render_page(items: list[dict], previews: dict[str, dict],
     pluie = rain() if any(t["pluie"] for t in themes) else ""
     choix = choix_theme_html(themes, defaut)
     taille_defaut = CFG.getint("site", "taille_defaut", fallback=90)
+    largeur_carte_ouverte = CFG.get("site", "largeur_carte_ouverte", fallback="min(600px, 85vw)")
+    hauteur_carte_ouverte = CFG.getint("site", "hauteur_carte_ouverte", fallback=115)
     return f"""<!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" style="--largeur-carte-ouverte: {largeur_carte_ouverte}; --hauteur-carte-ouverte: {hauteur_carte_ouverte / 100};">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -259,7 +264,7 @@ def render_page(items: list[dict], previews: dict[str, dict],
 {pluie}<main class="panel">
   <button type="button" class="btn-infos" data-article-id="bloc-infos" aria-label="Infos et liens">+</button>
   <p class="kicker">// {DOMAINE} automatique ✨</p>
-  <h1><span class="titre-ligne"><span class="drapeau" aria-hidden="true">🏳️‍⚧️</span><span class="glow">{DOMAINE}</span><span class="drapeau" aria-hidden="true">🏳️‍⚧️</span><span class="cursor" aria-hidden="true">▌</span></span></h1>
+  <h1><span class="titre-ligne"><span class="drapeau" aria-hidden="true">🏳️‍⚧️</span><span class="glow">{DOMAINE}</span><span class="drapeau" aria-hidden="true">🏳️‍⚧️</span></span></h1>
   <p class="sub">{len(items)} éléments · {len(groupes)} sources</p>
   <p class="sub-petit">Mis à jour le {generated}</p>
   {galerie_html}
@@ -281,6 +286,11 @@ def render_page(items: list[dict], previews: dict[str, dict],
         <label for="taille-site">Taille du site</label>
         <input type="range" id="taille-site" class="taille-slider" min="75" max="125" value="{taille_defaut}" aria-label="Taille du site (75% à 125%)">
         <span class="taille-valeur">{taille_defaut}%</span>
+      </div>
+      <div class="taille-controle">
+        <label for="hauteur-carte">Hauteur carte</label>
+        <input type="range" id="hauteur-carte" class="taille-slider" min="75" max="125" value="{hauteur_carte_ouverte}" aria-label="Hauteur de la carte ouverte (75% à 125%)">
+        <span class="taille-valeur">{hauteur_carte_ouverte}%</span>
       </div>
     </div>
     <div class="popover-section">
@@ -316,7 +326,7 @@ function showPopover(id) {{
       container.hidden = false;
       openPopover = container;
     }}
-  }} else if (id.startsWith('cat-')) {{
+  }} else if (id.startsWith('cat-') || id === 'search-results') {{
     const container = document.getElementById('container-' + id);
     if (container) {{
       container.hidden = false;
@@ -330,17 +340,8 @@ function showPopover(id) {{
 }}
 function closeArticleAndShowSource(articleId) {{
   if (!articleId) return;
-  // Articles de la galerie : pas de source associée, juste fermer
-  if (articleId.startsWith('gal-')) {{
-    closePopover();
-    return;
-  }}
-  const match = articleId.match(/^art-(\\d+)-/);
-  if (match) {{
-    const sourceId = 'cat-' + match[1];
-    closePopover();
-    showPopover(sourceId);
-  }}
+  // Fermer l'article et revenir à l'index du site
+  closePopover();
 }}
 // Taille du site (zoom global)
 const tailleSlider = document.getElementById('taille-site');
@@ -358,6 +359,25 @@ if (tailleSlider) {{
     document.documentElement.style.zoom = (valeur / 100);
     tailleValeur.textContent = valeur + '%';
     localStorage.setItem('kioske-taille', valeur);
+  }});
+}}
+// Hauteur de la carte ouverte
+const hauteurSlider = document.getElementById('hauteur-carte');
+const hauteurValeursSpans = document.querySelectorAll('.taille-valeur');
+const hauteurValeur = hauteurValeursSpans[hauteurValeursSpans.length - 1];
+if (hauteurSlider) {{
+  // Charger la hauteur sauvegardée ou utiliser la valeur par défaut
+  const hauteurSauvegardee = localStorage.getItem('kioske-hauteur-carte');
+  if (hauteurSauvegardee) {{
+    hauteurSlider.value = hauteurSauvegardee;
+    document.documentElement.style.setProperty('--hauteur-carte-ouverte', (hauteurSauvegardee / 100));
+    hauteurValeur.textContent = hauteurSauvegardee + '%';
+  }}
+  hauteurSlider.addEventListener('input', (e) => {{
+    const valeur = e.target.value;
+    document.documentElement.style.setProperty('--hauteur-carte-ouverte', (valeur / 100));
+    hauteurValeur.textContent = valeur + '%';
+    localStorage.setItem('kioske-hauteur-carte', valeur);
   }});
 }}
 // Gestion du bouton d'infos (+)
@@ -380,8 +400,13 @@ document.querySelectorAll('[data-close-infos]').forEach(elem => {{
   }});
 }});
 document.querySelectorAll('[data-article-id]').forEach(btn => {{
+  // Ne pas affecter le bouton + (qui gère le menu séparément)
+  if (btn.classList.contains('btn-infos')) return;
   btn.addEventListener('click', (e) => {{
     const target = btn.getAttribute('data-article-id');
+    // Fermer le menu + pour toute ouverture de panneau
+    const infosContainer = document.getElementById('bloc-infos-container');
+    if (infosContainer) infosContainer.hidden = true;
     if (btn.classList.contains('nav-btn')) {{
       showPopover(target);
     }} else if (btn.classList.contains('categorie-fermer')) {{
@@ -420,30 +445,170 @@ document.addEventListener('keydown', e => {{
     }}
   }}
 }});
+// Crée un panneau de résultats de recherche
+function createSearchResultsPanel() {{
+  if (document.getElementById('container-search-results')) return;
+  const container = document.createElement('div');
+  container.id = 'container-search-results';
+  container.className = 'categorie-container';
+  container.hidden = true;
+  const backdrop = document.createElement('div');
+  backdrop.className = 'categorie-backdrop';
+  backdrop.setAttribute('data-close-source', 'search-results');
+  backdrop.addEventListener('click', (e) => {{ if (e.target === backdrop) closePopover(); }});
+  const panneau = document.createElement('div');
+  panneau.id = 'search-results-panneau';
+  panneau.className = 'categorie-panneau';
+  const fermer = document.createElement('button');
+  fermer.type = 'button';
+  fermer.className = 'categorie-fermer';
+  fermer.setAttribute('data-article-id', 'search-results');
+  fermer.setAttribute('aria-label', 'Fermer');
+  fermer.textContent = '×';
+  const titre = document.createElement('h2');
+  titre.innerHTML = 'Résultats <span class="compte">(0)</span>';
+  const grille = document.createElement('div');
+  grille.className = 'grille';
+  grille.id = 'search-results-grille';
+  panneau.appendChild(fermer);
+  panneau.appendChild(titre);
+  panneau.appendChild(grille);
+  container.appendChild(backdrop);
+  container.appendChild(panneau);
+  document.body.appendChild(container);
+  // Attacher le listener au bouton fermer
+  fermer.addEventListener('click', () => closePopover());
+}}
 // Barre de recherche
 const rechercheInput = document.getElementById('recherche');
-rechercheInput.addEventListener('keydown', (e) => {{
-  if (e.key !== 'Enter') return;
-  e.preventDefault();
-  const query = rechercheInput.value.toLowerCase().trim();
-  if (!query) return;
-  const cards = document.querySelectorAll('[data-article-id^="art-"]');
-  let found = false;
-  cards.forEach(card => {{
-    const text = card.textContent.toLowerCase();
-    if (text.includes(query)) {{
-      card.style.opacity = '1';
-      card.style.pointerEvents = 'auto';
-      found = true;
-    }} else {{
-      card.style.opacity = '0.3';
-      card.style.pointerEvents = 'none';
+if (rechercheInput) {{
+  rechercheInput.addEventListener('keydown', (e) => {{
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const query = rechercheInput.value.toLowerCase().trim();
+    if (!query) return;
+    createSearchResultsPanel();
+    const cards = document.querySelectorAll('[data-article-id^="art-"]');
+    const grille = document.getElementById('search-results-grille');
+    grille.innerHTML = '';
+    let count = 0;
+    cards.forEach(card => {{
+      const text = card.textContent.toLowerCase();
+      if (text.includes(query)) {{
+        const clone = card.cloneNode(true);
+        grille.appendChild(clone);
+        // Réattacher les listeners à la carte clonée
+        clone.addEventListener('click', (e) => {{
+          const target = clone.getAttribute('data-article-id');
+          showPopover(target);
+        }});
+        count++;
+      }}
+    }});
+    if (count > 0) {{
+      document.querySelector('#search-results-panneau h2 .compte').textContent = `(${{count}})`;
+      // Fermer le menu +
+      const infosContainer = document.getElementById('bloc-infos-container');
+      if (infosContainer) infosContainer.hidden = true;
+      showPopover('search-results');
     }}
   }});
-  if (found) {{
-    document.querySelector('.cartes').scrollIntoView({{behavior: 'smooth'}});
-  }}
+}}
+// Galerie : hover sur cartes (PC seulement)
+if (window.innerWidth >= 1100) {{
+  document.querySelectorAll('.galerie-carte').forEach(carte => {{
+    carte.addEventListener('mouseenter', (e) => {{
+      const id = carte.getAttribute('data-article-id');
+      showPopover(id);
+    }});
+    carte.addEventListener('mouseleave', (e) => {{
+      closePopover();
+    }});
+  }});
+}}
+</script>
+</body>
+</html>
+"""
+
+
+def render_rss_page(categories: dict[str, str] | None = None) -> str:
+    """Page de découverte des flux RSS par catégorie."""
+    categories = categories or {}
+    ordre_categories = [c for c in dict.fromkeys(categories.values())]
+    if AUTRES not in ordre_categories:
+        ordre_categories.append(AUTRES)
+    slugs = slugs_categories(ordre_categories)
+
+    themes, defaut = charger_themes()
+    css = css_des_themes(themes, defaut)
+    pluie = rain() if any(t["pluie"] for t in themes) else ""
+    choix = choix_theme_html(themes, defaut)
+
+    # Lien vers le flux RSS principal
+    flux_principal = f'<a href="rss.xml" class="rss-lien rss-principal"><svg viewBox="0 0 20 20" aria-hidden="true"><rect y="0" width="20" height="4" fill="#5BCEFA"/><rect y="4" width="20" height="4" fill="#F5A9B8"/><rect y="8" width="20" height="4" fill="#FFFFFF"/><rect y="12" width="20" height="4" fill="#F5A9B8"/><rect y="16" width="20" height="4" fill="#5BCEFA"/><g fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round"><circle cx="4.5" cy="15.5" r="1.8" fill="#000" stroke="none"/><path d="M3 10.5a6.5 6.5 0 0 1 6.5 6.5"/><path d="M3 4.5a12.5 12.5 0 0 1 12.5 12.5"/></g></svg> {esc(DOMAINE)}</a>'
+
+    # Flux par catégorie
+    flux_categories = ""
+    for categorie in ordre_categories:
+        slug = slugs[categorie]
+        flux_categories += f'<h3>{esc(categorie)}</h3><a href="rss/{slug}.xml" class="rss-lien">{ICONE_RSS} {esc(categorie)}</a>'
+
+    bloc, bas = immuable.parties()
+
+    return f"""<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flux RSS — {esc(NOM_SITE)}</title>
+<meta name="description" content="Tous les flux RSS du {esc(DOMAINE)}, organisés par catégories.">
+<link rel="canonical" href="{URL_SITE}/rss.html">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<style>
+{css}
+.rss-page {{ max-width: 560px; margin: 2rem auto; padding: 2rem; }}
+.rss-page h2 {{ font-size: 1.8rem; margin-bottom: 1.5rem; }}
+.rss-page h3 {{ font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }}
+.rss-lien {{ display: block; padding: 0.8rem 1rem; margin-bottom: 0.5rem; border: 1px solid var(--red-dim); color: var(--red-light); text-decoration: none; transition: all 0.2s; }}
+.rss-lien:hover {{ background: var(--red); color: #000; }}
+.rss-lien svg {{ display: inline-block; width: 1.2rem; height: 1.2rem; margin-right: 0.5rem; vertical-align: middle; }}
+.rss-principal {{ border: 2px solid var(--red); font-weight: bold; }}
+</style>
+</head>
+<body>
+{pluie}<main class="panel">
+  {choix}
+  <p class="kicker">// {DOMAINE} flux RSS</p>
+  <h1>{esc(NOM_SITE)}</h1>
+  <p class="sub">Découvrez tous les flux RSS du {esc(DOMAINE)}</p>
+
+  <div class="rss-page">
+    <h2>📡 Flux RSS</h2>
+
+    <h3>Principal</h3>
+    {flux_principal}
+
+    <h3>Par catégorie</h3>
+    {flux_categories}
+  </div>
+
+  {bloc}
+  {bas}
+</main>
+<p class="mentions">Chaque flux renvoie vers sa source d'origine. Textes, images et vidéos : leurs auteur.ice.s et sites respectifs.</p>
+<script>
+let openPopover = null;
+document.querySelectorAll('[data-article-id]').forEach(btn => {{
+  btn.addEventListener('click', (e) => {{ closePopover(); }});
 }});
+function closePopover() {{
+  if (openPopover) {{
+    openPopover.hidden = true;
+    openPopover = null;
+  }}
+}}
 </script>
 </body>
 </html>
