@@ -17,6 +17,14 @@ def strip_html(text: str, limit: int | None = 280) -> str:
     return text[:limit] + "…" if len(text) > limit else text
 
 
+def truncate_label(text: str, max_length: int = 20) -> str:
+    """Tronque le texte à max_length caractères, en remplaçant ce qui dépasse par '...'"""
+    if len(text) <= max_length:
+        return text
+    # Réserver 3 caractères pour "...", tronquer le reste
+    return text[:max_length - 3] + "..."
+
+
 def cle_alphabetique(nom: str) -> str:
     """Clé de tri insensible à la casse et aux accents (« Élan » se range avec « E »)."""
     return unicodedata.normalize("NFKD", nom).encode("ascii", "ignore").decode().casefold()
