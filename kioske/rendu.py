@@ -200,9 +200,9 @@ def render_page(items: list[dict], previews: dict[str, dict],
     bloc, bas = immuable.parties()
     galerie_html, panneaux_galerie = render_galerie(items, previews)
     # Référencement : le titre et la description décrivent le contenu réel (sources et catégories du jour).
-    titre_page = f"{NOM_SITE} ({DOMAINE}) : {SLOGAN}"
-    description = (f"{NOM_SITE} : {SLOGAN}. Articles et vidéos de {len(groupes)} sources, par catégorie : "
-                   f"{', '.join(ordre_categories)}. Sans publicité ni pistage.")
+    titre_page = f"{NOM_SITE} ({DOMAINE})"
+    description = "Le KiosKe : une veille automatique des médias indépendants, des luttes et des voix LGBTQIA+. Une seule page statique (HTML5, CSS et JavaScript minimal), reconstruite toutes les 30 minutes sur le serveur à partir de flux RSS et de chaînes Twitch. Les images sont hébergées par le site : la page ne charge rien d'un autre site, sans publicité ni pistage."
+    keywords = "kioske, veille, médias indépendants, LGBTQIA+, Mélenchon, RSS, Twitch, informatique libre"
     themes, defaut = charger_themes()
     css = css_des_themes(themes, defaut)
     pluie = rain() if any(t["pluie"] for t in themes) else ""
@@ -214,6 +214,7 @@ def render_page(items: list[dict], previews: dict[str, dict],
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{esc(titre_page)}</title>
 <meta name="description" content="{esc(description)}">
+<meta name="keywords" content="{keywords}">
 <link rel="canonical" href="{URL_SITE}/">
 <meta name="theme-color" content="#000000">
 <meta property="og:type" content="website">

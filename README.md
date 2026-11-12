@@ -5,6 +5,8 @@ Une seule page statique (HTML5, CSS et JavaScript minimal), reconstruite toutes 
 le serveur à partir de flux RSS et de chaînes Twitch. Les images sont hébergées par le site : la page
 ne charge rien d'un autre site, sans publicité ni pistage.
 
+**Mots-clés** : kioske, veille, médias indépendants, LGBTQIA+, Mélenchon, RSS, Twitch, informatique libre.
+
 En haut de la page, le **bloc immuable** (cagnotte, lien Discord, code de conduite) n'est jamais
 modifié par le build.
 
@@ -47,7 +49,7 @@ carte ouvre l'article dans la page (texte du flux, lien vers l'original).
 | `data/` | `immuable.json` (empreinte du bloc, suivie par git) ; `historique.db`, `cache/`, `build.lock` (locaux, jamais publiés). |
 | `build/` | **Le site généré**, complet : `index.html`, `rss.xml`, `rss/`, `img/veille/`, copie de `static/`, `robots.txt`, `sitemap.xml`. Hors git, jamais édité à la main, jamais envoyé au serveur. |
 | `requirements.txt` | Dépendances Python (`feedparser`, `yt-dlp`, `legacy-cgi`). |
-| `apercu/preview.svg` | Source de `static/preview.png` : `rsvg-convert -w 1200 -h 630 apercu/preview.svg -o static/preview.png`. |
+| `apercu/preview.svg` | Source de `static/preview.png` (image de partage social) : générer avec `rsvg-convert -w 1200 -h 630 apercu/preview.svg -o static/preview.png`. |
 | `docs/img/` | Captures de ce README. |
 | `old/` | Sauvegardes et reliquats (hors git, non synchronisés). `old/reliquats-2026-11-11/` : anciens scripts FTP et systemd ; `old/avant-reorganisation-2026-11-11.tar.gz` : le projet avant la réorganisation. |
 
