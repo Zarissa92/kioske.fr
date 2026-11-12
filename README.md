@@ -21,7 +21,7 @@ modifié par le build.
 > - Layout compacté. Étiquettes tronquées (20 chars max). Navigation Précédent/Suivant en galerie. Zoom PC supprimé.
 > - **Barre de recherche refonte** : crée un panneau de résultats indépendant avec les cartes trouvées. Menu "+" se ferme à l'ouverture (2026-11-12 après-midi).
 > - **Navigation : fermeture nette** — quand on ferme un article, retour à l'index (pas au panneau de la source).
-> - **Galerie — hover sur PC** : survol d'une carte l'ouvre temporairement ; clic la garde ouverte (2026-11-12 après-midi).
+> - **Galerie — clic seulement** : suppression du hover sur cartes, clic seul pour ouvrir (2026-11-12 soir).
 > - **Preview nettoyé** : SVG et PNG de partage social régénérés, sans trace d'ancienne version (2026-11-12 soir).
 
 <p align="center"><img src="docs/img/kioske-accueil.png" width="640" alt="Page d'accueil : choix du thème, titre, et étiquettes des sources rangées par catégorie"></p>
@@ -174,9 +174,8 @@ Tant que l'empreinte n'est pas réenregistrée après une modification, rien n'e
   descriptions, sources et dates. Les cartes du panneau restent cliquables. Fermer le panneau avec ×
   ou en cliquant dehors revient à l'index.
 - **Galerie horizontale** : sous le bloc immuable, les 10 derniers articles ayant une image, affichés en
-  ligne avec images seulement (80 × 80 px). Scroll horizontal pour plus d'articles. **Sur PC (écran ≥ 1100px)** :
-  survoler une carte l'ouvre temporairement ; quitter le survol la ferme. **Clic sur une image** : ouvre
-  la fiche de l'article de façon permanente. Boutons Précédent/Suivant pour naviguer entre articles.
+  ligne avec images seulement (80 × 80 px). Scroll horizontal pour plus d'articles. **Clic sur une image** : ouvre
+  la fiche de l'article. Boutons Précédent/Suivant pour naviguer entre articles.
 - **Heures en Paris** : tous les timestamps affichés (dates des articles, heure de mise à jour du panel)
   sont en heure de Paris (CET/CEST selon la saison). L'attribut HTML `datetime` reste en UTC (standard).
 - **Lien GitHub** : en bas de la page, lien vers le dépôt du projet avec mention de la licence (GPL v3).

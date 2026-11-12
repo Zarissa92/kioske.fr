@@ -514,18 +514,6 @@ if (rechercheInput) {{
     }}
   }});
 }}
-// Galerie : hover sur cartes (PC seulement)
-if (window.innerWidth >= 1100) {{
-  document.querySelectorAll('.galerie-carte').forEach(carte => {{
-    carte.addEventListener('mouseenter', (e) => {{
-      const id = carte.getAttribute('data-article-id');
-      showPopover(id);
-    }});
-    carte.addEventListener('mouseleave', (e) => {{
-      closePopover();
-    }});
-  }});
-}}
 </script>
 </body>
 </html>
