@@ -35,7 +35,7 @@ FILTRE_F2B="/etc/fail2ban/filter.d/kioske-scan.conf"
 JAIL_F2B="/etc/fail2ban/jail.d/kioske-scan.local"
 JAIL_PREREQUIS="sans_pitie"
 
-EMAIL=""
+EMAIL=" "
 SANS_CERT=0
 NGINX_SIMPLE=0
 SIMULATION=0
