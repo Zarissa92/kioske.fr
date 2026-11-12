@@ -159,6 +159,50 @@ $PROTECTIONS
         return 404;
     }
 
+    # Service worker : pas de cache
+    location = /sw.js {
+        add_header Cache-Control "no-cache, must-revalidate, max-age=0" always;
+        add_header Service-Worker-Allowed "/" always;
+        try_files \$uri =404;
+    }
+
+    # Manifest PWA : cache 1 jour
+    location = /manifest.json {
+        add_header Cache-Control "public, max-age=86400" always;
+        add_header Content-Type "application/manifest+json" always;
+        try_files \$uri =404;
+    }
+
+    # Icônes PWA : cache 1 an
+    location ~ /icon-[0-9]+\\.png\$ {
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        try_files \$uri =404;
+    }
+
+    # Assets statiques : cache 1 an
+    location ~ \\.(css|js|woff2|woff|ttf|svg)\$ {
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        try_files \$uri =404;
+    }
+
+    # Images : cache 30 jours
+    location ~ /img/ {
+        add_header Cache-Control "public, max-age=2592000" always;
+        try_files \$uri =404;
+    }
+
+    # HTML : cache 1 heure
+    location ~ \\.html\$ {
+        add_header Cache-Control "public, max-age=3600, must-revalidate" always;
+        try_files \$uri =404;
+    }
+
+    # Flux RSS/XML : pas de cache
+    location ~ \\.xml\$ {
+        add_header Cache-Control "no-cache, must-revalidate, max-age=0" always;
+        try_files \$uri =404;
+    }
+
     location / {
         try_files \$uri \$uri/ =404;
     }
@@ -246,6 +290,50 @@ $PROTECTIONS
     location ~ /\. {
         deny all;
         return 404;
+    }
+
+    # Service worker : pas de cache
+    location = /sw.js {
+        add_header Cache-Control "no-cache, must-revalidate, max-age=0" always;
+        add_header Service-Worker-Allowed "/" always;
+        try_files \$uri =404;
+    }
+
+    # Manifest PWA : cache 1 jour
+    location = /manifest.json {
+        add_header Cache-Control "public, max-age=86400" always;
+        add_header Content-Type "application/manifest+json" always;
+        try_files \$uri =404;
+    }
+
+    # Icônes PWA : cache 1 an
+    location ~ /icon-[0-9]+\\.png\$ {
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        try_files \$uri =404;
+    }
+
+    # Assets statiques : cache 1 an
+    location ~ \\.(css|js|woff2|woff|ttf|svg)\$ {
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        try_files \$uri =404;
+    }
+
+    # Images : cache 30 jours
+    location ~ /img/ {
+        add_header Cache-Control "public, max-age=2592000" always;
+        try_files \$uri =404;
+    }
+
+    # HTML : cache 1 heure
+    location ~ \\.html\$ {
+        add_header Cache-Control "public, max-age=3600, must-revalidate" always;
+        try_files \$uri =404;
+    }
+
+    # Flux RSS/XML : pas de cache
+    location ~ \\.xml\$ {
+        add_header Cache-Control "no-cache, must-revalidate, max-age=0" always;
+        try_files \$uri =404;
     }
 
     location / {

@@ -55,14 +55,13 @@ def render_card(item: dict, preview: dict, ident: str, prev_ident: str | None = 
         f'<span class="carte-titre">{esc(title)}</span><span class="carte-extrait">{esc(summary)}</span></span>'
         f'<span class="carte-plus" aria-hidden="true">+</span></button>'
     )
-    nav_buttons = ""
-    if prev_ident or next_ident:
-        nav_buttons = '<div class="article-nav">'
-        if prev_ident:
-            nav_buttons += f'<button type="button" class="nav-btn nav-prev" data-article-id="art-{prev_ident}" aria-label="Article precedent">Precedent</button>'
-        if next_ident:
-            nav_buttons += f'<button type="button" class="nav-btn nav-next" data-article-id="art-{next_ident}" aria-label="Article suivant">Suivant</button>'
-        nav_buttons += '</div>'
+    nav_buttons = '<div class="article-nav">'
+    if prev_ident:
+        nav_buttons += f'<button type="button" class="nav-btn nav-prev" data-article-id="art-{prev_ident}" aria-label="Article precedent">Precedent</button>'
+    nav_buttons += f'<button type="button" class="fav-heart" data-article-id="{cible}" aria-label="Marquer comme favori" onclick="event.stopPropagation(); toggleFavorite(event)">♡</button>'
+    if next_ident:
+        nav_buttons += f'<button type="button" class="nav-btn nav-next" data-article-id="art-{next_ident}" aria-label="Article suivant">Suivant</button>'
+    nav_buttons += '</div>'
 
     panneau = (
         f'<div class="article-container" id="container-{cible}" hidden>'
@@ -118,12 +117,12 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> tuple[str, l
         if display_idx > 0:
             prev_idx = gal_indices[display_idx - 1]
             nav_buttons += f'<button type="button" class="nav-btn nav-prev" data-article-id="gal-{prev_idx}" aria-label="Article precedent">Precedent</button>'
+        nav_buttons += f'<button type="button" class="fav-heart" data-article-id="gal-{real_idx}" aria-label="Marquer comme favori" onclick="event.stopPropagation(); toggleFavorite(event)">♡</button>'
         if display_idx < len(gal_indices) - 1:
             next_idx = gal_indices[display_idx + 1]
             nav_buttons += f'<button type="button" class="nav-btn nav-next" data-article-id="gal-{next_idx}" aria-label="Article suivant">Suivant</button>'
 
-        if nav_buttons:
-            nav_buttons = f'<div class="article-nav">{nav_buttons}</div>'
+        nav_buttons = f'<div class="article-nav">{nav_buttons}</div>'
 
         # Panneau avec navigation
         contenu = item.get("content") or item["summary"] or previews.get(item["link"], {}).get("description", "")
@@ -258,7 +257,19 @@ def render_page(items: list[dict], previews: dict[str, dict],
 <link rel="alternate" type="application/rss+xml" title="{DOMAINE} (flux RSS)" href="rss.xml">
 {liens_rss}
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KiosKe.fr">
 <style>{css}</style>
+<script>
+if ('serviceWorker' in navigator) {{
+  window.addEventListener('load', () => {{
+    navigator.serviceWorker.register('sw.js').catch(() => {{}});
+  }});
+}}
+</script>
 </head>
 <body>
 {pluie}<main class="panel">
@@ -294,12 +305,33 @@ def render_page(items: list[dict], previews: dict[str, dict],
       </div>
     </div>
     <div class="popover-section">
+      <button type="button" class="btn-mes-favoris" onclick="openFavoritesPanel()">♡ Mes favoris</button>
+    </div>
+    <div class="popover-section">
+      <button type="button" class="btn-install-pwa" id="btn-install-pwa">⬇ Installer l'app</button>
+    </div>
+    <div class="popover-section">
       {bloc}
       {bas}
     </div>
   </div>
   </div>
 </div>
+<div class="categorie-container" id="container-favoris" hidden>
+  <div class="categorie-backdrop" data-close-source="favoris"></div>
+  <div id="favoris" class="categorie-panneau">
+    <button type="button" class="categorie-fermer" data-article-id="favoris" aria-label="Fermer">×</button>
+    <h2>Mes favoris</h2>
+    <div class="grille" id="fav-grille"></div>
+    <div class="fav-controls" style="padding: 1rem 0; border-top: 1px solid var(--red-dim); text-align: center; gap: 0.5rem; display: flex; flex-direction: column;">
+      <button type="button" class="fav-export" id="fav-export-btn">Télécharger mes favoris</button>
+      <button type="button" class="fav-import" id="fav-import-btn" onclick="document.getElementById('fav-file-input').click()">Charger des favoris</button>
+      <button type="button" class="fav-export" id="fav-clear-btn">Effacer tous les favoris</button>
+    </div>
+  </div>
+</div>
+<input type="file" id="fav-file-input" accept=".json" style="display: none;" aria-label="Charger un fichier de favoris">
+
 <section class="cartes" aria-label="Fenêtres des sources">
 {"".join(panneaux_galerie)}
 {"".join(fenetres)}
@@ -326,7 +358,7 @@ function showPopover(id) {{
       container.hidden = false;
       openPopover = container;
     }}
-  }} else if (id.startsWith('cat-') || id === 'search-results') {{
+  }} else if (id.startsWith('cat-') || id === 'search-results' || id === 'favoris') {{
     const container = document.getElementById('container-' + id);
     if (container) {{
       container.hidden = false;
@@ -347,13 +379,14 @@ function closeArticleAndShowSource(articleId) {{
 const tailleSlider = document.getElementById('taille-site');
 const tailleValeur = document.querySelector('.taille-valeur');
 if (tailleSlider) {{
-  // Charger la taille sauvegardée ou utiliser la valeur par défaut
-  const tailleSauvegardee = localStorage.getItem('kioske-taille');
-  if (tailleSauvegardee) {{
-    tailleSlider.value = tailleSauvegardee;
-    document.documentElement.style.zoom = (tailleSauvegardee / 100);
-    tailleValeur.textContent = tailleSauvegardee + '%';
-  }}
+  // Charger la taille sauvegardée ou utiliser la valeur du slider (valeur par défaut)
+  const tailleSauvegardee = localStorage.getItem('kioske-taille') || tailleSlider.value;
+
+  // Appliquer le zoom dès le chargement
+  tailleSlider.value = tailleSauvegardee;
+  document.documentElement.style.zoom = (tailleSauvegardee / 100);
+  tailleValeur.textContent = tailleSauvegardee + '%';
+
   tailleSlider.addEventListener('input', (e) => {{
     const valeur = e.target.value;
     document.documentElement.style.zoom = (valeur / 100);
@@ -514,6 +547,158 @@ if (rechercheInput) {{
     }}
   }});
 }}
+
+// Gestion des favoris
+function getFavorites() {{
+  const fav = localStorage.getItem('kioske_favoris');
+  return fav ? JSON.parse(fav) : {{}};
+}}
+
+function saveFavorites(fav) {{
+  localStorage.setItem('kioske_favoris', JSON.stringify(fav));
+  updateHearts();
+}}
+
+function toggleFavorite(event) {{
+  const heart = event.target;
+  const articleId = heart.getAttribute('data-article-id');
+  const favorites = getFavorites();
+
+  if (favorites[articleId]) {{
+    delete favorites[articleId];
+    heart.classList.remove('active');
+  }} else {{
+    const carte = document.querySelector(`[data-article-id="${{articleId}}"]`);
+    const titre = carte.querySelector('.carte-titre')?.textContent || 'Sans titre';
+    const lien = carte.querySelector('.article-lien')?.href || '#';
+    favorites[articleId] = {{
+      titre: titre,
+      lien: lien,
+      timestamp: new Date().toISOString()
+    }};
+    heart.classList.add('active');
+  }}
+  saveFavorites(favorites);
+}}
+
+function updateHearts() {{
+  const favorites = getFavorites();
+  document.querySelectorAll('.fav-heart').forEach(heart => {{
+    const articleId = heart.getAttribute('data-article-id');
+    if (favorites[articleId]) {{
+      heart.classList.add('active');
+    }} else {{
+      heart.classList.remove('active');
+    }}
+  }});
+}}
+
+function openFavoritesPanel() {{
+  closePopover();
+  document.getElementById('bloc-infos-container').hidden = true;
+
+  const favGrille = document.getElementById('fav-grille');
+  const favorites = getFavorites();
+  favGrille.innerHTML = '';
+
+  if (Object.keys(favorites).length === 0) {{
+    favGrille.innerHTML = '<p style="grid-column: 1/-1; color: #888; padding: 2rem; text-align: center;">Aucun favori pour le moment</p>';
+  }} else {{
+    Object.entries(favorites).forEach(([id, data]) => {{
+      const carte = document.querySelector(`[data-article-id="${{id}}"]`);
+      if (carte) {{
+        const clone = carte.cloneNode(true);
+        clone.addEventListener('click', (e) => {{
+          showPopover(id);
+        }});
+        favGrille.appendChild(clone);
+      }}
+    }});
+  }}
+
+  showPopover('favoris');
+}}
+
+function exportFavorites() {{
+  const favorites = getFavorites();
+  if (Object.keys(favorites).length === 0) {{
+    alert('Aucun favori à exporter');
+    return;
+  }}
+  const data = JSON.stringify(favorites, null, 2);
+  const blob = new Blob([data], {{type: 'application/json'}});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'kioske-favoris.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}}
+
+function importFavorites() {{
+  const file = document.getElementById('fav-file-input').files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {{
+    try {{
+      const data = JSON.parse(e.target.result);
+      const favorites = getFavorites();
+      Object.assign(favorites, data);
+      saveFavorites(favorites);
+      openFavoritesPanel();
+      alert('Favoris importés avec succès !');
+    }} catch (err) {{
+      alert('Erreur lors de l\\'import : format JSON invalide');
+    }}
+  }};
+  reader.readAsText(file);
+}}
+
+function clearFavorites() {{
+  if (confirm('Êtes-vous sûr de vouloir effacer tous vos favoris ?')) {{
+    localStorage.removeItem('kioske_favoris');
+    updateHearts();
+    openFavoritesPanel();
+  }}
+}}
+
+// Boutons
+document.getElementById('fav-export-btn')?.addEventListener('click', exportFavorites);
+document.getElementById('fav-file-input')?.addEventListener('change', importFavorites);
+document.getElementById('fav-clear-btn')?.addEventListener('click', clearFavorites);
+
+// Initialiser les cœurs
+updateHearts();
+
+// Gestion de l'installation PWA
+let installPromptEvent = null;
+const btnInstallPWA = document.getElementById('btn-install-pwa');
+
+window.addEventListener('beforeinstallprompt', (e) => {{
+  e.preventDefault();
+  installPromptEvent = e;
+}});
+
+if (btnInstallPWA) {{
+  btnInstallPWA.addEventListener('click', async () => {{
+    if (!installPromptEvent) {{
+      alert('L\\'installation PWA n\\'est pas disponible sur ce navigateur ou ce contexte.');
+      return;
+    }}
+    installPromptEvent.prompt();
+    const choix = await installPromptEvent.userChoice;
+    if (choix.outcome === 'accepted') {{
+      console.log('PWA installée');
+    }}
+    installPromptEvent = null;
+  }});
+}}
+
+window.addEventListener('appinstalled', () => {{
+  console.log('PWA installée avec succès');
+}});
 </script>
 </body>
 </html>
@@ -554,6 +739,11 @@ def render_rss_page(categories: dict[str, str] | None = None) -> str:
 <link rel="canonical" href="{URL_SITE}/rss.html">
 <meta name="theme-color" content="#000000">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KiosKe.fr">
 <style>
 {css}
 .rss-page {{ max-width: 560px; margin: 2rem auto; padding: 2rem; }}
@@ -564,6 +754,13 @@ def render_rss_page(categories: dict[str, str] | None = None) -> str:
 .rss-lien svg {{ display: inline-block; width: 1.2rem; height: 1.2rem; margin-right: 0.5rem; vertical-align: middle; }}
 .rss-principal {{ border: 2px solid var(--red); font-weight: bold; }}
 </style>
+<script>
+if ('serviceWorker' in navigator) {{
+  window.addEventListener('load', () => {{
+    navigator.serviceWorker.register('sw.js').catch(() => {{}});
+  }});
+}}
+</script>
 </head>
 <body>
 {pluie}<main class="panel">
@@ -597,6 +794,12 @@ function closePopover() {{
     openPopover = null;
   }}
 }}
+
+// Gestion de l'installation PWA (rss.html n'a pas de popover, on laisse juste le message du navigateur)
+window.addEventListener('beforeinstallprompt', (e) => {{
+  e.preventDefault();
+  console.log('L\'app est installable');
+}});
 </script>
 </body>
 </html>

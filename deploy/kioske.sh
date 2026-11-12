@@ -13,6 +13,7 @@
 #   deploy/kioske.sh                          # tout
 #   deploy/kioske.sh --email toi@exemple.fr   # tout, et demande le certificat Let's Encrypt
 #   deploy/kioske.sh --sans-certificat        # tout, HTTP seulement (nginx)
+#   deploy/kioske.sh --certificat-ok          # tout, nginx seul (config mise à jour, pas de certificats)
 #   deploy/kioske.sh veille nginx             # seulement ces étapes, dans l'ordre donné
 #   deploy/kioske.sh --simulation             # affiche ce qui serait fait, sans rien lancer
 #   deploy/kioske.sh aide
@@ -36,6 +37,7 @@ JAIL_PREREQUIS="sans_pitie"
 
 EMAIL=""
 SANS_CERT=0
+NGINX_SIMPLE=0
 SIMULATION=0
 ETAPES=()
 ETAPES_TOUT=(immuable serveur veille nginx fail2ban statut)
@@ -88,13 +90,18 @@ etape_veille() {
 
 etape_nginx() {
     info "nginx : configuration du site $DOMAINE"
-    local args=()
-    if [[ -n "$EMAIL" ]]; then
-        args+=(--email "$EMAIL")
-    elif (( SANS_CERT == 1 )); then
-        args+=(--sans-certificat)
+    if (( NGINX_SIMPLE == 1 )); then
+        info "Mode simple : copie la config, teste, et recharge (sans certificats)"
+        lancer bash "$DOSSIER/deploy/deployer_nginx_simple.sh"
+    else
+        local args=()
+        if [[ -n "$EMAIL" ]]; then
+            args+=(--email "$EMAIL")
+        elif (( SANS_CERT == 1 )); then
+            args+=(--sans-certificat)
+        fi
+        lancer bash "$DOSSIER/deploy/deployer_nginx.sh" "${args[@]}"
     fi
-    lancer bash "$DOSSIER/deploy/deployer_nginx.sh" "${args[@]}"
 }
 
 etape_fail2ban() {
@@ -154,6 +161,7 @@ while (( $# > 0 )); do
         aide|-h|--help) aide; exit 0 ;;
         --email) EMAIL="${2:-}"; [[ -n "$EMAIL" ]] || erreur "--email attend une adresse"; shift 2 ;;
         --sans-certificat) SANS_CERT=1; shift ;;
+        --certificat-ok) NGINX_SIMPLE=1; shift ;;
         --simulation) SIMULATION=1; shift ;;
         immuable|serveur|veille|nginx|fail2ban|statut) ETAPES+=("$1"); shift ;;
         *) erreur "Option ou étape inconnue : $1 (voir deploy/kioske.sh aide)" ;;
