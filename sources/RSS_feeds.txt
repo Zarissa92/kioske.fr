@@ -4,10 +4,10 @@
 "https://streetpress.com/rss.xml"
 "https://www.mediapart.fr/journal/podcasts/rss"
 "https://www.monde-diplomatique.fr/rss/"
+"https://www.off-investigation.fr/feed/"
 [Vidéo et radio]
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCdnaDhU-LDQrIEEmSIfq0-Q"
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCGvjUWz3mGV9cssraATuEsw"
-"https://www.youtube.com/feeds/videos.xml?channel_id=UCT67YOMntJxfRnO_9bXDpvw"
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCYxsgv2jlCcMLq8pNlwrJSQ"
 [Militance et luttes]
 "https://www.infolibertaire.net/feed"

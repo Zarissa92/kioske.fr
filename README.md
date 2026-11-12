@@ -13,6 +13,8 @@ modifié par le build.
 > Projet autonome depuis le 2026-11-11 (copie de `gauchiasses.fr`), réorganisé le même jour : code
 > dans le paquet `kioske/`, site généré dans `build/`, réglages dans `kioske.cfg`.
 > **À vérifier :** l'`origin` du dépôt git pointe encore vers `kit-gauchiasses.fr`.
+>
+> **Modifications (2026-11-12)** : navigation Précédent/Suivant ajoutée à la galerie, icônes RSS retirées de l'affichage (flux toujours découvrables par agrégateurs), image de partage social mise à jour.
 
 <p align="center"><img src="docs/img/kioske-accueil.png" width="640" alt="Page d'accueil : choix du thème, titre, et étiquettes des sources rangées par catégorie"></p>
 
@@ -165,13 +167,14 @@ Tant que l'empreinte n'est pas réenregistrée après une modification, rien n'e
   automatiquement vers les résultats.
 - **Galerie horizontale** : sous le bloc immuable, les 10 derniers articles ayant une image, affichés en
   ligne avec images seulement (80 × 80 px). Scroll horizontal pour plus d'articles. Clic sur une image
-  ouvre la fiche complète de l'article.
+  ouvre la fiche complète de l'article. Boutons Précédent/Suivant pour naviguer entre articles de la galerie.
 - **Lien GitHub** : en bas de la page, lien vers le dépôt du projet avec mention de la licence (GPL v3).
-- **Étiquettes** : une par source, dans un bloc par catégorie, avec l'icône du flux RSS de la catégorie.
-  Clic sur une étiquette → fenêtre de source avec backdrop cliquable pour fermer.
+- **Étiquettes** : une par source, dans un bloc par catégorie.
+  Clic sur une étiquette → fenêtre de source avec backdrop cliquable pour fermer. Les flux RSS (par catégorie et global) restent découvrables dans le code source pour les agrégateurs.
+
 - **Cartes d'articles** : format «carte à jouer» (ratio 2.5:3.5) avec image fixe en haut (35% de la hauteur), contenu scrollable au milieu, boutons de navigation en bas. Structure flexbox uniforme pour tous les articles.
-- **Navigation** : boutons Précédent/Suivant pour naviguer dans les articles d'une même source, sans recharger la page. Position de scroll préservée au retour.
-- **Fermeture** : croix (×) ou clic en dehors du panneau pour revenir à la fenêtre source. Clic en dehors de la fenêtre source → retour à l'accueil.
+- **Navigation** : boutons Précédent/Suivant pour naviguer dans les articles d'une même source, ou entre articles de la galerie, sans recharger la page. Position de scroll préservée au retour à une source.
+- **Fermeture** : croix (×) ou clic en dehors du panneau pour fermer l'article et revenir à la fenêtre source (ou à l'accueil pour la galerie). Clic en dehors de la fenêtre source → retour à l'accueil.
 - **Backdrops** : fond noir semi-transparent (70%) autour des panneaux, cliquable pour fermer et revenir au niveau précédent. Évite les clics accidentels.
 - **Téléphone** (640 px et moins) : une carte par ligne, image en haut, seul le titre est affiché ; les
   étiquettes passent à la ligne ; les fenêtres ont la largeur du panneau principal.
