@@ -109,11 +109,6 @@ h1 { font-size: clamp(1.8rem, 6vw, 2.8rem); line-height: 1.2; margin-bottom: 0.6
 .categorie-titre::after { content: "▸"; margin-left: auto; transition: transform .2s; }
 .categorie-titre:hover, .categorie-titre:focus-visible { color: var(--red-light); outline: none; box-shadow: 0 0 22px var(--red); }
 
-.categorie-panneau {
-  width: min(1100px, calc(100% - 2rem)); height: fit-content; max-height: calc(100vh - 2rem);
-  overflow: auto; padding: 2.2rem 1.4rem 1.4rem; box-sizing: border-box;
-  background: #0a0000; color: var(--red-light); border: 2px solid var(--red);
-  box-shadow: 0 0 50px color-mix(in srgb, var(--red) 60%, transparent), inset 0 0 20px color-mix(in srgb, var(--red) 10%, transparent); pointer-events: auto; }
 .categorie-panneau h2 { font-size: clamp(1.1rem, 2.6vw, 1.5rem); text-transform: uppercase; color: #fff; margin: 0 2.4rem 1rem 0; }
 .categorie-fermer { position: absolute; top: .5rem; right: .5rem; width: 2rem; height: 2rem; border: 1px solid var(--red-dim); background: #000; color: var(--red); font: inherit; font-size: 1.2rem; cursor: pointer; }
 .categorie-fermer:hover, .categorie-fermer:focus-visible { background: var(--red); color: #000; }
@@ -131,7 +126,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   border-radius: 0.8rem;
   scale: var(--hauteur-carte-ouverte);
   box-shadow: 0 8px 32px color-mix(in srgb, var(--red) 80%, transparent), 0 0 50px color-mix(in srgb, var(--red) 60%, transparent), inset 0 0 20px color-mix(in srgb, var(--red) 10%, transparent);
-  font-size: .85rem; line-height: 1.4; text-align: left; pointer-events: auto;
+  font-size: .99rem; line-height: 1.4; text-align: left; pointer-events: auto;
   display: flex; flex-direction: column; }
 .categorie-panneau { position: relative; z-index: 1;
   width: min(1000px, 95vw); height: auto; max-height: 95vh;
@@ -149,8 +144,8 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .article-panneau .article-image .lettre { font: 700 2.5rem "Courier New", monospace; color: #fff; text-shadow: 0 0 6px var(--red), 0 0 22px var(--red); }
 .article-panneau > div:not(.article-image):not(.article-backdrop), .article-panneau > p:not(.article-texte) { padding: 0 0.8rem; }
 .article-panneau .meta { font-size: .75rem; opacity: .8; margin: 0.8rem 0.8rem 0.2rem; }
-.article-panneau h2 { font-size: 0.95rem; line-height: 1.2; color: #fff; margin: 0.2rem 0.8rem 0.6rem; overflow-wrap: anywhere; }
-.article-texte { flex: 1; margin: 0 0.8rem; overflow-wrap: anywhere; color: var(--red-light); overflow-y: auto; }
+.article-panneau h2 { font-size: 1.2rem; line-height: 1.2; color: #fff; margin: 0.2rem 0.8rem 0.6rem; overflow-wrap: anywhere; }
+.article-texte { flex: 1; margin: 0 0.99rem; overflow-wrap: anywhere; color: var(--red-light); overflow-y: auto; }
 .article-panneau > p:last-of-type { margin: 0.8rem 0.8rem 0 !important; }
 .article-lien { display: block; padding: 0.4rem 0.8rem; color: var(--red-light); border: 1px solid var(--red-dim); text-decoration: none; overflow-wrap: anywhere; text-align: center; font-size: 0.8rem; }
 .article-lien:hover, .article-lien:focus-visible { background: var(--red); color: #000; outline: none; box-shadow: 0 0 20px var(--red); }
@@ -241,7 +236,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .galerie::-webkit-scrollbar { height: 6px; }
 .galerie::-webkit-scrollbar-track { background: transparent; }
 .galerie::-webkit-scrollbar-thumb { background: var(--red-dim); border-radius: 3px; }
-.galerie-carte { flex: 0 0 80px; aspect-ratio: 1; padding: 0; border: 1px solid var(--red-dim); background: #0a0000; cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.galerie-carte { position: relative; flex: 0 0 80px; aspect-ratio: 1; padding: 0; border: 1px solid var(--red-dim); background: #0a0000; cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
 .galerie-carte img { width: 100%; height: 100%; object-fit: cover; }
 .galerie-carte .lettre { font: 700 2rem "Courier New", monospace; color: #fff; text-shadow: 0 0 6px var(--red), 0 0 12px var(--red); }
 .galerie-carte:hover, .galerie-carte:focus-visible { border-color: var(--red); box-shadow: 0 0 14px var(--red); outline: none; }
@@ -249,3 +244,22 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 @media (min-width: 1100px) {
   .panel { width: min(1100px, calc((100vw - 2rem) / 1.25)); max-width: none; }
 }
+
+/* Bouton favori (cœur) dans la barre de navigation */
+.fav-heart { padding: 0.5rem 0.8rem; margin: 0 0.8rem; font-size: 1.4rem; line-height: 1; cursor: pointer; transition: all 0.2s; color: #888; user-select: none; border: 2px solid #888; background: #000; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; border-radius: 0.4rem; }
+.fav-heart:hover { transform: scale(1.15); color: #c000ff; border-color: #c000ff; box-shadow: 0 0 8px #c000ff; outline: none; }
+.fav-heart:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.fav-heart.active { color: #c000ff; background: rgba(192, 0, 255, 0.15); border-color: #c000ff; box-shadow: 0 0 12px #c000ff, inset 0 0 8px rgba(192, 0, 255, 0.3); }
+
+/* Bouton "Mes favoris" dans le popover */
+.btn-mes-favoris { display: block; width: 100%; padding: 0.7rem 0.8rem; border: 1px solid var(--red-dim); background: #000; color: var(--red-light); font: inherit; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; text-align: center; }
+.btn-mes-favoris:hover, .btn-mes-favoris:focus-visible { background: var(--red); color: #000; border-color: var(--red); box-shadow: 0 0 12px var(--red); outline: none; }
+
+.btn-install-pwa { display: block; width: 100%; padding: 0.7rem 0.8rem; border: 1px solid var(--red-dim); background: #000; color: var(--red-light); font: inherit; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; text-align: center; }
+.btn-install-pwa:hover, .btn-install-pwa:focus-visible { background: var(--red); color: #000; border-color: var(--red); box-shadow: 0 0 12px var(--red); outline: none; }
+
+/* Boutons de contrôle des favoris dans le panneau */
+.fav-controls { padding: 1rem 0; border-top: 1px solid var(--red-dim); text-align: center; gap: 0.5rem; display: flex; flex-direction: column; }
+.fav-export, .fav-import { display: block; padding: 0.6rem; border: 1px solid var(--red-dim); background: #000; color: var(--red-light); font: inherit; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; text-align: center; }
+.fav-export:hover, .fav-import:hover { background: var(--red); color: #000; border-color: var(--red); box-shadow: 0 0 8px var(--red); }
+#fav-file-input { display: none; }

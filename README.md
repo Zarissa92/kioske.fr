@@ -23,6 +23,9 @@ modifié par le build.
 > - **Navigation : fermeture nette** — quand on ferme un article, retour à l'index (pas au panneau de la source).
 > - **Galerie — clic seulement** : suppression du hover sur cartes, clic seul pour ouvrir (2026-11-12 soir).
 > - **Preview nettoyé** : SVG et PNG de partage social régénérés, sans trace d'ancienne version (2026-11-12 soir).
+> - **Système de favoris** : cœur cliquable dans barre de navigation (Précédent/Suivant), violet quand favorisé, localStorage, export/import JSON, panneau "Mes favoris" dans menu "+" (2026-11-12 soir).
+> - **PWA compatible** (2026-11-12 soir) : installable sur téléphone et ordinateur, caching des assets statiques, service worker pour fonctionnement hors ligne.
+> - **Zoom initial corrigé** (2026-11-12 après-midi) : la taille par défaut (`taille_defaut`) est maintenant appliquée au chargement de la page, sans intervention utilisateur.
 
 <p align="center"><img src="docs/img/kioske-accueil.png" width="640" alt="Page d'accueil : choix du thème, titre, et étiquettes des sources rangées par catégorie"></p>
 
@@ -42,8 +45,9 @@ carte ouvre l'article dans la page (texte du flux, lien vers l'original).
 7. [Données, caches et images](#données-caches-et-images)
 8. [Déploiement sur le serveur](#déploiement-sur-le-serveur)
 9. [Référencement](#référencement)
-10. [Limites](#limites)
-11. [Licences](#licences)
+10. [PWA (Progressive Web App)](#pwa-progressive-web-app)
+11. [Limites](#limites)
+12. [Licences](#licences)
 
 ## Structure
 
@@ -176,6 +180,8 @@ Tant que l'empreinte n'est pas réenregistrée après une modification, rien n'e
 - **Galerie horizontale** : sous le bloc immuable, les 10 derniers articles ayant une image, affichés en
   ligne avec images seulement (80 × 80 px). Scroll horizontal pour plus d'articles. **Clic sur une image** : ouvre
   la fiche de l'article. Boutons Précédent/Suivant pour naviguer entre articles.
+- **Favoris** : cœur ♡ cliquable dans la barre de navigation (avec Précédent/Suivant) pour marquer/demarquer un article. Couleur violet quand en favori. Stockage local
+  (localStorage), sans serveur ni pistage. Menu "Mes favoris" dans le menu "+" pour voir tous les favoris, exporter (JSON) ou importer ses favoris.
 - **Heures en Paris** : tous les timestamps affichés (dates des articles, heure de mise à jour du panel)
   sont en heure de Paris (CET/CEST selon la saison). L'attribut HTML `datetime` reste en UTC (standard).
 - **Lien GitHub** : en bas de la page, lien vers le dépôt du projet avec mention de la licence (GPL v3).
@@ -235,6 +241,7 @@ Elle n'envoie ni `build/`, ni `data/historique.db`, ni `data/cache/`, ni les ven
 ```bash
 deploy/kioske.sh                          # tout, dans l'ordre
 deploy/kioske.sh --email toi@exemple.fr   # tout, et demande le certificat Let's Encrypt
+deploy/kioske.sh --certificat-ok          # tout, mais mise à jour nginx uniquement (config et headers), sans certificats
 deploy/kioske.sh veille                   # seulement la mise à jour (ce que lance le timer)
 deploy/kioske.sh --simulation             # affiche sans rien lancer
 ```
@@ -263,10 +270,11 @@ sudo systemctl start kioske-veille.service   # publier tout de suite
 **Droits** : la racine web est en `www-data:www-data`, dossiers `2775`, fichiers `664`. `data/` et
 `build/` appartiennent à l'utilisateur du service.
 
-**nginx** (`deploy/deployer_nginx.sh`) : HTTPS seul avec HSTS, **TLS 1.3 seul**, 0-RTT refusé, version
-masquée, méthodes `GET` et `HEAD`, fichiers cachés refusés, en-têtes de sécurité, politique de contenu
-`default-src 'none'` (images, styles et polices du site seulement, aucun script). Le script teste la
-configuration et remet l'ancienne si elle est invalide. Le certificat couvre le domaine seul, sans `www`.
+**nginx** : HTTPS seul avec HSTS, **TLS 1.3 seul**, 0-RTT refusé, version masquée, méthodes `GET` et `HEAD`, fichiers cachés refusés, en-têtes de sécurité, politique de contenu `default-src 'none'` (images, styles et polices du site seulement, aucun script). Deux scripts de déploiement :
+- **`deploy/deployer_nginx.sh`** : complet, gère les certificats Let's Encrypt (appelle certbot) et déploie nginx. À utiliser lors de l'installation initiale ou pour renégocier les certificats.
+- **`deploy/deployer_nginx_simple.sh`** : copie la configuration nginx depuis `deploy/kioske-nginx.conf`, teste, et recharge nginx sans toucher aux certificats. À utiliser pour mettre à jour la configuration (cache headers, CSP, etc.) si les certificats sont déjà en place.
+
+Les deux scripts testent la configuration et restaurent l'ancienne version si le test échoue. Le certificat couvre le domaine seul, sans `www`.
 
 **fail2ban** (`deploy/fail2ban/`) : `f2b.sh` (copie de `~/fail2ban_hardened/f2b.sh`), filtre
 `kioske-scan.conf` (fichiers cachés, PHP, WordPress, `/cgi-bin/`), jail `kioske-scan.jail.conf`
@@ -289,6 +297,41 @@ Le titre et la description de la page décrivent son contenu réel : `nom` et `s
 nombre de sources et noms des catégories du jour. La page a une adresse canonique, des balises Open
 Graph et Twitter (image `preview.png`), un `robots.txt` et un `sitemap.xml`. Chaque flux RSS est
 déclaré dans l'en-tête.
+
+## PWA (Progressive Web App)
+
+Le site est compatible PWA : il peut être installé sur un téléphone ou un ordinateur comme une
+application native, et fonctionne partiellement hors ligne.
+
+**Fichiers PWA** :
+- `static/manifest.json` : métadonnées de l'application (nom, description, icônes en 5 tailles, screenshots, theme colors).
+- `static/sw.js` : service worker pour le caching des assets statiques et la résilience hors ligne.
+- `static/icon-96.png`, `icon-128.png`, `icon-192.png`, `icon-256.png`, `icon-512.png` : icônes en 5 résolutions (générées depuis `apercu/preview.svg` avec `rsvg-convert`).
+
+**Service Worker** :
+- **Cache-first** : assets statiques (CSS, JS, fonts, icônes). Se chargent depuis le cache si disponibles.
+- **Network-first** : articles, flux RSS, images. Vérifient le réseau d'abord, cache en fallback si hors ligne.
+- **Fallback hors ligne** : page d'accueil cachée si le réseau est indisponible et la page ne l'est pas.
+
+**Installation** :
+- **Button "⬇ Installer l'app"** dans le menu "+" (popover d'infos). Visible automatiquement quand le navigateur propose l'installation (HTTPS, critères PWA remplis). Affiche une alerte sur navigateurs non compatibles ou HTTP/localhost.
+- **Via le navigateur** :
+  - **Téléphone** (Chrome, Firefox, Edge) : visiter le site, puis « Installer » dans le menu du navigateur.
+  - **Ordinateur** (Chrome, Edge) : visiter le site, cliquer sur l'icône « Installer » dans la barre d'adresse.
+- **Raccourci PWA** : lien vers la page RSS (`rss.html`) depuis le manifest.
+
+**Cache headers** (nginx) :
+- Service worker (`sw.js`) : `no-cache, max-age=0` (toujours vérifier les mises à jour).
+- Manifest (`manifest.json`) : `max-age=86400` (1 jour).
+- Icônes PWA : `max-age=31536000, immutable` (1 an).
+- Assets statiques (CSS, JS, fonts) : `max-age=31536000, immutable` (1 an).
+- Pages HTML : `max-age=1800` (30 min, durée du timer).
+- Flux RSS/XML : `no-cache, max-age=0` (pas de cache, rafraîchir régulièrement).
+
+**Mise à jour du cache** :
+Le cache est versionné (`CACHE_VERSION` dans `static/sw.js`). Pour forcer une mise à jour après un déploiement :
+modifier la version (ex: de `kioske-v1` à `kioske-v2`). Les anciens caches seront supprimés automatiquement
+au prochain chargement.
 
 ## Limites
 

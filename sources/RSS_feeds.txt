@@ -9,7 +9,9 @@
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCdnaDhU-LDQrIEEmSIfq0-Q"
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCGvjUWz3mGV9cssraATuEsw"
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCYxsgv2jlCcMLq8pNlwrJSQ"
+"https://www.youtube.com/feeds/videos.xml?channel_id=UCPVS8efBdhXGGYs4JW2IJcQ"
 [Militance et luttes]
+"https://histoirescrepues.fr/rss/"
 "https://portail.basta.media/spip.php?page=backend"
 "https://www.infolibertaire.net/feed"
 "https://rezo.net/backend/"

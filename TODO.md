@@ -42,6 +42,9 @@ Le site est déjà 90% compatible. Travail estimé :
 - **Page rss.html** ✅ terminée (2026-11-12) : page de découverte avec lien vers le flux principal et tous les flux par catégorie (icônes RSS aux couleurs du drapeau trans).
 - **Lien vers rss.html** ✅ terminé (2026-11-12) : ajouté au bloc immuable, visible dans le popover d'infos et sur toutes les pages.
 
+## En savoir plus
+
+**afficher plus de texte** sur une carte **ouverte**
 ## Documentation
 
 - Mettre à jour README.md avec un schéma du nouveau layout (menu "+", popover d'infos).
