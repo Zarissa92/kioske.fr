@@ -48,3 +48,21 @@ def slugs_categories(ordre: list[str]) -> dict[str, str]:
         utilises.add(s)
         slugs[c] = s
     return slugs
+
+
+def slug_article(titre: str, lien: str = "") -> str:
+    """Slug persistant pour un article : titre lisible + hash court du lien.
+    « Mon Article Intéressant » + « https://... » → « mon-article-intere-a1b2c3d4 »"""
+    import hashlib
+    titre_slug = unicodedata.normalize("NFKD", titre).encode("ascii", "ignore").decode().lower()
+    titre_slug = re.sub(r"[^a-z0-9]+", "-", titre_slug).strip("-")[:30]
+    if lien:
+        hash_court = hashlib.sha256(lien.encode()).hexdigest()[:8]
+        return f"{titre_slug}-{hash_court}" if titre_slug else hash_court
+    return titre_slug or "article"
+
+
+def article_id(lien: str) -> str:
+    """ID unique persistant pour un article : hash SHA256 court du lien."""
+    import hashlib
+    return hashlib.sha256(lien.encode()).hexdigest()[:12]

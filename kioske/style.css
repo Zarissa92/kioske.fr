@@ -31,6 +31,21 @@ html, body {
   overflow-y: auto;
 }
 
+/* Barre de recherche globale */
+.recherche-globale {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding: 0.6rem;
+  background: var(--bg);
+  border-bottom: 1px solid var(--red-dim);
+  text-align: center;
+}
+.recherche-globale .recherche {
+  display: inline-block;
+  width: min(100%, 400px);
+}
+
 .panel {
   position: relative;
   z-index: 1;
@@ -112,6 +127,8 @@ h1 { font-size: clamp(1.8rem, 6vw, 2.8rem); line-height: 1.2; margin-bottom: 0.6
 .categorie-panneau h2 { font-size: clamp(1.1rem, 2.6vw, 1.5rem); text-transform: uppercase; color: #fff; margin: 0 2.4rem 1rem 0; }
 .categorie-fermer { position: absolute; top: .5rem; right: .5rem; width: 2rem; height: 2rem; border: 1px solid var(--red-dim); background: #000; color: var(--red); font: inherit; font-size: 1.2rem; cursor: pointer; }
 .categorie-fermer:hover, .categorie-fermer:focus-visible { background: var(--red); color: #000; }
+.categorie-retour { position: absolute; top: 0.5rem; left: 0.5rem; padding: 0.4rem 0.8rem; background: #0a0000; border: 1px solid var(--red-dim); color: var(--red); font: inherit; font-size: 0.85rem; cursor: pointer; z-index: 10; }
+.categorie-retour:hover, .categorie-retour:focus-visible { background: var(--red); color: #000; outline: none; }
 .compte { font-weight: 400; opacity: .7; font-size: .8rem; }
 
 /* panneau d'un article : s'ouvre au clic sur la carte, dans la page, sans aller sur le site */
@@ -129,13 +146,36 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   font-size: .99rem; line-height: 1.4; text-align: left; pointer-events: auto;
   display: flex; flex-direction: column; }
 .categorie-panneau { position: relative; z-index: 1;
-  width: min(1000px, 95vw); height: auto; max-height: 95vh;
-  overflow: auto; padding: 2.2rem 1.4rem 1.4rem; box-sizing: border-box;
-  background: #0a0000; color: var(--red-light); border: 2px solid var(--red);
+  width: min(1000px, 90vw); height: auto; max-height: 90vh;
+  display: flex; flex-direction: column;
+  padding: var(--espacement-panneau-vertical, 2.4rem) 2rem var(--espacement-panneau-vertical, 2.4rem); box-sizing: border-box;
+  background: #0a0000; color: var(--red-light);
+  border: 2px solid var(--red); border-left: var(--bordure-panneau-epaisseur, 8px) solid var(--red); border-right: var(--bordure-panneau-epaisseur, 8px) solid var(--red); border-top: var(--bordure-panneau-epaisseur, 8px) solid var(--red); border-bottom: var(--bordure-panneau-epaisseur, 8px) solid var(--red);
   box-shadow: 0 0 50px color-mix(in srgb, var(--red) 60%, transparent), inset 0 0 20px color-mix(in srgb, var(--red) 10%, transparent);
   font-size: .95rem; line-height: 1.5; text-align: left; pointer-events: auto; }
 @media (max-width: 640px) {
+  .categorie-panneau { width: 98vw; max-height: 85vh; padding: 1.2rem 1rem; }
+  .categorie-panneau h2 { font-size: 1.3rem; margin-bottom: 0.8rem; }
+  .categorie-fermer { width: 2.2rem !important; height: 2.2rem !important; font-size: 1.4rem !important; }
   .article-panneau { width: 98vw; max-height: 90vh; padding: 1.5rem 1rem 1rem; }
+}
+@media (max-width: 429px) {
+  .categorie-panneau { width: 96vw; max-height: 80vh; padding: 1rem 0.8rem; }
+  .categorie-panneau h2 { font-size: 1.2rem; margin-bottom: 0.6rem; }
+  .categorie-fermer { width: 1.8rem !important; height: 1.8rem !important; font-size: 1.1rem !important; padding: 0.2rem 0.4rem !important; }
+  .grille { --colonnes: 1; gap: 0.4rem; }
+}
+@media (max-width: 429px) {
+  .pagination-btn {
+    font-size: 0.75rem !important;
+    padding: 0.3rem 0.5rem !important;
+  }
+}
+@media (max-width: 300px) {
+  .categorie-panneau { width: 95vw; max-height: 75vh; padding: 0.8rem 0.6rem; }
+  .categorie-panneau h2 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+  .categorie-fermer { width: 1.6rem !important; height: 1.6rem !important; font-size: 1rem !important; padding: 0.1rem 0.3rem !important; }
+  .pagination-btn { font-size: 0.65rem !important; padding: 0.2rem 0.4rem !important; }
 }
 .article-panneau .categorie-fermer { position: absolute; top: 0.5rem; right: 0.5rem; z-index: 10; width: 1.8rem; height: 1.8rem; border: 1px solid var(--red-dim); background: #000; color: var(--red); font: inherit; font-size: 1rem; cursor: pointer; }
 .article-panneau .categorie-fermer:hover { background: var(--red); color: #000; }
@@ -174,7 +214,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 }
 .carte-corps { flex: 1; min-height: 0; overflow: hidden; padding: .45rem .525rem 1.8rem; display: block; }
 .carte .meta { font-size: .4875rem; color: var(--red-light); opacity: .8; margin-bottom: .225rem; }
-.carte .carte-titre { font-size: .615rem; font-weight: 700; line-height: 1.2; text-transform: uppercase; margin-bottom: .225rem; color: #fff; overflow-wrap: anywhere; }
+.carte .carte-titre { font-size: 1rem; font-weight: 700; line-height: 1.2; text-transform: uppercase; margin-bottom: .225rem; color: #fff; overflow-wrap: anywhere; }
 .carte .carte-extrait { font-size: .54rem; line-height: 1.35; color: var(--red-light); overflow-wrap: anywhere; }
 /* la carte est un bouton : son contenu est fait de <span>, affichés en blocs */
 .carte .meta, .carte .carte-titre, .carte .carte-extrait { display: block; }
@@ -192,10 +232,11 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .nuage { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem; margin: 0.5rem 0 0; padding: .7rem;
   background: #0a0000; border: 1px solid var(--red); box-shadow: 0 0 18px color-mix(in srgb, var(--red) 25%, transparent); }
 .nuage .tag { display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .55rem; border: 1px solid var(--red);
-  border-radius: .3rem; background: none; color: #fff; font: inherit; font-size: .8rem; line-height: 1.4;
-  text-shadow: 0 0 6px #fff; white-space: normal; max-width: 100%; overflow-wrap: anywhere; cursor: pointer; }
+  border-radius: .3rem; background: #faf7f7; color: #000; font: inherit; font-size: .8rem; line-height: 1.4;
+  text-shadow: none; white-space: normal; max-width: 100%; overflow-wrap: anywhere; cursor: pointer; }
+.nuage button.tag { margin: 0; }
 .nuage .tag .nb { font-size: .72rem; opacity: .75; text-shadow: none; white-space: nowrap; }
-.nuage .tag:hover, .nuage .tag:focus-visible { color: #000; background: #fff; text-shadow: none; outline: none; }
+.nuage .tag:hover, .nuage .tag:focus-visible { color: #fff; background: var(--red); text-shadow: none; outline: none; }
 /* catégories : un bloc par catégorie des fichiers de sources/, son nuage à l'intérieur */
 .groupes { margin: 0.6rem 0 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: .8rem; }
 .groupe { min-width: 0; padding: .6rem .7rem .7rem; background: #0a0000; border: 1px solid var(--red);
@@ -203,13 +244,14 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 /* téléphone : les étiquettes passent à la ligne au lieu de dépasser du panneau */
 @media (max-width: 640px) {
   .nuage { min-width: 0; }
-  /* cartes d'articles : une carte par ligne, image en haut, seul le titre est écrit sur la carte (date, source et extrait sont masqués) */
-  .grille { --colonnes: 1; }
+  /* cartes d'articles : deux par ligne, plus petites */
+  .grille { --colonnes: 2; }
   .carte { width: 100%; aspect-ratio: auto; }
-  .carte-image { flex: 0 0 auto; height: 9.5rem; }
-  .carte-corps { padding: .6rem .8rem 2rem; }
+  .carte-image { flex: 0 0 auto; height: 4.75rem; }
+  .carte-corps { padding: .3rem .4rem 1rem; }
   .carte .meta, .carte .carte-extrait { display: none; }
-  .carte .carte-titre { font-size: .8rem; margin: 0; }
+  .carte .carte-titre { font-size: .6rem; margin: 0; line-height: 1; }
+  .carte-plus { width: 0.75rem; height: 0.75rem; font-size: 0.5rem; right: 0.15rem; bottom: 0.15rem; }
 }
 .groupe h2 { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--red-light); margin: 0 0 .3rem; font-weight: 700; }
 .groupe .nuage { margin: 0; padding: 0; border: 0; background: none; box-shadow: none; justify-content: flex-start; }
@@ -232,7 +274,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .nav-btn:disabled { opacity: .5; cursor: not-allowed; }
 
 /* Galerie horizontale des 10 derniers articles */
-.galerie { display: flex; gap: 0.6rem; overflow-x: auto; overflow-y: hidden; padding: 0.6rem 0; margin: 0.6rem auto; scroll-behavior: smooth; scrollbar-width: thin; scrollbar-color: var(--red-dim) transparent; justify-content: center; width: 100%; }
+.galerie { display: flex; gap: 0.6rem; overflow-x: auto; overflow-y: hidden; padding: 0.6rem; margin: 0.6rem auto; scroll-behavior: smooth; scrollbar-width: thin; scrollbar-color: var(--red-dim) transparent; justify-content: flex-start; width: 100%; }
 .galerie::-webkit-scrollbar { height: 6px; }
 .galerie::-webkit-scrollbar-track { background: transparent; }
 .galerie::-webkit-scrollbar-thumb { background: var(--red-dim); border-radius: 3px; }

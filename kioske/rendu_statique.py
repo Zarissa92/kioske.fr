@@ -104,7 +104,7 @@ def render_article_page(item: dict, preview: dict, prev_article: dict | None = N
   font-weight: bold;
   cursor: pointer;
   transition: all 0.2s;
-  z-index: 10;
+  z-index: 9999;
 }}
 .btn-retour:hover, .btn-retour:focus-visible {{
   background: var(--red);
@@ -128,6 +128,7 @@ def render_article_page(item: dict, preview: dict, prev_article: dict | None = N
   padding: 0 !important;
   margin: 1rem auto !important;
   overflow: hidden;
+  position: relative;
 }}
 
 /* Tablette : adapter à la largeur */
@@ -292,9 +293,9 @@ document.getElementById('form-recherche').addEventListener('submit', (e) => {{
 </html>"""
 
 
-def render_category_page(category_name: str, sources_with_articles: list[tuple[str, list[dict]]],
+def render_category_page(category_name: str, articles: list[dict],
                         previews: dict[str, dict]) -> str:
-    """Page HTML d'une catégorie avec ses sources et articles."""
+    """Page HTML d'une catégorie avec ses articles triés par date."""
     themes, defaut = charger_themes()
     css = css_des_themes(themes, defaut)
     pluie = rain() if any(t["pluie"] for t in themes) else ""
@@ -307,38 +308,34 @@ def render_category_page(category_name: str, sources_with_articles: list[tuple[s
     cat_slug = slug_categorie(category_name)
     from_param = f"?from=/categories/{cat_slug}/"
 
-    # Rendu des sources et articles
-    sources_html = []
-    for source_name, articles in sources_with_articles:
-        articles_html = []
-        for article in articles:
-            title = previews.get(article["link"], {}).get("title") or article["title"]
-            image = previews.get(article["link"], {}).get("image") or article["image"] or ""
-            summary = article["summary"] or previews.get(article["link"], {}).get("description", "")
-            art_id = article_id(article["link"])
-            art_slug = slug_article(title, article["link"])
+    # Rendu de tous les articles dans une seule grille
+    articles_html = []
+    for article in articles:
+        title = previews.get(article["link"], {}).get("title") or article["title"]
+        image = previews.get(article["link"], {}).get("image") or article["image"] or ""
+        summary = article["summary"] or previews.get(article["link"], {}).get("description", "")
+        source_name = article.get("source", "")
+        art_id = article_id(article["link"])
+        art_slug = slug_article(title, article["link"])
 
-            if image:
-                # Corriger le chemin relatif pour les images (2 niveaux de profondeur : /categories/slug/index.html)
-                img_path = image.replace('img/veille/', '../../img/veille/')
-                media = f'<img src="{esc(img_path)}" alt="{esc(title)}" loading="lazy" referrerpolicy="no-referrer">'
-            else:
-                media = f'<span class="lettre">{esc((source_name[:1] or "•").upper())}</span>'
+        if image:
+            # Corriger le chemin relatif pour les images (2 niveaux de profondeur : /categories/slug/index.html)
+            img_path = image.replace('img/veille/', '../../img/veille/')
+            media = f'<img src="{esc(img_path)}" alt="{esc(title)}" loading="lazy" referrerpolicy="no-referrer">'
+        else:
+            media = f'<span class="lettre">{esc((source_name[:1] or "•").upper())}</span>'
 
-            articles_html.append(
-                f'<a href="/articles/{art_id}-{art_slug}/?from={quote(from_param[6:])}" class="carte carte-lien">'
-                f'<span class="carte-image" aria-hidden="true">{media}</span>'
-                f'<span class="carte-corps"><span class="meta">{esc(article["link"])}</span>'
-                f'<span class="carte-titre">{esc(title)}</span><span class="carte-extrait">{esc(summary)}</span></span>'
-                f'<span class="carte-plus" aria-hidden="true">+</span></a>'
-            )
-
-        sources_html.append(
-            f'<section class="source">'
-            f'<h2>{esc(source_name)}</h2>'
-            f'<div class="grille">{"".join(articles_html)}</div>'
-            f'</section>'
+        articles_html.append(
+            f'<a href="/articles/{art_id}-{art_slug}/?from={quote(from_param[6:])}" class="carte carte-lien">'
+            f'<span class="carte-image" aria-hidden="true">{media}</span>'
+            f'<span class="carte-corps"><span class="meta">{esc(article["link"])}</span>'
+            f'<span class="carte-titre">{esc(title)}</span><span class="carte-extrait">{esc(summary)}</span></span>'
+            f'<span class="carte-plus" aria-hidden="true">+</span></a>'
         )
+
+    sources_html = [
+        f'<div class="grille">{"".join(articles_html)}</div>'
+    ]
 
     canonical = f"{URL_SITE}/categories/{slug_categorie(category_name)}/"
 
@@ -375,7 +372,7 @@ def render_category_page(category_name: str, sources_with_articles: list[tuple[s
   font-weight: bold;
   cursor: pointer;
   transition: all 0.2s;
-  z-index: 10;
+  z-index: 9999;
 }}
 .btn-retour:hover, .btn-retour:focus-visible {{
   background: var(--red);
