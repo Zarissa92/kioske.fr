@@ -23,11 +23,13 @@ from .flux import load_feed
 from .historique import Historique
 from .images import appliquer_images, purger_images, telecharger_images
 from .rendu import render_page, render_rss_page
+from .rendu_statique import render_article_page, render_category_page
 from .rss import render_rss
 from .sources import AUTRES, ordre_des_categories, read_categories, read_feeds, read_local, read_twitch
-from .texte import slugs_categories
+from .texte import slugs_categories, article_id, slug_article, cle_alphabetique
 from .twitch import load_twitch
 from .verrou import verrou
+from datetime import datetime, timezone
 
 
 def analyser_arguments(argv: list[str] | None = None) -> argparse.Namespace:
@@ -142,6 +144,147 @@ def ecrire_page_rss(categories: dict[str, str]) -> None:
     print(f"OK : page RSS écrite dans {sortie.relative_to(ROOT)}")
 
 
+def ecrire_pages_articles(items: list[dict], previews: dict[str, dict]) -> None:
+    """Écrit les pages statiques pour chaque article dans build/articles/."""
+    articles_dossier = BUILD / "articles"
+    written = 0
+
+    # Trier par date décroissante (plus récents en premier) pour Précédent/Suivant
+    epoque = datetime.min.replace(tzinfo=timezone.utc)
+    items_sorted = sorted(items, key=lambda i: i["date"] or epoque, reverse=True)
+
+    for item in items_sorted:
+        art_id = article_id(item["link"])
+        title = previews.get(item["link"], {}).get("title") or item["title"]
+        art_slug = slug_article(title, item["link"])
+
+        # Chercher prev/next en fonction de la position dans la liste triée
+        prev_article = None
+        next_article = None
+        for i, other in enumerate(items_sorted):
+            if other["link"] == item["link"]:
+                if i > 0:
+                    prev_article = items_sorted[i - 1]
+                if i < len(items_sorted) - 1:
+                    next_article = items_sorted[i + 1]
+                break
+
+        page = render_article_page(item, previews.get(item["link"], {}), prev_article, next_article, previews)
+        sortie = articles_dossier / f"{art_id}-{art_slug}" / "index.html"
+        ecrire_si_change(sortie, page)
+        written += 1
+
+    # Purger les anciens articles
+    if articles_dossier.exists():
+        attendus = {f"{article_id(i['link'])}-{slug_article(previews.get(i['link'], {}).get('title') or i['title'], i['link'])}" for i in items}
+        for ancien in articles_dossier.iterdir():
+            if ancien.is_dir() and ancien.name not in attendus:
+                import shutil
+                shutil.rmtree(ancien)
+                print(f"supprimé (article disparu) : {ancien.relative_to(ROOT)}")
+
+    print(f"OK : {written} page(s) d'article(s) écrite(s) dans {articles_dossier.relative_to(ROOT)}/")
+
+
+def ecrire_pages_categories(items: list[dict], previews: dict[str, dict],
+                            categories: dict[str, str]) -> None:
+    """Écrit les pages statiques pour chaque catégorie dans build/categories/."""
+    # Grouper les articles par source
+    groupes: dict[str, list[dict]] = {}
+    noms: dict[str, str] = {}
+    for item in items:
+        groupes.setdefault(item["key"], []).append(item)
+        noms.setdefault(item["key"], item["source"])
+
+    # Regrouper par catégorie
+    par_categorie: dict[str, list[str]] = {}
+    for cle in groupes:
+        par_categorie.setdefault(categories.get(cle, AUTRES), []).append(cle)
+
+    categories_dossier = BUILD / "categories"
+    cat_slugs = slugs_categories(list(par_categorie.keys()))
+    written = 0
+
+    for categorie, sources_keys in par_categorie.items():
+        cat_slug = cat_slugs[categorie]
+        # Assembler les sources et articles de la catégorie
+        sources_with_articles = []
+        for source_key in sorted(sources_keys, key=lambda k: cle_alphabetique(noms[k])):
+            source_articles = sorted(groupes[source_key],
+                                    key=lambda i: i["date"] or datetime.min.replace(tzinfo=timezone.utc),
+                                    reverse=True)
+            sources_with_articles.append((noms[source_key], source_articles))
+
+        page = render_category_page(categorie, sources_with_articles, previews)
+        sortie = categories_dossier / cat_slug / "index.html"
+        ecrire_si_change(sortie, page)
+        written += 1
+
+    # Purger les anciennes catégories
+    if categories_dossier.exists():
+        attendus = set(cat_slugs.values())
+        for ancien in categories_dossier.iterdir():
+            if ancien.is_dir() and ancien.name not in attendus:
+                import shutil
+                shutil.rmtree(ancien)
+                print(f"supprimé (catégorie disparue) : {ancien.relative_to(ROOT)}")
+
+    print(f"OK : {written} page(s) de catégorie(s) écrite(s) dans {categories_dossier.relative_to(ROOT)}/")
+
+
+def ecrire_index_articles(items: list[dict], previews: dict[str, dict], categories: dict[str, str]) -> None:
+    """Génère un index JSON de tous les articles pour la recherche JavaScript."""
+    import json
+
+    index = []
+    for item in items:
+        from urllib.parse import urlparse
+        from zoneinfo import ZoneInfo
+
+        title = item.get("title", "")
+        summary = item.get("summary", "")
+        source = item.get("source", "")
+        category = categories.get(item["key"], "")
+        link = item.get("link", "")
+        image = item.get("image", "")
+        date = item.get("date")
+
+        # Générer l'ID et le slug pour construire l'URL
+        ident = article_id(link)
+        slug = slug_article(title, link)
+        url = f"/articles/{ident}-{slug}/"
+
+        # Date au format français
+        date_str = ""
+        if date:
+            date_paris = date.astimezone(ZoneInfo("Europe/Paris")) if hasattr(date, 'astimezone') else date
+            date_str = f"{date_paris:%d/%m/%Y}"
+
+        # Host du lien
+        host = urlparse(link).netloc.removeprefix("www.")
+
+        # Chemins absolus pour les images (commencent par /)
+        image_abs = f"/{image}" if image and not image.startswith("/") else image
+
+        index.append({
+            "title": title,
+            "summary": summary,
+            "source": source,
+            "category": category,
+            "link": link,
+            "url": url,
+            "image": image_abs,
+            "date": date_str,
+            "host": host,
+            "searchText": f"{title} {summary} {source} {category}".lower()
+        })
+
+    output_file = BUILD / "articles-index.json"
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(index, f, ensure_ascii=False, indent=2)
+    print(f"index : {len(index)} article(s) indexé(s) dans {output_file.relative_to(ROOT)}")
+
+
 def migrer_ancienne_structure() -> None:
     """Transition (réorganisation du 2026-11-11) : les images étaient dans img/ à la racine du projet.
     Elles sont déplacées une fois dans build/img/, pour ne pas tout retélécharger."""
@@ -199,6 +342,14 @@ def construire(args: argparse.Namespace) -> None:
 
         categories = read_categories(args.rss, args.tw)
         print(f"{len(set(categories.values()))} catégorie(s) lue(s) dans les fichiers de sources")
+
+        # Générer les pages statiques pour articles et catégories
+        ecrire_pages_articles(items, previews)
+        ecrire_pages_categories(items, previews, categories)
+
+        # Générer l'index JSON pour la recherche JavaScript
+        ecrire_index_articles(items, previews, categories)
+
         ecrire_page(items, previews, categories)
         ecrire_page_rss(categories)
         if not args.simple:
