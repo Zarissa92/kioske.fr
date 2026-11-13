@@ -16,7 +16,10 @@ modifié par le build.
 > **À vérifier :** l'`origin` du dépôt git pointe encore vers `kit-gauchiasses.fr`.
 >
 > **Modifications récentes** :
-> - **Panneaux de catégories dynamiques** (2026-11-13 nuit) : boutons "+" des catégories → panneaux JS avec pagination (30 articles/page) identiques aux sources. Données injectées en JSON `window.categoriesData`. Cache service worker v12.
+> - **Code de conduite en panneau normalisé + boutons de partage** (2026-11-13 nuit) : code de conduite stocké dans `accueil/code-de-conduite.html`, s'ouvre dans un panneau au format standardisé du site (comme les sources et catégories). **Nouveaux boutons en bas du panneau** : 📤 Partager (Web Share API) et 🔗 Copier le lien (clipboard). Menu hamburger ferme automatiquement à l'ouverture. Corrections : ID manquant dans `showPopover()` pour afficher le panneau. Cache service worker v15.
+> - **Navbar top sticky** (2026-11-13 nuit) : refonte complète de la navigation. Remplacement du bouton "+" + titre énorme + barre de recherche fragmentée par une **navbar horizontale sticky** en haut. Logo + stats à gauche, barre de recherche au centre, bouton ♡ Favoris + menu hamburger ≡ à droite. Menu déroulant contient : thèmes, taille du site, lien Flux RSS, lien Discord, code de conduite. Cache service worker v14.
+> - **Panneaux de catégories + favoris corrigés** (2026-11-13 nuit) : boutons "+" des catégories → panneaux JS avec pagination identiques aux sources. Système de favoris entièrement réécrit : stockage des métadonnées complètes (image, date, host, résumé) et création des cartes favoris depuis les données, pas clonage du DOM. Cache service worker v13.
+> - Panneaux de catégories dynamiques : boutons "+" des catégories → panneaux JS avec pagination (30 articles/page) identiques aux sources. Données injectées en JSON `window.categoriesData`. Cache service worker v12.
 > - **Liens recherche corrigés** (2026-11-13 nuit) : les slugs de l'index JSON utilisent maintenant les titres des previews (comme les pages statiques). Résout les 404 sur les liens de recherche. Cache service worker v9.
 > - **Galerie augmentée** (2026-11-13 nuit) : 10 → 12 articles. Cache service worker v8.
 > - **Pages catégories refondues** (2026-11-13 nuit) : articles mélangés et triés par date (sans groupement par source). Tous les articles d'une catégorie dans une seule grille. Cache service worker v7.
@@ -101,6 +104,7 @@ Format INI, commenté dans le fichier. Une valeur manquante ou invalide arrête 
 | `[site]` | `domaine`, `nom`, `slogan` (titre de l'onglet et référencement), `theme` (thème par défaut), `taille_defaut` (zoom en %, min 75, max 125, défaut 115), `largeur_carte_ouverte` (largeur max du panneau article, ex: `min(600px, 85vw)`), `hauteur_carte_ouverte` (zoom de la hauteur des cartes, min 75, max 125, défaut 115). |
 | `[veille]` | `articles_flux_rss` (100), `videos_par_chaine` (15), `articles_par_source` (0 = tous), `delai_nouvel_essai_heures` (24). |
 | `[serveur]` | `racine_web` (`/var/www/kioske.fr`), `ip_publique`, `intervalle_timer` (`30min`). |
+| `[reseaux]` | `discord` (URL du serveur Discord), `mastodon` (profil Mastodon), `rss` (chemin vers la page RSS, défaut `rss.html`). Laissez vide pour désactiver un lien. |
 | `[theme.<nom>]` | `nom`, `fond` (`etoiles` ou `noir`), `pluie` (`oui` ou `non`), `opacite_panneau` (0 à 100, en %). |
 
 Deux thèmes existent : `voie_lactee` (fond noir étoilé, bande de la Voie lactée) et `pluie` (pluie

@@ -1,7 +1,7 @@
 """Garde du bloc immuable de la page d'accueil.
 
-Le bloc entre <!-- IMMUABLE:DEBUT --> et <!-- IMMUABLE:FIN --> (lien Discord, code de
-conduite) est écrit une fois pour toutes dans accueil/bloc_immuable.html. Le build l'insère tel
+Le bloc entre <!-- IMMUABLE:DEBUT --> et <!-- IMMUABLE:FIN --> (lien Discord et réseaux sociaux)
+est écrit une fois pour toutes dans accueil/bloc_immuable.html. Le build l'insère tel
 quel dans la page : il ne le modifie jamais.
 
 Deux contrôles :
@@ -20,7 +20,7 @@ from .config import EMPREINTE
 DEBUT = "<!-- IMMUABLE:DEBUT"
 FIN = "<!-- IMMUABLE:FIN -->"
 # Éléments qui doivent être présents dans la zone
-ATTENDUS = ["discord.gg", 'id="code-conduite"']
+ATTENDUS = ["discord.gg"]
 
 
 def zone(texte: str) -> str:
