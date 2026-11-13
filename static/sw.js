@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'kioske-v18';
+const CACHE_VERSION = 'kioske-v19';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -54,7 +54,7 @@ self.addEventListener('fetch', (event) => {
 
   // Pages HTML et articles : network-first (chercher le frais en priorité)
   if (url.pathname.endsWith('.html') ||
-      url.pathname === '/' ||
+      url.pathname.endsWith('/') ||
       url.pathname.includes('/img/') ||
       url.pathname.includes('/rss.xml') ||
       url.pathname.includes('/rss/') ||

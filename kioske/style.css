@@ -49,8 +49,9 @@ html, body {
 /* Navbar top sticky */
 .kioske-navbar {
   position: sticky;
+  opacity: 1;
   top: 0;
-  z-index: 200;
+  z-index: 100;
   background: #0a0000;
   border-bottom: 2px solid var(--red);
   box-shadow: 0 0 20px color-mix(in srgb, var(--red) 40%, transparent);
@@ -191,6 +192,8 @@ html, body {
 }
 .menu-button {
   display: block;
+  box-sizing: border-box;
+  text-decoration: none;
   width: 100%;
   padding: 0.5rem 0.6rem;
   background: transparent;
@@ -227,7 +230,7 @@ html, body {
 .infos-container { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 100; }
 .infos-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .7); cursor: pointer; }
 .popover-infos { position: relative; z-index: 1; width: min(600px, calc(100vw - 2rem)); height: fit-content; max-height: calc(100vh - 2rem); overflow: auto; padding: 0; box-sizing: border-box; background: #0a0000; color: var(--red-light); border: 1px solid var(--red); box-shadow: 0 0 30px color-mix(in srgb, var(--red) 50%, transparent), inset 0 0 20px color-mix(in srgb, var(--red) 10%, transparent); }
-.infos-fermer { position: absolute; top: .5rem; right: .5rem; width: 2rem; height: 2rem; border: 1px solid var(--red-dim); background: #000; color: var(--red); font: inherit; font-size: 1.2rem; cursor: pointer; z-index: 10; }
+.infos-fermer { position: absolute; top: .5rem; right: .5rem; width: 2rem; height: 2rem; border: 1px solid var(--red-dim); background: #000; color: var(--red); font: inherit; font-size: 1.2rem; cursor: pointer; z-index: 300; }
 .infos-fermer:hover, .infos-fermer:focus-visible { background: var(--red); color: #000; outline: none; }
 .popover-contenu { padding: 2rem 1.5rem 1.5rem; }
 .popover-section { padding-bottom: 1.2rem; border-bottom: 1px solid var(--red-dim); }
@@ -244,7 +247,7 @@ html, body {
 .taille-valeur { font-size: 0.85rem; min-width: 40px; text-align: right; font-weight: bold; }
 .kicker { font-size: 0.85rem; color: var(--red-light); opacity: 0.8; margin-bottom: 0.5rem; letter-spacing: 0.1em; }
 .theme-input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.choix-theme { display: flex; justify-content: center; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
+.choix-theme { display: flex; justify-content: center; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; margin-top: -3rem; }
 .choix-theme label { padding: .3rem .7rem; border: 1px solid var(--red-dim); color: var(--red-light); font-size: .8rem; cursor: pointer; }
 .choix-theme label:hover { background: var(--red); color: #000; }
 .theme-input:checked + label { background: var(--red); color: #000; box-shadow: 0 0 12px var(--red); }
@@ -338,7 +341,7 @@ h1 { font-size: clamp(1.8rem, 6vw, 2.8rem); line-height: 1.2; margin-bottom: 0.6
 .categorie-titre:hover, .categorie-titre:focus-visible { color: var(--red-light); outline: none; box-shadow: 0 0 22px var(--red); }
 
 .categorie-panneau h2 { font-size: clamp(1.1rem, 2.6vw, 1.5rem); text-transform: uppercase; color: #fff; margin: 0 2.4rem 1rem 0; }
-.categorie-fermer { position: absolute; top: .5rem; right: .5rem; width: 2rem; height: 2rem; border: 1px solid var(--red-dim); background: #000; color: var(--red); font: inherit; font-size: 1.2rem; cursor: pointer; }
+.categorie-fermer { position: absolute; z-index: 300; top: .5rem; right: .5rem; width: 2rem; height: 2rem; border: 1px solid var(--red-dim); background: #000; color: var(--red); font: inherit; font-size: 1.2rem; cursor: pointer; }
 .categorie-fermer:hover, .categorie-fermer:focus-visible { background: var(--red); color: #000; }
 .categorie-retour { position: absolute; top: 0.5rem; left: 0.5rem; padding: 0.4rem 0.8rem; background: #0a0000; border: 1px solid var(--red-dim); color: var(--red); font: inherit; font-size: 0.85rem; cursor: pointer; z-index: 10; }
 .categorie-retour:hover, .categorie-retour:focus-visible { background: var(--red); color: #000; outline: none; }
@@ -358,14 +361,29 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   box-shadow: 0 8px 32px color-mix(in srgb, var(--red) 80%, transparent), 0 0 50px color-mix(in srgb, var(--red) 60%, transparent), inset 0 0 20px color-mix(in srgb, var(--red) 10%, transparent);
   font-size: .99rem; line-height: 1.4; text-align: left; pointer-events: auto;
   display: flex; flex-direction: column; }
-.categorie-panneau { position: relative; z-index: 1;
-  width: min(1000px, 90vw); height: auto; max-height: 90vh;
-  display: flex; flex-direction: column;
-  padding: var(--espacement-panneau-vertical, 2.4rem) 2rem var(--espacement-panneau-vertical, 2.4rem); box-sizing: border-box;
-  background: #0a0000; color: var(--red-light);
-  border: 2px solid var(--red); border-left: var(--bordure-panneau-epaisseur, 8px) solid var(--red); border-right: var(--bordure-panneau-epaisseur, 8px) solid var(--red); border-top: var(--bordure-panneau-epaisseur, 8px) solid var(--red); border-bottom: var(--bordure-panneau-epaisseur, 8px) solid var(--red);
-  box-shadow: 0 0 50px color-mix(in srgb, var(--red) 60%, transparent), inset 0 0 20px color-mix(in srgb, var(--red) 10%, transparent);
-  font-size: .95rem; line-height: 1.5; text-align: left; pointer-events: auto; }
+.categorie-panneau {
+	position: relative;
+	z-index: 1;
+	width: min(1000px, 90vw);
+	height: auto;
+	max-height: 85vh;
+	display: flex;
+	flex-direction: column;
+	padding: var(--espacement-panneau-vertical, 2.4rem) 2rem var(--espacement-panneau-vertical, 2.4rem);
+	box-sizing: border-box;
+	background: #0a0000;
+	color: var(--red-light);
+	border: 2px solid var(--red);
+	border-left: var(--bordure-panneau-epaisseur, 8px) solid var(--red);
+	border-right: var(--bordure-panneau-epaisseur, 8px) solid var(--red);
+	border-top: var(--bordure-panneau-epaisseur, 8px) solid var(--red);
+	border-bottom: var(--bordure-panneau-epaisseur, 8px) solid var(--red);
+	box-shadow: 0 0 50px color-mix(in srgb, var(--red) 60%, transparent), inset 0 0 20px color-mix(in srgb, var(--red) 10%, transparent);
+	font-size: .95rem;
+	line-height: 1.5;
+	text-align: left;
+	pointer-events: auto;
+}
 @media (max-width: 640px) {
   .categorie-panneau { width: 98vw; max-height: 85vh; padding: 1.2rem 1rem; }
   .categorie-panneau h2 { font-size: 1.3rem; margin-bottom: 0.8rem; }
@@ -390,16 +408,16 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   .categorie-fermer { width: 1.6rem !important; height: 1.6rem !important; font-size: 1rem !important; padding: 0.1rem 0.3rem !important; }
   .pagination-btn { font-size: 0.65rem !important; padding: 0.2rem 0.4rem !important; }
 }
-.article-panneau .categorie-fermer { position: absolute; top: 0.5rem; right: 0.5rem; z-index: 10; width: 1.8rem; height: 1.8rem; border: 1px solid var(--red-dim); background: #000; color: var(--red); font: inherit; font-size: 1rem; cursor: pointer; }
+.article-panneau .categorie-fermer { position: absolute; top: 0.5rem; right: 0.5rem; z-index: 300; width: 1.8rem; height: 1.8rem; border: 1px solid var(--red-dim); background: #000; color: var(--red); font: inherit; font-size: 1rem; cursor: pointer; }
 .article-panneau .categorie-fermer:hover { background: var(--red); color: #000; }
 .article-panneau .article-image { flex: 0 0 35%; border: 1px solid var(--red-dim); background: #140000; overflow: hidden; display: flex; align-items: center; justify-content: center; border-radius: 0.6rem; }
 .article-panneau .article-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .article-panneau .article-image .lettre { font: 700 2.5rem "Courier New", monospace; color: #fff; text-shadow: 0 0 6px var(--red), 0 0 22px var(--red); }
 .article-panneau > div:not(.article-image):not(.article-backdrop), .article-panneau > p:not(.article-texte) { padding: 0 0.8rem; }
 .article-panneau .meta { font-size: .75rem; opacity: .8; margin: 0.8rem 0.8rem 0.2rem; }
-.article-panneau h2 { font-size: 1.2rem; line-height: 1.2; color: #fff; margin: 0.2rem 0.8rem 0.6rem; overflow-wrap: anywhere; }
+.article-panneau h2 { font-size: 1.2rem; line-height: 1.2; color: #fff; margin: -3rem 0.8rem 0.6rem; overflow-wrap: anywhere; }
 .article-texte { flex: 1; margin: 0 0.99rem; overflow-wrap: anywhere; color: var(--red-light); overflow-y: auto; }
-.article-panneau > p:last-of-type { margin: 0.8rem 0.8rem 0 !important; }
+/*.article-panneau > p:last-of-type { margin: 0.8rem 0.8rem 0 !important; }*/
 .article-lien { display: block; padding: 0.4rem 0.8rem; color: var(--red-light); border: 1px solid var(--red-dim); text-decoration: none; overflow-wrap: anywhere; text-align: center; font-size: 0.8rem; }
 .article-lien:hover, .article-lien:focus-visible { background: var(--red); color: #000; outline: none; box-shadow: 0 0 20px var(--red); }
 .article-nav { flex: 0 0 auto; display: flex; gap: 0.4rem; justify-content: center; padding: 0.8rem; border-top: 1px solid var(--red-dim); }
@@ -505,6 +523,9 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .fav-heart:hover { transform: scale(1.15); color: #c000ff; border-color: #c000ff; box-shadow: 0 0 8px #c000ff; outline: none; }
 .fav-heart:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 .fav-heart.active { color: #c000ff; background: rgba(192, 0, 255, 0.15); border-color: #c000ff; box-shadow: 0 0 12px #c000ff, inset 0 0 8px rgba(192, 0, 255, 0.3); }
+.share-btn { padding: 0.5rem 0.8rem; margin: 0 0.8rem; font-size: 1.4rem; line-height: 1; cursor: pointer; transition: all 0.2s; color: #888; user-select: none; border: 2px solid #888; background: #000; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; border-radius: 0.4rem; }
+.share-btn:hover { transform: scale(1.15); color: var(--red); border-color: var(--red); box-shadow: 0 0 8px var(--red); outline: none; }
+.share-btn:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 
 /* Bouton "Mes favoris" dans le popover */
 .btn-mes-favoris { display: block; width: 100%; padding: 0.7rem 0.8rem; border: 1px solid var(--red-dim); background: #000; color: var(--red-light); font: inherit; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; text-align: center; }
@@ -514,7 +535,16 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .btn-install-pwa:hover, .btn-install-pwa:focus-visible { background: var(--red); color: #000; border-color: var(--red); box-shadow: 0 0 12px var(--red); outline: none; }
 
 /* Boutons de contrôle des favoris dans le panneau */
-.fav-controls { padding: 1rem 0; border-top: 1px solid var(--red-dim); text-align: center; gap: 0.5rem; display: flex; flex-direction: column; }
+.fav-controls { flex: 0 0 auto; padding: 1rem 0; border-top: 1px solid var(--red-dim); text-align: center; gap: 0.5rem; display: flex; flex-direction: column; }
+/* Favoris et résultats de recherche : la grille est directement dans le panneau, qui a une hauteur
+   maximale. Elle défile au lieu de déborder ; le titre et les boutons restent en place. */
+/* Panneaux (source, catégorie, recherche, favoris, code de conduite) : plein écran, au-dessus de la
+   barre du haut. Dimensions en % du conteneur (fixe, plein écran) et non en vw/vh : elles restent
+   justes quand la page est agrandie (réglage « taille du site »). Placé après les règles
+   @media ci-dessus, qui ne fixent plus que les marges intérieures. */
+.categorie-container { z-index: 500; align-items: stretch; }
+.categorie-panneau { flex: 1 1 auto; width: 100%; height: 100%; max-width: none; max-height: none; }
+.categorie-panneau > .grille { flex: 1 1 auto; min-height: 0; overflow-y: auto; align-content: start; overscroll-behavior: contain; }
 .fav-export, .fav-import { display: block; padding: 0.6rem; border: 1px solid var(--red-dim); background: #000; color: var(--red-light); font: inherit; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; text-align: center; }
 .fav-export:hover, .fav-import:hover { background: var(--red); color: #000; border-color: var(--red); box-shadow: 0 0 8px var(--red); }
 #fav-file-input { display: none; }

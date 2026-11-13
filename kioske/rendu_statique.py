@@ -11,6 +11,284 @@ from .config import BUILD, DOMAINE, NOM_SITE, URL_SITE, CFG
 from .texte import esc, article_id, slug_article, slug_categorie, cle_alphabetique
 from .themes import charger_themes, css_des_themes, rain
 
+# Style de la carte ouverte (format carte à jouer). Partagé par la page d'article et par l'accueil,
+# qui affiche la même carte en JavaScript. Les règles internes sont limitées à .panel-article
+# par :where(), qui n'ajoute aucune priorité : le rendu est le même des deux côtés.
+CSS_CARTE_OUVERTE = """/* Bouton retour = style Précédent/Suivant */
+.btn-retour {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  padding: 0.6rem 1.2rem;
+  background: #0a0000;
+  border: 1px solid var(--red-dim);
+  color: var(--red);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 9999;
+}
+.btn-retour:hover, .btn-retour:focus-visible {
+  background: var(--red);
+  color: #000;
+  border-color: var(--red);
+  box-shadow: 0 0 12px var(--red);
+  outline: none;
+}
+/* Format Pokemon pour la carte d'article : responsive */
+.panel-article {
+  /* Sur desktop : hauteur raisonnable */
+  height: min(90vh, calc(100vw * 3.5 / 2.5 - 4rem));
+  width: auto;
+  max-width: none !important;
+  aspect-ratio: 2.5 / 3.5;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid var(--red) !important;
+  border-radius: 0.8rem !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6) !important;
+  padding: 0 !important;
+  margin: 1rem auto !important;
+  overflow: hidden;
+  position: relative;
+}
+/* Tablette : adapter à la largeur */
+@media (max-width: 1024px) {
+  .panel-article {
+    height: min(85dvh, calc((100vw - 2rem) * 3.5 / 2.5));
+    width: calc(100vw - 2rem);
+    margin: 1rem auto !important;
+    border-radius: 0.6rem !important;
+  }
+}
+/* Mobile : plein écran */
+@media (max-width: 640px) {
+  .panel-article {
+    height: 100dvh;
+    width: 100vw;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+  }
+}
+/* Image d'article : fixe en haut (35% de la hauteur) */
+:where(.panel-article) .article-image {
+  flex: 0 0 35%;
+  overflow: hidden;
+  background: #0a0000;
+  border-bottom: 1px solid var(--red-dim);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+:where(.panel-article) .article-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* Contenu de l'article : scrollable au milieu */
+:where(.panel-article) article {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  font-size: 1rem;
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  -webkit-overflow-scrolling: touch;
+}
+:where(.panel-article) article h1 {
+  font-size: 1.1rem;
+  margin: 0;
+  font-weight: bold;
+}
+:where(.panel-article) article h2 {
+  font-size: 1.1rem;
+  margin: 0;
+  font-weight: bold;
+}
+:where(.panel-article) article p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+:where(.panel-article) .meta {
+  font-size: 0.85rem;
+  color: var(--red-light);
+}
+/* Boutons de navigation : fixes en bas */
+:where(.panel-article) .article-nav {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-top: 1px solid var(--red-dim);
+  justify-content: space-around;
+  position: sticky;
+  bottom: 0;
+  background: #0a0000;
+  z-index: 5;
+}
+"""
+
+# Superposition qui porte la carte quand elle est ouverte en JavaScript (accueil, pages de catégorie).
+CSS_CARTE_SUPERPOSEE = """/* Carte d'article ouverte en JavaScript par-dessus la page */
+.carte-ouverte { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; overflow: auto; }
+.carte-ouverte-fond { position: fixed; inset: 0; background: rgba(0, 0, 0, .7); cursor: pointer; }
+.carte-ouverte .panel-article { flex: 0 0 auto; background: #0a0000; }
+"""
+
+# Script de la carte ouverte en JavaScript. La page qui l'inclut doit fournir updateHearts() et
+# toggleFavorite() (script de l'accueil, ou static/app.js), et fermer la carte sur la touche Échap.
+JS_CARTE_OUVERTE = """// Carte d'article ouverte en JavaScript : la page statique de l'article est chargée et sa carte
+// affichée par-dessus l'accueil. L'adresse devient celle de la page statique (partage, rechargement).
+let carteOuverte = null;
+const titreAccueil = document.title;
+
+function articleDuSite(href) {
+  let u;
+  try { u = new URL(href, location.href); } catch (e) { return null; }
+  return (u.origin === location.origin && u.pathname.startsWith('/articles/')) ? u : null;
+}
+
+function chargerCarte(u) {
+  return fetch(u.pathname)
+    .then(r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.text();
+    })
+    .then(html => {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const carte = doc.querySelector('main.panel-article');
+      if (!carte) throw new Error('carte absente de la page');
+      // Les images de la page sont relatives à son adresse : les rendre absolues
+      carte.querySelectorAll('img[src]').forEach(img => {
+        const a = new URL(img.getAttribute('src'), u);
+        img.setAttribute('src', a.origin === location.origin ? a.pathname + a.search : a.href);
+      });
+      return { carte: document.importNode(carte, true), titre: doc.title };
+    });
+}
+
+function afficherCarte(contenu, u) {
+  if (!carteOuverte) {
+    carteOuverte = document.createElement('div');
+    carteOuverte.className = 'carte-ouverte';
+    carteOuverte.setAttribute('role', 'dialog');
+    carteOuverte.setAttribute('aria-modal', 'true');
+    const fond = document.createElement('div');
+    fond.className = 'carte-ouverte-fond';
+    fond.addEventListener('click', fermerCarte);
+    carteOuverte.appendChild(fond);
+    document.body.appendChild(carteOuverte);
+  }
+  // L'accueil est agrandi (réglage « taille du site ») : l'annuler pour garder la taille de la page d'article
+  carteOuverte.style.zoom = 1 / (parseFloat(document.documentElement.style.zoom) || 1);
+  const ancienne = carteOuverte.querySelector('.panel-article');
+  if (ancienne) ancienne.remove();
+  carteOuverte.appendChild(contenu.carte);
+  carteOuverte.hidden = false;
+
+  const retour = contenu.carte.querySelector('.btn-retour');
+  if (retour) retour.addEventListener('click', fermerCarte);
+  // Précédent/Suivant gardent le « from » de la carte en cours
+  const from = u.searchParams.get('from');
+  if (from) {
+    contenu.carte.querySelectorAll('a.nav-prev, a.nav-next').forEach(a => {
+      a.setAttribute('href', a.getAttribute('href').split('?')[0] + '?from=' + encodeURIComponent(from));
+    });
+  }
+  document.title = contenu.titre || titreAccueil;
+  updateHearts();
+}
+
+function masquerCarte() {
+  if (!carteOuverte) return;
+  carteOuverte.hidden = true;
+  const carte = carteOuverte.querySelector('.panel-article');
+  if (carte) carte.remove();
+  document.title = titreAccueil;
+}
+
+// mode : 'ajouter' (nouvelle entrée d'historique), 'remplacer' (Précédent/Suivant), 'aucun' (retour/avance du navigateur)
+function ouvrirCarte(u, mode) {
+  return chargerCarte(u)
+    .then(contenu => {
+      afficherCarte(contenu, u);
+      const adresse = u.pathname + u.search;
+      if (mode === 'ajouter') history.pushState({ carte: true }, '', adresse);
+      else if (mode === 'remplacer') history.replaceState({ carte: true }, '', adresse);
+    })
+    .catch(err => {
+      // En cas d'échec, la page statique s'ouvre normalement
+      console.error('Carte non chargée :', err);
+      if (mode !== 'aucun') window.location.href = u.href;
+    });
+}
+
+function fermerCarte() {
+  if (history.state && history.state.carte) history.back();
+  else masquerCarte();
+}
+
+window.addEventListener('popstate', (e) => {
+  const u = (e.state && e.state.carte) ? articleDuSite(location.href) : null;
+  if (u) ouvrirCarte(u, 'aucun');
+  else masquerCarte();
+});
+
+// Clic simple sur une carte (panneaux, galerie, recherche, favoris) ou sur Précédent/Suivant de la carte ouverte.
+// Ctrl/Maj/clic molette gardent le comportement du lien : la page statique.
+document.addEventListener('click', (e) => {
+  if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+  const lien = e.target.closest('a.carte, a.galerie-carte, .carte-ouverte a.nav-btn');
+  if (!lien) return;
+  const u = articleDuSite(lien.href);
+  if (!u) return;
+  e.preventDefault();
+  const dejaOuverte = carteOuverte && !carteOuverte.hidden;
+  ouvrirCarte(u, dejaOuverte ? 'remplacer' : 'ajouter');
+});
+
+// Bouton de partage de la carte ouverte
+function shareArticle(e) {
+  e.stopPropagation();
+  const btn = e.target;
+  const titre = btn.closest('.panel-article')?.querySelector('h1')?.textContent || document.title;
+  const adresse = location.origin + location.pathname;
+  if (navigator.share) {
+    navigator.share({ title: titre, url: adresse }).catch(() => {});
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(adresse).then(() => {
+      const texte = btn.textContent;
+      btn.textContent = '✓';
+      setTimeout(() => { btn.textContent = texte; }, 2000);
+    }).catch(() => alert('Partage indisponible sur ce navigateur'));
+  } else {
+    alert('Partage indisponible sur ce navigateur');
+  }
+}
+
+"""
+
+# Propre à la page d'article : la carte occupe toute la page sur petit écran.
+CSS_PAGE_ARTICLE = """@media (max-width: 1024px) {
+  body {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+@media (max-width: 640px) {
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+"""
+
 
 def render_article_page(item: dict, preview: dict, prev_article: dict | None = None, next_article: dict | None = None, previews: dict[str, dict] | None = None) -> str:
     """Page HTML d'un article avec navigation Précédent/Suivant.
@@ -45,6 +323,7 @@ def render_article_page(item: dict, preview: dict, prev_article: dict | None = N
         prev_slug = slug_article(prev_title, prev_article["link"])
         nav_buttons += f'<a href="{esc(f"/articles/{prev_id}-{prev_slug}/")}" class="nav-btn nav-prev" aria-label="Article precedent">Précédent</a>'
     nav_buttons += f'<button type="button" class="fav-heart" data-article-link="{esc(item["link"])}" aria-label="Marquer comme favori" onclick="event.stopPropagation(); toggleFavorite(event)">♡</button>'
+    nav_buttons += f'<button type="button" class="share-btn" aria-label="Partager" onclick="shareArticle(event)" title="Partager ce lien">📤</button>'
     if next_article:
         next_id = article_id(next_article["link"])
         # Utiliser le titre du preview si disponible, sinon le titre original (cohérent avec la génération de la page)
@@ -90,139 +369,7 @@ def render_article_page(item: dict, preview: dict, prev_article: dict | None = N
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="KiosKe.fr">
 <style>{css}
-/* Bouton retour = style Précédent/Suivant */
-.btn-retour {{
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  padding: 0.6rem 1.2rem;
-  background: #0a0000;
-  border: 1px solid var(--red-dim);
-  color: var(--red);
-  font-family: inherit;
-  font-size: 0.9rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s;
-  z-index: 9999;
-}}
-.btn-retour:hover, .btn-retour:focus-visible {{
-  background: var(--red);
-  color: #000;
-  border-color: var(--red);
-  box-shadow: 0 0 12px var(--red);
-  outline: none;
-}}
-/* Format Pokemon pour la page d'article : responsive */
-.panel-article {{
-  /* Sur desktop : hauteur raisonnable */
-  height: min(90vh, calc(100vw * 3.5 / 2.5 - 4rem));
-  width: auto;
-  max-width: none !important;
-  aspect-ratio: 2.5 / 3.5;
-  display: flex;
-  flex-direction: column;
-  border: 2px solid var(--red) !important;
-  border-radius: 0.8rem !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6) !important;
-  padding: 0 !important;
-  margin: 1rem auto !important;
-  overflow: hidden;
-  position: relative;
-}}
-
-/* Tablette : adapter à la largeur */
-@media (max-width: 1024px) {{
-  body {{
-    padding: 0 !important;
-    margin: 0 !important;
-  }}
-  .panel-article {{
-    height: min(85dvh, calc((100vw - 2rem) * 3.5 / 2.5));
-    width: calc(100vw - 2rem);
-    margin: 1rem auto !important;
-    border-radius: 0.6rem !important;
-  }}
-}}
-
-/* Mobile : hauteur maximale raisonnable, pas de marge */
-@media (max-width: 640px) {{
-  body {{
-    padding: 0 !important;
-    margin: 0 !important;
-  }}
-  main {{
-    padding: 0 !important;
-    margin: 0 !important;
-  }}
-  .panel-article {{
-    height: 100dvh;
-    width: 100vw;
-    margin: 0 !important;
-    padding: 0 !important;
-    border-radius: 0 !important;
-    border: none !important;
-  }}
-}}
-/* Image d'article : fixe en haut (35% de la hauteur) */
-.article-image {{
-  flex: 0 0 35%;
-  overflow: hidden;
-  background: #0a0000;
-  border-bottom: 1px solid var(--red-dim);
-  position: sticky;
-  top: 0;
-  z-index: 5;
-}}
-.article-image img {{
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}}
-/* Contenu de l'article : scrollable au milieu */
-article {{
-  flex: 1;
-  overflow-y: auto;
-  padding: 1rem;
-  font-size: 1rem;
-  line-height: 1.4;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  -webkit-overflow-scrolling: touch;
-}}
-article h1 {{
-  font-size: 1.1rem;
-  margin: 0;
-  font-weight: bold;
-}}
-article h2 {{
-  font-size: 1.1rem;
-  margin: 0;
-  font-weight: bold;
-}}
-article p {{
-  margin: 0;
-  font-size: 0.95rem;
-}}
-.meta {{
-  font-size: 0.85rem;
-  color: var(--red-light);
-}}
-/* Boutons de navigation : fixes en bas */
-.article-nav {{
-  flex: 0 0 auto;
-  display: flex;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  border-top: 1px solid var(--red-dim);
-  justify-content: space-around;
-  position: sticky;
-  bottom: 0;
-  background: #0a0000;
-  z-index: 5;
-}}
-</style>
+{CSS_CARTE_OUVERTE}{CSS_PAGE_ARTICLE}</style>
 <script>
 if ('serviceWorker' in navigator) {{
   window.addEventListener('load', () => {{
@@ -255,7 +402,10 @@ if ('serviceWorker' in navigator) {{
 // Navigation Précédent/Suivant : préserve le param 'from'
 document.addEventListener('DOMContentLoaded', () => {{
   const params = new URLSearchParams(window.location.search);
-  const fromParam = params.get('from');
+  let fromParam = params.get('from');
+  // Retour vers une adresse du site seulement (ni autre site, ni javascript:)
+  const debutFrom = fromParam ? fromParam.charCodeAt(1) : 0;  // 47 = « / », 92 = barre oblique inversée
+  if (fromParam && (!fromParam.startsWith('/') || debutFrom === 47 || debutFrom === 92)) fromParam = null;
 
   // Bouton retour
   const btnRetour = document.getElementById('btn-retour');
@@ -288,6 +438,33 @@ document.getElementById('form-recherche').addEventListener('submit', (e) => {{
     window.location.href = '/?q=' + encodeURIComponent(query);
   }}
 }});
+
+// Bouton de partage
+function shareArticle(e) {{
+  e.stopPropagation();
+  const articleUrl = window.location.href;
+  const articleTitle = document.querySelector('h1')?.textContent || 'Article';
+
+  if (navigator.share) {{
+    navigator.share({{
+      title: articleTitle,
+      url: articleUrl
+    }}).catch(err => console.log('Partage annulé'));
+  }} else {{
+    navigator.clipboard.writeText(articleUrl).then(() => {{
+      const btn = e.target;
+      const originalText = btn.textContent;
+      btn.textContent = '✓ Copié !';
+      btn.style.color = '#00ff00';
+      setTimeout(() => {{
+        btn.textContent = originalText;
+        btn.style.color = 'var(--red)';
+      }}, 2000);
+    }}).catch(() => {{
+      alert('Partage indisponible sur ce navigateur');
+    }});
+  }}
+}}
 </script>
 </body>
 </html>"""
@@ -422,7 +599,7 @@ def render_category_page(category_name: str, articles: list[dict],
   margin: 0 0 1rem 0;
   font-weight: bold;
 }}
-</style>
+{CSS_CARTE_OUVERTE}{CSS_CARTE_SUPERPOSEE}</style>
 <script>
 if ('serviceWorker' in navigator) {{
   window.addEventListener('load', () => {{
@@ -445,6 +622,11 @@ if ('serviceWorker' in navigator) {{
 </main>
 <script src="/app.js" defer></script>
 <script>
+{JS_CARTE_OUVERTE}
+document.addEventListener('keydown', (e) => {{
+  if (e.key === 'Escape' && carteOuverte && !carteOuverte.hidden) fermerCarte();
+}});
+
 // Bouton retour de catégorie : revient à l'accueil
 document.addEventListener('DOMContentLoaded', () => {{
   const btnRetour = document.getElementById('btn-retour');

@@ -133,10 +133,10 @@ def ecrire_flux_rss(items: list[dict], categories: dict[str, str]) -> None:
             print(f"supprimé (catégorie disparue) : {ancien.relative_to(ROOT)}")
 
 
-def ecrire_page_rss(categories: dict[str, str]) -> None:
+def ecrire_page_rss(categories: dict[str, str], items: list[dict]) -> None:
     """Écrit build/rss.html : page de découverte des flux RSS par catégorie."""
     BUILD.mkdir(parents=True, exist_ok=True)
-    page = render_rss_page(categories)
+    page = render_rss_page(categories, items)
     sortie = BUILD / "rss.html"
     tmp = sortie.with_name(sortie.name + ".tmp")
     tmp.write_text(page, encoding="utf-8")
@@ -352,7 +352,7 @@ def construire(args: argparse.Namespace) -> None:
         ecrire_index_articles(items, previews, categories)
 
         ecrire_page(items, previews, categories)
-        ecrire_page_rss(categories)
+        ecrire_page_rss(categories, items)
         if not args.simple:
             ecrire_flux_rss(items, categories)
         copier_statiques()

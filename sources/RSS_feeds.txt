@@ -15,6 +15,7 @@
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCPVS8efBdhXGGYs4JW2IJcQ"
 "https://www.infolibertaire.net/feed/podcasts/"
 [Militance et luttes]
+"https://www.politis.fr/flux-rss/"
 "https://ajis.asso.fr/feed"
 "https://lesjours.fr/rss.xml"
 "https://urbania.ca/articles.rss"
@@ -28,6 +29,7 @@
 [LGBTQIA++]
 "https://www.problematik-media.com/feed.xml"
 "https://www.outrans.org/feed/"
+"https://revueladeferlante.fr/feed/"
 [International]
 "https://www.thepinknews.com/feed/"
 "https://orientxxi.info/?page=backend&lang=fr"

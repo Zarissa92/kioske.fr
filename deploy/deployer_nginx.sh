@@ -42,8 +42,48 @@ EMAIL=""
 SANS_CERT=0
 
 # Politique de contenu : le site ne charge rien d'un autre site (images du KiosKe comprises,
-# qui sont téléchargées par le build et servies depuis img/veille/ dans la racine web). Aucun script.
-CSP="default-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+# qui sont téléchargées par le build et servies depuis img/veille/ dans la racine web).
+# Scripts : ceux des pages et /app.js ; connect-src pour fetch (recherche, carte ouverte, favoris) ;
+# manifest-src et worker-src pour la PWA (manifest.json, sw.js).
+CSP="default-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+
+CARTE_CACHE="$(cat <<'NGINX'
+# Durée de cache selon le fichier demandé. Une seule variable, lue par un seul add_header au niveau
+# « server » : dans nginx, un add_header placé dans un bloc « location » annule tous ceux du niveau
+# « server » (HSTS, politique de contenu…). Aucun bloc « location » ne doit donc contenir d'add_header.
+map $uri $kioske_cache_control {
+    # Service worker : toujours revérifié
+    /sw.js                            "no-cache, must-revalidate, max-age=0";
+    # Manifest PWA : 1 jour
+    /manifest.json                    "public, max-age=86400";
+    # Icônes PWA : 1 an
+    ~/icon-[0-9]+\.png$               "public, max-age=31536000, immutable";
+    # Images de la veille : 30 jours
+    ~/img/                            "public, max-age=2592000";
+    # Polices, favicon : 1 an
+    ~\.(css|woff2|woff|ttf|svg)$      "public, max-age=31536000, immutable";
+    # Flux RSS/XML : toujours revérifiés
+    ~\.xml$                           "no-cache, must-revalidate, max-age=0";
+    # Pages, app.js, index des articles : 30 min (durée du timer de mise à jour)
+    default                           "public, max-age=1800, must-revalidate";
+}
+NGINX
+)"
+
+# Blocs « location » communs aux configurations HTTP et HTTPS. Aucun add_header ici (voir CARTE_CACHE).
+EMPLACEMENTS="$(cat <<'NGINX'
+    # Manifest PWA : type MIME des manifestes
+    location = /manifest.json {
+        types { }
+        default_type application/manifest+json;
+    }
+
+    # Route par défaut
+    location / {
+        try_files $uri $uri/ =404;
+    }
+NGINX
+)"
 
 info()    { printf '\033[1;34m[info]\033[0m %s\n' "$*"; }
 avert()   { printf '\033[1;33m[attention]\033[0m %s\n' "$*"; }
@@ -131,12 +171,16 @@ PROTECTIONS="    # Ne pas annoncer la version de nginx
     add_header X-Frame-Options \"SAMEORIGIN\" always;
     add_header Referrer-Policy \"strict-origin-when-cross-origin\" always;
     add_header Permissions-Policy \"camera=(), microphone=(), geolocation=(), payment=()\" always;
-    add_header Content-Security-Policy \"$CSP\" always;"
+    add_header Content-Security-Policy \"$CSP\" always;
+    # Durée de cache : voir la table « map » en tête du fichier généré. Sans « always » : pas sur les erreurs.
+    add_header Cache-Control \$kioske_cache_control;"
 
 # 3. Configuration HTTP seule : sert le site directement, sans redirection
 info "Configuration HTTP seule"
 appliquer_config <<EOF
 # Généré par deploy/deployer_nginx.sh : ne pas éditer à la main (relancer le script).
+$CARTE_CACHE
+
 server {
     listen 80;
     listen [::]:80;
@@ -159,53 +203,7 @@ $PROTECTIONS
         return 404;
     }
 
-    # Service worker : pas de cache
-    location = /sw.js {
-        add_header Cache-Control "no-cache, must-revalidate, max-age=0" always;
-        add_header Service-Worker-Allowed "/" always;
-        try_files \$uri =404;
-    }
-
-    # Manifest PWA : cache 1 jour
-    location = /manifest.json {
-        add_header Cache-Control "public, max-age=86400" always;
-        add_header Content-Type "application/manifest+json" always;
-        try_files \$uri =404;
-    }
-
-    # Icônes PWA : cache 1 an
-    location ~ /icon-[0-9]+\\.png\$ {
-        add_header Cache-Control "public, max-age=31536000, immutable" always;
-        try_files \$uri =404;
-    }
-
-    # Assets statiques : cache 1 an
-    location ~ \\.(css|js|woff2|woff|ttf|svg)\$ {
-        add_header Cache-Control "public, max-age=31536000, immutable" always;
-        try_files \$uri =404;
-    }
-
-    # Images : cache 30 jours
-    location ~ /img/ {
-        add_header Cache-Control "public, max-age=2592000" always;
-        try_files \$uri =404;
-    }
-
-    # HTML : cache 1 heure
-    location ~ \\.html\$ {
-        add_header Cache-Control "public, max-age=3600, must-revalidate" always;
-        try_files \$uri =404;
-    }
-
-    # Flux RSS/XML : pas de cache
-    location ~ \\.xml\$ {
-        add_header Cache-Control "no-cache, must-revalidate, max-age=0" always;
-        try_files \$uri =404;
-    }
-
-    location / {
-        try_files \$uri \$uri/ =404;
-    }
+$EMPLACEMENTS
 
     access_log /var/log/nginx/$DOMAINE.access.log;
     error_log  /var/log/nginx/$DOMAINE.error.log;
@@ -244,6 +242,8 @@ if [[ -d "$CERT_DIR" ]]; then
     info "Configuration HTTPS"
     appliquer_config <<EOF
 # Généré par deploy/deployer_nginx.sh : ne pas éditer à la main (relancer le script).
+$CARTE_CACHE
+
 server {
     listen 80;
     listen [::]:80;
@@ -292,53 +292,7 @@ $PROTECTIONS
         return 404;
     }
 
-    # Service worker : pas de cache
-    location = /sw.js {
-        add_header Cache-Control "no-cache, must-revalidate, max-age=0" always;
-        add_header Service-Worker-Allowed "/" always;
-        try_files \$uri =404;
-    }
-
-    # Manifest PWA : cache 1 jour
-    location = /manifest.json {
-        add_header Cache-Control "public, max-age=86400" always;
-        add_header Content-Type "application/manifest+json" always;
-        try_files \$uri =404;
-    }
-
-    # Icônes PWA : cache 1 an
-    location ~ /icon-[0-9]+\\.png\$ {
-        add_header Cache-Control "public, max-age=31536000, immutable" always;
-        try_files \$uri =404;
-    }
-
-    # Assets statiques : cache 1 an
-    location ~ \\.(css|js|woff2|woff|ttf|svg)\$ {
-        add_header Cache-Control "public, max-age=31536000, immutable" always;
-        try_files \$uri =404;
-    }
-
-    # Images : cache 30 jours
-    location ~ /img/ {
-        add_header Cache-Control "public, max-age=2592000" always;
-        try_files \$uri =404;
-    }
-
-    # HTML : cache 1 heure
-    location ~ \\.html\$ {
-        add_header Cache-Control "public, max-age=3600, must-revalidate" always;
-        try_files \$uri =404;
-    }
-
-    # Flux RSS/XML : pas de cache
-    location ~ \\.xml\$ {
-        add_header Cache-Control "no-cache, must-revalidate, max-age=0" always;
-        try_files \$uri =404;
-    }
-
-    location / {
-        try_files \$uri \$uri/ =404;
-    }
+$EMPLACEMENTS
 
     access_log /var/log/nginx/$DOMAINE.access.log;
     error_log  /var/log/nginx/$DOMAINE.error.log;

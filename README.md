@@ -1,10 +1,11 @@
 # kioske.fr
 
 Le **KiosKe** : une veille automatique des médias indépendants, des luttes et des voix LGBTQIA+.
-Pages HTML statiques (HTML5, CSS et JavaScript minimal) générées toutes les 30 minutes sur le serveur
+Pages HTML statiques (HTML5, CSS, JavaScript sans dépendance) générées toutes les 30 minutes sur le serveur
 à partir de flux RSS et de chaînes Twitch. Une page d'accueil + une page par catégorie + une page par article
-(~1035 pages au total). Les images sont hébergées par le site : les pages ne chargent rien d'un autre site,
-sans publicité ni pistage.
+(plus de mille pages). Les images sont hébergées par le site : les pages ne chargent rien d'un autre site,
+sans publicité ni pistage. Le JavaScript sert à la navigation (panneaux, cartes, recherche, favoris) ; sans
+lui, les pages statiques d'articles et de catégories restent lisibles par leurs liens.
 
 **Mots-clés** : kioske, veille, médias indépendants, LGBTQIA+, RSS, Twitch, informatique libre.
 
@@ -16,6 +17,11 @@ modifié par le build.
 > **À vérifier :** l'`origin` du dépôt git pointe encore vers `kit-gauchiasses.fr`.
 >
 > **Modifications récentes** :
+> - **Panneaux en plein écran** (2026-11-13) : les panneaux de source, de catégorie, de recherche, des favoris et du code de conduite remplissent l'écran et passent au-dessus de la barre du haut (`.categorie-container`, `.categorie-panneau` dans `kioske/style.css`). La carte d'article ouverte garde son format « carte à jouer ».
+> - **Menu et page des flux vérifiés et corrigés** (2026-11-13) : les entrées Flux RSS, Discord et Mastodon du menu ≡ sont de vrais liens (`<a>`) et non plus des boutons avec `onclick` ; les liens externes s'ouvrent avec `rel="noopener noreferrer"`. Le bouton ≡ porte `aria-expanded`. `rss.html` ne liste plus que les catégories dont le flux est réellement écrit (le lien « Des Liens » menait à une page introuvable) et a un lien « ← Accueil ». Favoris et résultats de recherche : les cartes défilent dans le panneau.
+> - **nginx : en-têtes de sécurité et politique de contenu corrigés** (2026-11-13, à déployer) : les blocs `location` contenaient un `add_header Cache-Control`, ce qui annulait tous les en-têtes du niveau `server` (HSTS, CSP, `nosniff`…) sur les pages. La durée de cache passe par une table `map` et un seul `add_header` au niveau `server` ; plus aucun `add_header` dans un `location`. La CSP autorise maintenant ce dont le site a besoin : `script-src 'self' 'unsafe-inline'`, `connect-src 'self'`, `manifest-src 'self'`, `worker-src 'self'`. `app.js` n'est plus mis en cache un an. Sauvegarde des anciens fichiers : `old/nginx-avant-csp-2026-11-13/`.
+> - **Carte d'article ouverte en JavaScript sur l'accueil et sur les pages de catégorie** (2026-11-13) : un clic sur une carte (panneau de source ou de catégorie, galerie, recherche, favoris, page de catégorie) charge la page statique de l'article et affiche sa carte « à jouer » par-dessus la page, sans la quitter. Le style et le script de la carte sont des constantes partagées (`CSS_CARTE_OUVERTE`, `CSS_CARTE_SUPERPOSEE`, `JS_CARTE_OUVERTE` dans `kioske/rendu_statique.py`) : même rendu que la page statique. L'adresse devient celle de la page statique (partage, rechargement) ; fermer la carte (« ← Retour », Échap, clic sur le fond, bouton précédent du navigateur) ramène au panneau ou à la page de catégorie d'où l'on vient. Précédent/Suivant changent d'article dans la même carte. Ctrl+clic, clic molette et navigation sans JavaScript ouvrent la page statique, toujours générée (référencement). Favoris : même format sur l'accueil et sur les pages (`static/app.js`), un favori ouvre la carte du KiosKe et non plus le site d'origine. Les anciens favoris, enregistrés avec le seul lien du site d'origine, sont complétés à l'ouverture du panneau « Mes favoris » à partir de `articles-index.json` (page du KiosKe, image, date, résumé) ; un article qui n'est plus dans l'index garde son lien d'origine.
+> - **Navigation JS corrigée** (2026-11-13) : le bouton « ← Retour » d'un article rouvre le panneau (source ou catégorie) d'où l'on vient, à la bonne page de pagination. L'adresse de l'accueil garde la trace du panneau ouvert (`/#source=…&p=2`, `/#cat=…&p=1`), les cartes des panneaux transmettent cette adresse dans `?from=`. La recherche lancée depuis une page d'article ou de catégorie (`/?q=…`) s'exécute maintenant sur l'accueil. Le paramètre `from` n'accepte qu'une adresse du site. Panneaux de catégorie triés par vraie date. Script temporaire `popstate` (renvoi vers `https://kioske.fr`) retiré. Service worker : les pages `/articles/…/` et `/categories/…/` passent en réseau d'abord (elles restaient figées dans le cache). Bouton 📤 de partage sur les pages d'article. Cache service worker v19.
 > - **Code de conduite en panneau normalisé + boutons de partage** (2026-11-13 nuit) : code de conduite stocké dans `accueil/code-de-conduite.html`, s'ouvre dans un panneau au format standardisé du site (comme les sources et catégories). **Nouveaux boutons en bas du panneau** : 📤 Partager (Web Share API) et 🔗 Copier le lien (clipboard). Menu hamburger ferme automatiquement à l'ouverture. Corrections : ID manquant dans `showPopover()` pour afficher le panneau. Cache service worker v15.
 > - **Navbar top sticky** (2026-11-13 nuit) : refonte complète de la navigation. Remplacement du bouton "+" + titre énorme + barre de recherche fragmentée par une **navbar horizontale sticky** en haut. Logo + stats à gauche, barre de recherche au centre, bouton ♡ Favoris + menu hamburger ≡ à droite. Menu déroulant contient : thèmes, taille du site, lien Flux RSS, lien Discord, code de conduite. Cache service worker v14.
 > - **Panneaux de catégories + favoris corrigés** (2026-11-13 nuit) : boutons "+" des catégories → panneaux JS avec pagination identiques aux sources. Système de favoris entièrement réécrit : stockage des métadonnées complètes (image, date, host, résumé) et création des cartes favoris depuis les données, pas clonage du DOM. Cache service worker v13.
@@ -41,8 +47,8 @@ modifié par le build.
 
 <p align="center"><img src="docs/img/kioske-accueil.png" width="640" alt="Page d'accueil : choix du thème, titre, et étiquettes des sources rangées par catégorie"></p>
 
-Cliquer sur une étiquette ouvre la fenêtre de la source, avec une carte par article. Cliquer sur une
-carte ouvre l'article dans la page (texte du flux, lien vers l'original).
+Cliquer sur une étiquette ouvre le panneau de la source, avec une carte par article. Cliquer sur une
+carte ouvre l'article par-dessus la page, au format « carte à jouer » (texte du flux, lien vers l'original).
 
 <p align="center"><img src="docs/img/kioske-cartes.png" width="640" alt="Fenêtre d'une source : une carte par article, avec image, date, titre et extrait"></p>
 
@@ -68,12 +74,12 @@ carte ouvre l'article dans la page (texte du flux, lien vers l'original).
 | `kioske.cfg` | **Tous les réglages** : domaine, thèmes, veille, serveur. Lu par Python et par les scripts bash. |
 | `sources/` | Ce que la veille suit : `RSS_feeds.txt`, `Twitch_feeds.txt`, `flux_corrige_main.txt`. Écrits à la main. |
 | `accueil/bloc_immuable.html` | Source du bloc immuable. |
-| `static/` | Fichiers publiés tels quels : `favicon.svg`, `apple-touch-icon.png`, `preview.png`, `fonts/`. |
+| `static/` | Fichiers publiés tels quels : `favicon.svg`, `apple-touch-icon.png`, `preview.png`, `fonts/`, `app.js` (favoris et réglages des pages d'article et de catégorie), `sw.js` et `manifest.json` (PWA), icônes `icon-*.png`. |
 | `kioske/` | Le code (paquet Python) et les feuilles de style `style.css`, `pluie.css`. Voir ci-dessous. |
 | `bin/` | Points d'entrée : `build_site.py`, `publier_public.py`, `garde_immuable.py`. Quelques lignes chacun. |
 | `deploy/` | Scripts du serveur : `kioske.sh` (point d'entrée), `installer_serveur.sh`, `deployer_nginx.sh`, `verifier_serveur.sh`, `lib_config.sh`, `systemd/`, `fail2ban/`. |
 | `data/` | `immuable.json` (empreinte du bloc, suivie par git) ; `historique.db`, `cache/`, `build.lock` (locaux, jamais publiés). |
-| `build/` | **Le site généré**, complet : `index.html` (accueil), `rss.html` (découverte des flux RSS), `articles/{id}-{slug}/index.html` (pages d'articles, ~1028), `categories/{slug}/index.html` (pages de catégories, 7), `rss.xml`, `rss/{slug}.xml` (flux par catégories), `img/veille/`, copie de `static/`, `robots.txt`, `sitemap.xml`. Hors git, jamais édité à la main, jamais envoyé au serveur. |
+| `build/` | **Le site généré**, complet : `index.html` (accueil), `rss.html` (découverte des flux RSS), `articles/{id}-{slug}/index.html` (une page par article), `categories/{slug}/index.html` (une page par catégorie), `articles-index.json` (index de tous les articles : recherche et favoris), `rss.xml`, `rss/{slug}.xml` (flux par catégories), `img/veille/`, copie de `static/`, `robots.txt`, `sitemap.xml`. Hors git, jamais édité à la main, jamais envoyé au serveur. |
 | `requirements.txt` | Dépendances Python (`feedparser`, `yt-dlp`, `legacy-cgi`). |
 | `apercu/preview.svg` | Source de `static/preview.png` (image de partage social) : générer avec `rsvg-convert -w 1200 -h 630 apercu/preview.svg -o static/preview.png`. |
 | `docs/img/` | Captures de ce README. |
@@ -89,8 +95,8 @@ Le paquet `kioske/` :
 | `images.py` | Téléchargement des images dans `build/img/veille/`, et purge de celles qui ne servent plus. |
 | `historique.py` | Base SQLite de tout ce qui a été récupéré. |
 | `themes.py`, `style.css`, `pluie.css` | Thèmes et CSS de la page. |
-| `rendu.py`, `rss.py`, `texte.py` | HTML de la page d'accueil, flux RSS produits, outils de texte (slugs, IDs, échappement HTML). |
-| `rendu_statique.py` | HTML des pages statiques pour articles et catégories. Navigation hiérarchique (retour au parent). |
+| `rendu.py`, `rss.py`, `texte.py` | HTML et JavaScript de la page d'accueil et de `rss.html`, flux RSS produits, outils de texte (slugs, IDs, échappement HTML). |
+| `rendu_statique.py` | HTML des pages statiques d'articles et de catégories (retour au parent). Contient aussi le style et le script partagés de la carte ouverte : `CSS_CARTE_OUVERTE`, `CSS_CARTE_SUPERPOSEE`, `JS_CARTE_OUVERTE`. |
 | `immuable.py` | Garde du bloc immuable. |
 | `verrou.py` | Un seul build ou une seule publication à la fois. |
 | `construction.py`, `publication.py` | Le build (`build/`) et la copie vers la racine web. |
@@ -101,7 +107,7 @@ Format INI, commenté dans le fichier. Une valeur manquante ou invalide arrête 
 
 | Section | Clés |
 | --- | --- |
-| `[site]` | `domaine`, `nom`, `slogan` (titre de l'onglet et référencement), `theme` (thème par défaut), `taille_defaut` (zoom en %, min 75, max 125, défaut 115), `largeur_carte_ouverte` (largeur max du panneau article, ex: `min(600px, 85vw)`), `hauteur_carte_ouverte` (zoom de la hauteur des cartes, min 75, max 125, défaut 115). |
+| `[site]` | `domaine`, `nom`, `slogan` (titre de l'onglet et référencement), `theme` (thème par défaut), `taille_defaut` (zoom en %, min 75, max 125, défaut 115), `largeur_carte_ouverte` (largeur max du panneau article, ex: `min(600px, 85vw)`), `hauteur_carte_ouverte` (zoom de la hauteur des cartes, min 75, max 125, défaut 115), `bordure_panneau_epaisseur` (défaut 8), `espacement_panneau_vertical` (défaut `2.4rem`). |
 | `[veille]` | `articles_flux_rss` (100), `videos_par_chaine` (15), `articles_par_source` (0 = tous), `delai_nouvel_essai_heures` (24). |
 | `[serveur]` | `racine_web` (`/var/www/kioske.fr`), `ip_publique`, `intervalle_timer` (`30min`). |
 | `[reseaux]` | `discord` (URL du serveur Discord), `mastodon` (profil Mastodon), `rss` (chemin vers la page RSS, défaut `rss.html`). Laissez vide pour désactiver un lien. |
@@ -127,7 +133,10 @@ venv_blog/bin/python bin/build_site.py --no-previews   # sans visiter les pages 
 venv_blog/bin/python bin/build_site.py --no-cache      # ignore les caches
 ```
 
-Le résultat est dans `build/` : ouvrir `build/index.html` dans un navigateur suffit pour le voir.
+Le résultat est dans `build/`. Ouvrir `build/index.html` directement montre l'accueil, mais les cartes, la
+recherche et les pages d'article utilisent des adresses absolues (`/articles/…`, `/articles-index.json`) :
+pour les essayer, servir le dossier, par exemple `venv_blog/bin/python -m http.server -d build 8000`, puis
+ouvrir `http://localhost:8000/`. Un build local sans réseau (`--simple`) n'a pas les images.
 
 La publication copie `build/` dans la racine web (`racine_web`). Elle se lance **sur le serveur** :
 
@@ -184,51 +193,85 @@ Tant que l'empreinte n'est pas réenregistrée après une modification, rien n'e
 
 ## La page
 
-- **Thème au choix du visiteur** : deux boutons au-dessus de « // kioske.fr automatique ». Boutons
-  radio cachés et règles `:root:has(#theme-<id>:checked)` : CSS seul, sans JavaScript ni cookie. Le
-  choix ne dure que la visite. Sans `:has()` (vieux navigateurs), seul le thème par défaut s'affiche.
-- **Barre de recherche** : champ texte sous les thèmes. Appuyez sur Entrée pour chercher : crée un
-  panneau de résultats indépendant avec les cartes qui correspondent. Cherche dans les titres,
-  descriptions, sources et dates. Les cartes du panneau restent cliquables. Fermer le panneau avec ×
-  ou en cliquant dehors revient à l'index.
-- **Galerie horizontale** : sous le bloc immuable, les 10 derniers articles ayant une image, affichés en
-  ligne avec images seulement (80 × 80 px). Scroll horizontal pour plus d'articles. **Clic sur une image** : ouvre
-  la fiche de l'article. Boutons Précédent/Suivant pour naviguer entre articles.
-- **Favoris** : cœur ♡ cliquable dans la barre de navigation (avec Précédent/Suivant) pour marquer/demarquer un article. Couleur violet quand en favori. Stockage local
-  (localStorage), sans serveur ni pistage. Menu "Mes favoris" dans le menu "+" pour voir tous les favoris, exporter (JSON) ou importer ses favoris.
-- **Heures en Paris** : tous les timestamps affichés (dates des articles, heure de mise à jour du panel)
-  sont en heure de Paris (CET/CEST selon la saison). L'attribut HTML `datetime` reste en UTC (standard).
-- **Lien GitHub** : en bas de la page, lien vers le dépôt du projet avec mention de la licence (GPL v3).
-- **Étiquettes** : une par source, dans un bloc par catégorie.
-  Clic sur une étiquette → fenêtre de source avec backdrop cliquable pour fermer. Les flux RSS (par catégorie et global) restent découvrables dans le code source pour les agrégateurs.
-- **Page de découverte des flux** : `rss.html` liste le flux principal et tous les flux par catégorie,
-  avec icônes RSS aux couleurs du drapeau trans. Accessible depuis le lien « Découvrir les flux RSS »
-  dans le menu "+" (bloc immuable).
+### Accueil
 
-**Pages statiques et navigation hiérarchique :**
-- **Architecture** : le site génère ~1035 pages HTML statiques lors du build :
-  - 1 page d'accueil (`index.html`)
-  - ~1028 pages d'articles (`articles/{id}-{slug}/index.html`)
-  - 7 pages de catégories (`categories/{slug}/index.html`)
-- **Navigation** : chaque page a un bouton retour en haut à gauche menant à son parent :
-  - **Article** → retour à la catégorie (texte: « ← Retour à la catégorie »)
-  - **Catégorie** → retour à l'accueil (texte: « ← Accueil »)
-  - **Accueil** → pas de bouton retour
-- **Paramètre de contexte** : les articles passent un param `from` URL-encodé pour mémoriser leur catégorie parente. Ex: `/articles/abc123-titre/?from=%2Fcategories%2Fmedias%2F`.
-- **Identifiants persistants** : chaque article a un ID unique (12 caractères du hash SHA256 du lien), et un slug lisible (titre + 8 car du hash). Les catégories ont un slug issu du nom.
+- **Barre du haut** (fixe en haut de l'écran) : logo avec le nombre d'articles et de sources, champ de
+  recherche, bouton ♡ (favoris), menu ≡. Le menu contient le choix du thème, les liens Flux RSS, Discord et
+  Mastodon (selon `[reseaux]` ; de vrais liens, les externes dans un nouvel onglet avec
+  `rel="noopener noreferrer"`) et le code de conduite. Le bouton ≡ annonce l'état du menu (`aria-expanded`).
+- **Thème au choix du visiteur** : boutons radio cachés et règles `:root:has(#theme-<id>:checked)`, sans
+  JavaScript ni cookie. Le choix ne dure que la visite. Sans `:has()` (vieux navigateurs), seul le thème
+  par défaut s'affiche.
+- **Recherche** : taper puis Entrée. Le script charge `/articles-index.json` et cherche dans les titres,
+  les résumés et les noms de sources ; les résultats s'affichent en cartes dans un panneau. Depuis une page
+  d'article ou de catégorie, la recherche renvoie vers l'accueil (`/?q=…`), qui l'exécute.
+- **Galerie horizontale** : les 12 derniers articles ayant une image. Les flèches < et > font défiler au
+  survol.
+- **Étiquettes** : une par source, dans un bloc par catégorie. Un clic ouvre le panneau de la source
+  (30 cartes par page, pagination). Le bouton « + » d'un titre de catégorie ouvre le panneau de la catégorie,
+  toutes sources mélangées, du plus récent au plus ancien.
+- **Favoris** : cœur ♡ dans la carte ouverte, violet quand l'article est en favori. Stockage dans le
+  navigateur (`localStorage`), sans serveur ni pistage. Le bouton ♡ de la barre ouvre « Mes favoris » :
+  cartes des favoris, export et import en JSON, effacement. Les favoris enregistrés par une ancienne version
+  (lien du site d'origine seul) sont complétés à l'ouverture du panneau à partir de `articles-index.json` ;
+  un article qui n'est plus dans l'index garde son lien d'origine.
+- **Code de conduite** : panneau ouvert depuis le menu ≡, avec boutons Partager et Copier le lien.
+- **Heures en Paris** : toutes les dates affichées sont en heure de Paris (CET/CEST). L'attribut HTML
+  `datetime` reste en UTC.
+- **Page de découverte des flux** : `rss.html` liste le flux principal et un flux par catégorie ayant des
+  articles (les mêmes que ceux écrits dans `build/rss/`), avec icônes RSS aux couleurs du drapeau trans et
+  un lien de retour vers l'accueil. Les flux sont aussi déclarés dans l'en-tête de l'accueil.
+- **Lien GitHub** : en bas de la page, avec la licence (GPL v3).
 
-- **Cartes d'articles** : format «carte à jouer» (ratio 2.5:3.5) avec image fixe en haut (35% de la hauteur), contenu scrollable au milieu, boutons de navigation en bas. Structure flexbox uniforme pour tous les articles.
-- **Navigation** : boutons Précédent/Suivant pour naviguer dans les articles d'une même source, ou entre articles de la galerie, sans recharger la page. Position de scroll préservée au retour à une source.
-- **Fermeture** : croix (×) ou clic en dehors du panneau pour fermer l'article et revenir à la fenêtre source (ou à l'accueil pour la galerie). Clic en dehors de la fenêtre source → retour à l'accueil.
-- **Backdrops** : fond noir semi-transparent (70%) autour des panneaux, cliquable pour fermer et revenir au niveau précédent. Évite les clics accidentels.
-- **Téléphone** (640 px et moins) : une carte par ligne, image en haut, seul le titre est affiché ; les
-  étiquettes passent à la ligne ; les fenêtres ont la largeur du panneau principal.
-- **Grand écran** (1100 px et plus) : `zoom: 1.25`, fenêtres de catégorie sur trois colonnes, blocs de
-  catégories sur deux colonnes dès 900 px. Largeur et hauteur des fenêtres sont divisées par 1,25 pour
-  tenir dans l'écran.
-- **Lisibilité** : cartes, fenêtres et panneaux d'article opaques ; seul le grand panneau principal est
-  translucide (`opacite_panneau`). Pas de halo sur les textes courants ; halo réduit sur le titre. Les
-  étiquettes ne clignotent pas.
+### Carte d'article
+
+- **Format** : « carte à jouer » (ratio 2.5:3.5), image fixe en haut (35 % de la hauteur), texte
+  défilant au milieu, boutons en bas (Précédent, ♡, 📤 partage, Suivant). Plein écran sur téléphone.
+- **Ouverture en JavaScript** (accueil et pages de catégorie) : un clic simple sur une carte charge la
+  page statique de l'article (`fetch`), en extrait `main.panel-article` et l'affiche par-dessus la page,
+  dans `.carte-ouverte`. Le style et le script sont partagés avec la page statique (`CSS_CARTE_OUVERTE`,
+  `CSS_CARTE_SUPERPOSEE`, `JS_CARTE_OUVERTE` dans `kioske/rendu_statique.py`). La page qui inclut le script
+  fournit `updateHearts()` et `toggleFavorite()` (script de l'accueil, ou `static/app.js`) et ferme la
+  carte sur Échap.
+- **Adresse** : à l'ouverture, `history.pushState` met l'adresse de la page statique de l'article (lien
+  partageable, rechargement possible). `popstate` referme ou rouvre la carte.
+- **Fermeture** : « ← Retour », Échap, clic sur le fond sombre ou bouton précédent du navigateur. On
+  retrouve le panneau ou la page de catégorie d'où l'on vient.
+- **Précédent/Suivant** : article voisin dans l'ordre chronologique de tous les articles, chargé dans la
+  même carte sans nouvelle entrée d'historique.
+- **Lien normal conservé** : Ctrl+clic, Maj+clic, clic molette et navigation sans JavaScript ouvrent la
+  page statique. Si le chargement échoue, le navigateur ouvre aussi la page statique.
+- **Taille** : l'accueil est agrandi par `taille_defaut` ; ce zoom est annulé sur la carte ouverte pour
+  qu'elle ait la taille de la page statique.
+
+### Pages statiques
+
+- **Architecture** : le build écrit une page d'accueil (`index.html`), une page par article
+  (`articles/{id}-{slug}/index.html`) et une page par catégorie (`categories/{slug}/index.html`). Ce sont
+  elles que voient les moteurs de recherche et les visiteurs sans JavaScript.
+- **Bouton retour** (en haut à gauche) :
+  - **Article** → l'adresse donnée par `from` (« ← Retour », ou « ← Retour à la catégorie »), sinon l'accueil ;
+  - **Catégorie** → l'accueil (« ← Accueil »).
+- **Paramètre `from`** : les liens vers un article disent d'où l'on vient. Depuis une page de catégorie :
+  `/articles/abc123-titre/?from=%2Fcategories%2Fmedias%2F`. Depuis un panneau de l'accueil : `from` vaut
+  `/#source=<clé>&p=<page>` ou `/#cat=<nom>&p=<page>`. L'accueil écrit cette ancre dans son adresse quand un
+  panneau est ouvert, et la lit au chargement pour rouvrir le panneau à la bonne page. `from` doit être une
+  adresse du site (commençant par un seul `/`), sinon le retour mène à l'accueil. Précédent/Suivant
+  conservent `from`.
+- **Identifiants persistants** : chaque article a un ID (12 caractères du hash SHA256 du lien) et un slug
+  lisible (titre + 8 caractères du hash). Les catégories ont un slug issu du nom.
+
+### Mise en page
+
+- **Panneaux** : fond noir semi-transparent (70 %) autour du panneau, cliquable pour fermer ; croix × ;
+  Échap. Un panneau remplit tout l'écran, au-dessus de la barre du haut (taille en % de son conteneur fixe, pour rester juste quand la page est agrandie) ; il se ferme par la croix × ou Échap, et ses cartes défilent à l'intérieur. Pour les sources et les
+  catégories, la zone défilante est créée par le script ; pour les favoris et les résultats de recherche,
+  c'est la grille elle-même (`.categorie-panneau > .grille` dans `kioske/style.css`).
+- **Téléphone** (640 px et moins) : deux cartes par ligne, image en haut, seul le titre est affiché.
+- **Écrans plus larges** : trois cartes par ligne jusqu'à 960 px, quatre au-delà ; blocs de catégories sur
+  deux colonnes dès 900 px.
+- **Lisibilité** : cartes et panneaux opaques ; seul le grand panneau principal est translucide
+  (`opacite_panneau`).
 
 Le CSS est dans `kioske/style.css` (et `kioske/pluie.css`), inséré dans la page au build. Celui du bloc
 immuable est dans `accueil/bloc_immuable.html`.
@@ -296,7 +339,9 @@ sudo systemctl start kioske-veille.service   # publier tout de suite
 **Droits** : la racine web est en `www-data:www-data`, dossiers `2775`, fichiers `664`. `data/` et
 `build/` appartiennent à l'utilisateur du service.
 
-**nginx** : HTTPS seul avec HSTS, **TLS 1.3 seul**, 0-RTT refusé, version masquée, méthodes `GET` et `HEAD`, fichiers cachés refusés, en-têtes de sécurité, politique de contenu `default-src 'none'` (images, styles et polices du site seulement, aucun script). Deux scripts de déploiement :
+**nginx** : HTTPS seul avec HSTS, **TLS 1.3 seul**, 0-RTT refusé, version masquée, méthodes `GET` et `HEAD`, fichiers cachés refusés, en-têtes de sécurité, politique de contenu `default-src 'none'` puis, pour le site seulement (`'self'`) : images, styles, polices, scripts (ceux des pages et `/app.js`), `fetch` (`connect-src` : recherche, carte ouverte, favoris), `manifest.json` et `sw.js`. Rien ne peut être chargé depuis un autre site.
+
+**Règle à respecter dans la configuration** : aucun `add_header` dans un bloc `location`. Dans nginx, un `add_header` placé dans un `location` annule tous ceux du niveau `server` pour ce `location`. La durée de cache est donc choisie par une table `map $uri $kioske_cache_control` en tête de fichier et envoyée par un seul `add_header Cache-Control` au niveau `server`. Deux scripts de déploiement :
 - **`deploy/deployer_nginx.sh`** : complet, gère les certificats Let's Encrypt (appelle certbot) et déploie nginx. À utiliser lors de l'installation initiale ou pour renégocier les certificats.
 - **`deploy/deployer_nginx_simple.sh`** : copie la configuration nginx depuis `deploy/kioske-nginx.conf`, teste, et recharge nginx sans toucher aux certificats. À utiliser pour mettre à jour la configuration (cache headers, CSP, etc.) si les certificats sont déjà en place.
 
@@ -336,11 +381,11 @@ application native, et fonctionne partiellement hors ligne.
 
 **Service Worker** :
 - **Cache-first** : assets statiques (CSS, JS, fonts, icônes). Se chargent depuis le cache si disponibles.
-- **Network-first** : articles, flux RSS, images. Vérifient le réseau d'abord, cache en fallback si hors ligne.
+- **Network-first** : toutes les pages (accueil, `/articles/…/`, `/categories/…/`, `.html`), flux RSS, images. Vérifient le réseau d'abord, cache en fallback si hors ligne.
 - **Fallback hors ligne** : page d'accueil cachée si le réseau est indisponible et la page ne l'est pas.
 
 **Installation** :
-- **Button "⬇ Installer l'app"** dans le menu "+" (popover d'infos). Visible automatiquement quand le navigateur propose l'installation (HTTPS, critères PWA remplis). Affiche une alerte sur navigateurs non compatibles ou HTTP/localhost.
+- **Bouton « ⬇ Installer l'app »** : présent dans l'ancien panneau d'infos (menu « + »), qui n'a plus de bouton d'ouverture depuis la barre du haut. Voir « Limites ».
 - **Via le navigateur** :
   - **Téléphone** (Chrome, Firefox, Edge) : visiter le site, puis « Installer » dans le menu du navigateur.
   - **Ordinateur** (Chrome, Edge) : visiter le site, cliquer sur l'icône « Installer » dans la barre d'adresse.
@@ -349,10 +394,11 @@ application native, et fonctionne partiellement hors ligne.
 **Cache headers** (nginx) :
 - Service worker (`sw.js`) : `no-cache, max-age=0` (toujours vérifier les mises à jour).
 - Manifest (`manifest.json`) : `max-age=86400` (1 jour).
-- Icônes PWA : `max-age=31536000, immutable` (1 an).
-- Assets statiques (CSS, JS, fonts) : `max-age=31536000, immutable` (1 an).
-- Pages HTML : `max-age=1800` (30 min, durée du timer).
+- Icônes PWA, polices, `favicon.svg` : `max-age=31536000, immutable` (1 an).
+- Images de la veille (`/img/`) : `max-age=2592000` (30 jours).
 - Flux RSS/XML : `no-cache, max-age=0` (pas de cache, rafraîchir régulièrement).
+- Tout le reste (pages, `app.js`, `articles-index.json`) : `max-age=1800` (30 min, durée du timer).
+- Les réponses d'erreur n'ont pas de `Cache-Control`.
 
 **Mise à jour du cache** :
 Le cache est versionné (`CACHE_VERSION` dans `static/sw.js`). Pour forcer une mise à jour après un déploiement :
@@ -361,6 +407,19 @@ au prochain chargement.
 
 ## Limites
 
+- **Configuration nginx à déployer et à vérifier** : la correction des en-têtes (voir « Déploiement ») n'a
+  pas pu être testée avec nginx sur le PC. Après `bash deploy/deployer_nginx_simple.sh` sur le serveur, contrôler que
+  `curl -sI https://kioske.fr/` affiche `content-security-policy`, `strict-transport-security` et
+  `cache-control`, puis essayer la recherche et l'ouverture d'une carte. La CSP est appliquée aux pages
+  pour la première fois : si un élément ne s'affiche plus, la console du navigateur indique la règle en cause.
+- **Deux invitations Discord différentes** : le menu ≡ utilise `discord` de `kioske.cfg`, le bloc immuable
+  en contient une autre. À harmoniser si l'une des deux est périmée.
+- **Panneau d'infos sans bouton** : les réglages « taille du site » et « hauteur carte » et le bouton
+  « Installer l'app » sont dans un panneau (`bloc-infos-container`) que plus aucun bouton n'ouvre.
+- **Cartes des pages de catégorie statiques** : la ligne sous l'image affiche l'adresse de l'article au lieu
+  de « date · site ».
+- **Titres et résumés des flux** : insérés tels quels dans le HTML des panneaux par le JavaScript de
+  l'accueil ; un flux malveillant pourrait y injecter du code.
 - Un flux injoignable est ignoré avec un message `[flux] …` ; la page est construite sans lui.
 - Twitch passe par yt-dlp. Une vidéo réservée aux abonnés ou supprimée est ignorée avec un message.
 - Les aperçus viennent de la page de l'article ; certains sites ne fournissent pas d'image.

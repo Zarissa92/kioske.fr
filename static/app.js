@@ -28,11 +28,18 @@ function toggleFavorite(event) {
     delete favorites[articleLink];
     heart.classList.remove('active');
   } else {
-    const carte = document.querySelector(`[data-article-link="${articleLink}"]`)?.closest('[data-article-id], article, .carte-lien') || {};
+    const carte = document.querySelector(`[data-article-link="${articleLink}"]`)?.closest('[data-article-id], article, .carte-lien') || document.body;
     const titre = carte.querySelector('h1')?.textContent || carte.querySelector('h2')?.textContent || carte.querySelector('.carte-titre')?.textContent || 'Sans titre';
+    const meta = (carte.querySelector('.meta')?.textContent || '').split(' · ');
     favorites[articleLink] = {
       titre: titre,
+      title: titre,
       lien: articleLink,
+      url: location.pathname.startsWith('/articles/') ? location.pathname : articleLink,
+      image: carte.querySelector('.article-image img')?.src || '',
+      date: meta.length > 2 ? meta[0] : '',
+      host: meta.length > 2 ? meta[1] : (meta[0] || ''),
+      source: meta[meta.length - 1] || '',
       timestamp: new Date().toISOString()
     };
     heart.classList.add('active');

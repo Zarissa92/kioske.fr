@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 
 from . import immuable
 from .config import DOMAINE, DOSSIER_RSS_CATEGORIES, NOM_SITE, SLOGAN, URL_SITE, CFG
+from .rendu_statique import CSS_CARTE_OUVERTE, CSS_CARTE_SUPERPOSEE, JS_CARTE_OUVERTE
 from .sources import AUTRES, ordre_des_categories
 from .texte import cle_alphabetique, esc, slugs_categories, truncate_label, article_id, slug_article
 from .themes import charger_themes, choix_theme_html, css_des_themes, rain
@@ -184,16 +185,7 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> tuple[str, l
     </section>
 
     {script_galerie}
-
-
-    <script>
-      history.pushState({{interception: true}}, "", location.href);
-      window.addEventListener("popstate", () => {{
-        window.location.replace("https://kioske.fr");
-      }});
-    </script>
     """
-## Script ci dessus temporaire, le temps de regler lhistoire du retour. 
     return html, []
 
 
@@ -326,10 +318,11 @@ def render_page(items: list[dict], previews: dict[str, dict],
                     "date": date_str,
                     "host": host,
                     "url": article_url,
-                    "source": item["source"]
+                    "source": item["source"],
+                    "_tri": date or epoque
                 })
-        # Trier par date (plus récents d'abord)
-        articles_data.sort(key=lambda a: a["date"], reverse=True)
+        # Trier par date (plus récents d'abord) ; le texte « jj/mm/aaaa » ne se trie pas
+        articles_data.sort(key=lambda a: a.pop("_tri"), reverse=True)
         categories_json[categorie] = articles_data
 
     import json
@@ -344,11 +337,11 @@ def render_page(items: list[dict], previews: dict[str, dict],
     # Générer les boutons de réseaux sociaux conditionnellement
     boutons_reseaux = ""
     if lien_rss:
-        boutons_reseaux += f'<button type="button" class="menu-button" onclick="window.location.href=\'{lien_rss}\'">📡 Flux RSS</button>\n      '
+        boutons_reseaux += f'<a class="menu-button" href="{esc(lien_rss)}">📡 Flux RSS</a>\n      '
     if lien_discord:
-        boutons_reseaux += f'<button type="button" class="menu-button" onclick="window.open(\'{lien_discord}\', \'_blank\')">💜 Discord</button>\n      '
+        boutons_reseaux += f'<a class="menu-button" href="{esc(lien_discord)}" target="_blank" rel="noopener noreferrer">💜 Discord</a>\n      '
     if lien_mastodon:
-        boutons_reseaux += f'<button type="button" class="menu-button" onclick="window.open(\'{lien_mastodon}\', \'_blank\')">🦣 Mastodon</button>\n      '
+        boutons_reseaux += f'<a class="menu-button" href="{esc(lien_mastodon)}" target="_blank" rel="noopener noreferrer">🦣 Mastodon</a>\n      '
 
     # Générer la navbar
     navbar_html = f"""<nav class="kioske-navbar">
@@ -364,10 +357,10 @@ def render_page(items: list[dict], previews: dict[str, dict],
 
   <div class="navbar-controls">
     <button type="button" class="btn-favs" title="Mes favoris" onclick="openFavoritesPanel()">♡</button>
-    <button type="button" class="btn-menu" title="Menu" onclick="document.querySelector('.navbar-menu').classList.toggle('open'); document.querySelector('.navbar-menu').setAttribute('aria-expanded', document.querySelector('.navbar-menu').classList.contains('open'))">≡</button>
+    <button type="button" class="btn-menu" title="Menu" aria-label="Menu" aria-controls="navbar-menu" aria-expanded="false">≡</button>
   </div>
 
-  <div class="navbar-menu" aria-expanded="false">
+  <div class="navbar-menu" id="navbar-menu">
     <div class="navbar-menu-group">
       <div class="navbar-menu-title">🎨 Thèmes</div>
       <div class="theme-options">
@@ -423,7 +416,7 @@ def render_page(items: list[dict], previews: dict[str, dict],
 .conduct-panneau li {{ margin-bottom: 0.3rem; }}
 .conduct-panneau blockquote {{ margin: 0.5rem 0; padding: 0.6rem 0.9rem; border-left: 3px solid var(--red); background: rgba(255, 255, 255, .05); font-style: italic; }}
 .conduct-panneau strong {{ color: #fff; }}
-</style>
+{CSS_CARTE_OUVERTE}{CSS_CARTE_SUPERPOSEE}</style>
 <script>
 if ('serviceWorker' in navigator) {{
   window.addEventListener('load', () => {{
@@ -499,10 +492,15 @@ window.conductCode = {json.dumps(conduite_html, ensure_ascii=False)};
 <script>
 let openPopover = null;
 let scrollPositions = {{}};
+function majAdresse(ancre) {{
+  const adresse = location.pathname + location.search + (ancre ? '#' + ancre : '');
+  try {{ history.replaceState(null, '', adresse); }} catch (e) {{}}
+}}
 function closePopover() {{
   if (openPopover) {{
     openPopover.hidden = true;
     openPopover = null;
+    majAdresse('');
   }}
 }}
 function showPopover(id) {{
@@ -525,6 +523,7 @@ function showPopover(id) {{
     if (container) {{
       container.hidden = false;
       openPopover = container;
+      if (container.ancre) majAdresse(container.ancre());
       const panel = document.getElementById(id + '-panneau');
       if (!panel) return;
       if (scrollPositions[id] !== undefined) {{
@@ -538,15 +537,20 @@ function closeArticleAndShowSource(articleId) {{
   // Fermer l'article et revenir à l'index du site
   closePopover();
 }}
-// Fermer le menu navbar au clic dehors
-document.addEventListener('click', (e) => {{
-  const navbar = document.querySelector('.kioske-navbar');
-  const menu = document.querySelector('.navbar-menu');
-  const btnMenu = document.querySelector('.btn-menu');
-  if (navbar && menu && btnMenu && !navbar.contains(e.target)) {{
-    menu.classList.remove('open');
-  }}
-}});
+// Menu de la barre du haut : ouverture au bouton, fermeture au clic dehors.
+// aria-expanded suit la classe « open », quel que soit le code qui la change.
+const menuNavbar = document.querySelector('.navbar-menu');
+const btnMenuNavbar = document.querySelector('.btn-menu');
+if (menuNavbar && btnMenuNavbar) {{
+  new MutationObserver(() => {{
+    btnMenuNavbar.setAttribute('aria-expanded', String(menuNavbar.classList.contains('open')));
+  }}).observe(menuNavbar, {{ attributes: true, attributeFilter: ['class'] }});
+  btnMenuNavbar.addEventListener('click', () => menuNavbar.classList.toggle('open'));
+  document.addEventListener('click', (e) => {{
+    const navbar = document.querySelector('.kioske-navbar');
+    if (navbar && !navbar.contains(e.target)) menuNavbar.classList.remove('open');
+  }});
+}}
 
 // Taille du site (zoom global) - slider du popover
 const tailleSlider = document.getElementById('taille-site');
@@ -640,7 +644,9 @@ document.querySelectorAll('.categorie-backdrop').forEach(backdrop => {{
 }});
 document.addEventListener('keydown', e => {{
   if (e.key === 'Escape') {{
-    if (openPopover && openPopover.classList.contains('article-container')) {{
+    if (carteOuverte && !carteOuverte.hidden) {{
+      fermerCarte();
+    }} else if (openPopover && openPopover.classList.contains('article-container')) {{
       const articleId = openPopover.querySelector('.article-panneau').id;
       closeArticleAndShowSource(articleId);
     }} else {{
@@ -721,6 +727,7 @@ function createSourcePanel(sourceKey, sourceName) {{
   const articlesPerPage = 30;
   let currentPage = 1;
   const totalPages = Math.ceil(articles.length / articlesPerPage);
+  container.ancre = () => 'source=' + encodeURIComponent(sourceKey) + '&p=' + currentPage;
 
   // Créer le conteneur de pagination
   const paginationContainer = document.createElement('div');
@@ -768,7 +775,7 @@ function createSourcePanel(sourceKey, sourceName) {{
 
     articlesPage.forEach(article => {{
       const carte = document.createElement('a');
-      carte.href = article.url;
+      carte.href = article.url + '?from=' + encodeURIComponent('/#' + container.ancre());
       carte.className = 'carte';
       carte.style.textDecoration = 'none';
       carte.style.color = 'inherit';
@@ -793,7 +800,9 @@ function createSourcePanel(sourceKey, sourceName) {{
     btnSuivantes.disabled = currentPage === totalPages;
     btnPrecedentes.style.opacity = currentPage === 1 ? '0.5' : '1';
     btnSuivantes.style.opacity = currentPage === totalPages ? '0.5' : '1';
+    if (openPopover === container) majAdresse(container.ancre());
   }}
+  container.afficherPage = afficherPage;
 
   btnPrecedentes.addEventListener('click', () => afficherPage(currentPage - 1));
   btnSuivantes.addEventListener('click', () => afficherPage(currentPage + 1));
@@ -879,6 +888,7 @@ function createCategoryPanel(categoryName) {{
   const articlesPerPage = 30;
   let currentPage = 1;
   const totalPages = Math.ceil(articles.length / articlesPerPage);
+  container.ancre = () => 'cat=' + encodeURIComponent(categoryName) + '&p=' + currentPage;
 
   // Créer le conteneur de pagination
   const paginationContainer = document.createElement('div');
@@ -926,7 +936,7 @@ function createCategoryPanel(categoryName) {{
 
     articlesPage.forEach(article => {{
       const carte = document.createElement('a');
-      carte.href = article.url;
+      carte.href = article.url + '?from=' + encodeURIComponent('/#' + container.ancre());
       carte.className = 'carte';
       carte.style.textDecoration = 'none';
       carte.style.color = 'inherit';
@@ -951,7 +961,9 @@ function createCategoryPanel(categoryName) {{
     btnSuivantes.disabled = currentPage === totalPages;
     btnPrecedentes.style.opacity = currentPage === 1 ? '0.5' : '1';
     btnSuivantes.style.opacity = currentPage === totalPages ? '0.5' : '1';
+    if (openPopover === container) majAdresse(container.ancre());
   }}
+  container.afficherPage = afficherPage;
 
   btnPrecedentes.addEventListener('click', () => afficherPage(currentPage - 1));
   btnSuivantes.addEventListener('click', () => afficherPage(currentPage + 1));
@@ -1149,11 +1161,8 @@ document.querySelectorAll('.tag-categorie').forEach(btn => {{
 
 // Barre de recherche
 const rechercheInput = document.getElementById('recherche');
-if (rechercheInput) {{
-  rechercheInput.addEventListener('keydown', (e) => {{
-    if (e.key !== 'Enter') return;
-    e.preventDefault();
-    const query = rechercheInput.value.toLowerCase().trim();
+function lancerRecherche(texte) {{
+    const query = (texte || '').toLowerCase().trim();
     if (!query) return;
 
     console.log('Recherche lancée pour: ' + query);
@@ -1224,8 +1233,44 @@ if (rechercheInput) {{
         console.error('Erreur lors du chargement de l\\\'index:', err);
         alert('Erreur lors de la recherche. Vérifiez votre connexion.');
       }});
+}}
+if (rechercheInput) {{
+  rechercheInput.addEventListener('keydown', (e) => {{
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    lancerRecherche(rechercheInput.value);
   }});
 }}
+
+// Au chargement : rouvrir le panneau indiqué par l'adresse, ou lancer la recherche /?q=…
+function ouvrirDepuisAdresse() {{
+  const ancre = new URLSearchParams(location.hash.slice(1));
+  const page = parseInt(ancre.get('p'), 10) || 1;
+  const sourceKey = ancre.get('source');
+  const categoryName = ancre.get('cat');
+  let id = null;
+  if (sourceKey && Object.hasOwn(window.sourcesData, sourceKey)) {{
+    const tag = Array.from(document.querySelectorAll('.nuage .tag'))
+      .find(t => t.getAttribute('data-source-key') === sourceKey);
+    createSourcePanel(sourceKey, tag ? tag.getAttribute('data-source-name') : sourceKey);
+    id = 'source-' + sourceKey.replace(/[^a-z0-9-]/gi, '_');
+  }} else if (categoryName && Object.hasOwn(window.categoriesData, categoryName)) {{
+    createCategoryPanel(categoryName);
+    id = 'cat-' + categoryName.replace(/[^a-z0-9-]/gi, '_');
+  }}
+  if (id) {{
+    showPopover(id);
+    const container = document.getElementById('container-' + id);
+    if (container && container.afficherPage) container.afficherPage(page);
+    return;
+  }}
+  const q = new URLSearchParams(location.search).get('q');
+  if (q) {{
+    if (rechercheInput) rechercheInput.value = q;
+    lancerRecherche(q);
+  }}
+}}
+ouvrirDepuisAdresse();
 
 // Gestion des favoris
 function getFavorites() {{
@@ -1239,53 +1284,29 @@ function saveFavorites(fav) {{
 }}
 
 function toggleFavorite(event) {{
+  event.stopPropagation();
   const heart = event.target;
   const articleLink = heart.getAttribute('data-article-link');
   if (!articleLink) return;
 
   const favorites = getFavorites();
-  const favKey = 'fav_' + articleLink.replace(/[^a-z0-9]/gi, '_');
-
-  if (favorites[favKey]) {{
-    delete favorites[favKey];
-    heart.classList.remove('active');
+  if (favorites[articleLink]) {{
+    delete favorites[articleLink];
   }} else {{
-    // Chercher l'article dans les sources et catégories
-    let articleData = null;
-    for (const sourceKey in window.sourcesData) {{
-      const articles = window.sourcesData[sourceKey];
-      const found = articles.find(a => a.url === articleLink);
-      if (found) {{
-        articleData = found;
-        break;
-      }}
-    }}
-
-    if (!articleData) {{
-      for (const categoryName in window.categoriesData) {{
-        const articles = window.categoriesData[categoryName];
-        const found = articles.find(a => a.url === articleLink);
-        if (found) {{
-          articleData = found;
-          break;
-        }}
-      }}
-    }}
-
-    if (articleData) {{
-      favorites[favKey] = {{
-        id: articleData.id,
-        title: articleData.title,
-        image: articleData.image,
-        summary: articleData.summary,
-        date: articleData.date,
-        host: articleData.host,
-        url: articleData.url,
-        source: articleData.source,
-        timestamp: new Date().toISOString()
-      }};
-      heart.classList.add('active');
-    }}
+    const carte = heart.closest('.panel-article');
+    const titre = carte?.querySelector('h1')?.textContent || 'Sans titre';
+    const meta = (carte?.querySelector('.meta')?.textContent || '').split(' · ');
+    favorites[articleLink] = {{
+      titre: titre,
+      title: titre,
+      lien: articleLink,
+      url: location.pathname.startsWith('/articles/') ? location.pathname : articleLink,
+      image: carte?.querySelector('.article-image img')?.getAttribute('src') || '',
+      date: meta.length > 2 ? meta[0] : '',
+      host: meta.length > 2 ? meta[1] : (meta[0] || ''),
+      source: meta[meta.length - 1] || '',
+      timestamp: new Date().toISOString()
+    }};
   }}
   saveFavorites(favorites);
 }}
@@ -1294,12 +1315,7 @@ function updateHearts() {{
   const favorites = getFavorites();
   document.querySelectorAll('.fav-heart').forEach(heart => {{
     const articleLink = heart.getAttribute('data-article-link');
-    const favKey = 'fav_' + articleLink.replace(/[^a-z0-9]/gi, '_');
-    if (favorites[favKey]) {{
-      heart.classList.add('active');
-    }} else {{
-      heart.classList.remove('active');
-    }}
+    heart.classList.toggle('active', Boolean(articleLink && favorites[articleLink]));
   }});
 }}
 
@@ -1311,43 +1327,78 @@ function openFavoritesPanel() {{
   closePopover();
   document.getElementById('bloc-infos-container').hidden = true;
 
+  afficherFavoris(getFavorites());
+  showPopover('favoris');
+  completerFavoris();
+}}
+
+function afficherFavoris(favorites) {{
   const favGrille = document.getElementById('fav-grille');
-  const favorites = getFavorites();
   favGrille.innerHTML = '';
 
   if (Object.keys(favorites).length === 0) {{
     favGrille.innerHTML = '<p style="grid-column: 1/-1; color: #888; padding: 2rem; text-align: center;">Aucun favori pour le moment</p>';
-  }} else {{
-    Object.entries(favorites).forEach(([favKey, data]) => {{
-      // Créer la carte depuis les données stockées (avec fallback pour données incomplètes)
-      const carte = document.createElement('a');
-      carte.href = data.url || data.lien || '#';
-      carte.className = 'carte';
-      carte.style.textDecoration = 'none';
-      carte.style.color = 'inherit';
-
-      const source = data.source || 'Article';
-      const media = data.image
-        ? `<img src="${{data.image}}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-        : `<span class="lettre">${{source.charAt(0).toUpperCase() || '•'}}</span>`;
-
-      const metaText = [data.date, data.host].filter(x => x).join(' · ') || 'Sans date';
-      const title = data.title || data.titre || 'Sans titre';
-      const summary = data.summary || '';
-
-      carte.innerHTML =
-        `<span class="carte-image" aria-hidden="true">${{media}}</span>` +
-        `<span class="carte-corps">` +
-        `<span class="meta">${{metaText}}</span>` +
-        `<span class="carte-titre">${{title}}</span>` +
-        `<span class="carte-extrait">${{summary}}</span>` +
-        `</span>`;
-
-      favGrille.appendChild(carte);
-    }});
+    return;
   }}
+  Object.entries(favorites).forEach(([favKey, data]) => {{
+    // Créer la carte depuis les données stockées (avec fallback pour données incomplètes)
+    const carte = document.createElement('a');
+    carte.href = data.url || data.lien || '#';
+    carte.className = 'carte';
+    carte.style.textDecoration = 'none';
+    carte.style.color = 'inherit';
 
-  showPopover('favoris');
+    const source = data.source || 'Article';
+    const media = data.image
+      ? `<img src="${{data.image}}" alt="" loading="lazy" referrerpolicy="no-referrer">`
+      : `<span class="lettre">${{source.charAt(0).toUpperCase() || '•'}}</span>`;
+
+    const metaText = [data.date, data.host].filter(x => x).join(' · ') || 'Sans date';
+    const title = data.title || data.titre || 'Sans titre';
+    const summary = data.summary || '';
+
+    carte.innerHTML =
+      `<span class="carte-image" aria-hidden="true">${{media}}</span>` +
+      `<span class="carte-corps">` +
+      `<span class="meta">${{metaText}}</span>` +
+      `<span class="carte-titre">${{title}}</span>` +
+      `<span class="carte-extrait">${{summary}}</span>` +
+      `</span>`;
+
+    favGrille.appendChild(carte);
+  }});
+}}
+
+// Anciens favoris : seul le lien du site d'origine était enregistré. L'index des articles
+// donne la page du KiosKe correspondante (et l'image, la date, le résumé).
+function completerFavoris() {{
+  const favorites = getFavorites();
+  const incomplets = Object.entries(favorites)
+    .filter(([cle, data]) => !String(data.url || '').startsWith('/articles/'));
+  if (incomplets.length === 0) return;
+  fetch('/articles-index.json')
+    .then(r => {{
+      if (!r.ok) throw new Error(`HTTP ${{r.status}}`);
+      return r.json();
+    }})
+    .then(articles => {{
+      const parLien = new Map(articles.map(a => [a.link, a]));
+      let change = false;
+      incomplets.forEach(([cle, data]) => {{
+        const a = parLien.get(data.lien) || parLien.get(cle);
+        if (!a) return;
+        favorites[cle] = Object.assign({{}}, data, {{
+          title: a.title, titre: a.title, lien: a.link, url: a.url, image: a.image,
+          summary: a.summary, date: a.date, host: a.host, source: a.source
+        }});
+        change = true;
+      }});
+      if (!change) return;
+      saveFavorites(favorites);
+      const conteneur = document.getElementById('container-favoris');
+      if (conteneur && !conteneur.hidden) afficherFavoris(favorites);
+    }})
+    .catch(err => console.error('Favoris non complétés :', err));
 }}
 
 function exportFavorites() {{
@@ -1415,7 +1466,7 @@ if (btnOpenConduct) {{
   }});
 }}
 
-// Gestion de l'installation PWA
+{JS_CARTE_OUVERTE}// Gestion de l'installation PWA
 let installPromptEvent = null;
 const btnInstallPWA = document.getElementById('btn-install-pwa');
 
@@ -1448,12 +1499,12 @@ window.addEventListener('appinstalled', () => {{
 """
 
 
-def render_rss_page(categories: dict[str, str] | None = None) -> str:
-    """Page de découverte des flux RSS par catégorie."""
+def render_rss_page(categories: dict[str, str] | None = None, items: list[dict] | None = None) -> str:
+    """Page de découverte des flux RSS par catégorie.
+    Mêmes catégories et mêmes noms de fichier que les flux écrits par le build (ecrire_flux_rss) :
+    une catégorie sans article n'a pas de flux, donc pas de lien."""
     categories = categories or {}
-    ordre_categories = [c for c in dict.fromkeys(categories.values())]
-    if AUTRES not in ordre_categories:
-        ordre_categories.append(AUTRES)
+    ordre_categories = ordre_des_categories(items or [], categories)
     slugs = slugs_categories(ordre_categories)
 
     themes, defaut = charger_themes()
@@ -1507,6 +1558,7 @@ if ('serviceWorker' in navigator) {{
 </head>
 <body>
 {pluie}<main class="panel">
+  <p><a class="rss-lien" href="/">← Accueil</a></p>
   {choix}
   <p class="kicker">// {DOMAINE} flux RSS</p>
   <h1>{esc(NOM_SITE)}</h1>
