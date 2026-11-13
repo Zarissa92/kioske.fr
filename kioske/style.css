@@ -427,8 +427,8 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 }
 .carte-corps { flex: 1; min-height: 0; overflow: hidden; padding: .45rem .525rem 1.8rem; display: block; }
 .carte .meta { font-size: .4875rem; color: var(--red-light); opacity: .8; margin-bottom: .225rem; }
-.carte .carte-titre { font-size: 1rem; font-weight: 700; line-height: 1.2; text-transform: uppercase; margin-bottom: .225rem; color: #fff; overflow-wrap: anywhere; }
-.carte .carte-extrait { font-size: .54rem; line-height: 1.35; color: var(--red-light); overflow-wrap: anywhere; }
+.carte .carte-titre { font-size: 9px; font-weight: 700; line-height: 1.2; text-transform: uppercase; margin-bottom: .225rem; color: #fff; overflow-wrap: anywhere; }
+.carte .carte-extrait { font-size: 9px; line-height: 1.35; color: var(--red-light); overflow-wrap: anywhere; }
 /* la carte est un bouton : son contenu est fait de <span>, affichés en blocs */
 .carte .meta, .carte .carte-titre, .carte .carte-extrait { display: block; }
 .carte-plus {
@@ -523,14 +523,31 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 /* code sophia */
 
 
+/* code sophia */
+
+:root {
+    --rayon-carte: 12px; /* rayon des coins, proportions de carte à jouer */
+}
+
 /* Conteneur défilant */
+
+.galerie-slider {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+}
+
 .galerie {
     display: flex;
+    flex: 1;
     gap: 18px;
     overflow-x: auto;
     overflow-y: hidden;
     padding: 25px 15px 35px;
-    scroll-behavior: auto;
+    scroll-behavior: smooth;
     scrollbar-width: none;
     overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;
@@ -540,7 +557,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
     display: none;
 }
 
-/ Cartes /
+/*Cartes
 .galerie-carte {
     position: relative;
     flex: 0 0 220px;
@@ -558,17 +575,40 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 
     box-shadow: 0 4px 12px rgba(0,0,0,.15);
 }
+*/
+
+/* Cartes (version active) */
+.galerie-carte {
+    position: relative;
+    flex: 0 0 220px;
+    height: 160px;
+    border-radius: var(--rayon-carte);
+    overflow: hidden;
+    isolation: isolate;
+    -webkit-mask-image: -webkit-radial-gradient(white, black); /* correctif Safari */
+    background: #222;
+    cursor: pointer;
+    z-index: 1;
+
+    transition:
+        transform .35s cubic-bezier(.2,.8,.2,1),
+        box-shadow .35s ease,
+        filter .35s ease;
+
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
 
 .galerie-carte img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
+    border-radius: inherit;
 
     transition: transform .5s ease;
 }
 
-/ Grow au survol /
+/*Grow au survol*/
 .galerie-carte:hover {
     transform: translateY(-7px) scale(1.07);
     box-shadow:
@@ -580,17 +620,23 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
     transform: scale(1.12);
 }
 
-/ Flèches */
+
+/*Flèches */
 .galerie-arrow {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
     z-index: 20;
 
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 48px;
     height: 56px;
+    padding: 0;
+    line-height: 1;
     border: 1px solid rgba(255,255,255,.25);
-    border-radius: 14px;
+    border-radius: var(--rayon-carte);
 
     background: rgba(20,25,40,.85);
     backdrop-filter: blur(10px);
@@ -633,152 +679,25 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .galerie {
+        scroll-behavior: auto;
+    }
+
     .galerie-carte,
     .galerie-carte img,
     .galerie-arrow {
         transition: none;
     }
 }
-.galerie-slider {
-    position: relative;
-    width: 100%;
-    min-width: 0;
-}
 
-/* Conteneur défilant */
-.galerie {
+.carte {
+    flex: 1;
+    overflow-y: auto;
+    font-size: 9px;
+    line-height: 1.4;
     display: flex;
-    gap: 18px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 25px 15px 35px;
-    scroll-behavior: auto;
-    scrollbar-width: none;
-    overscroll-behavior-x: contain;
+    flex-direction: column;
+    gap: 0.6rem;
+    border-radius: var(--rayon-carte);
     -webkit-overflow-scrolling: touch;
 }
-
-.galerie::-webkit-scrollbar {
-    display: none;
-}
-
-/ Cartes /
-.galerie-carte {
-    position: relative;
-    flex: 0 0 220px;
-    height: 160px;
-    border-radius: 14px;
-    overflow: hidden;
-    background: #222;
-    cursor: pointer;
-    z-index: 1;
-
-    transition:
-        transform .35s cubic-bezier(.2,.8,.2,1),
-        box-shadow .35s ease,
-        filter .35s ease;
-
-    box-shadow: 0 4px 12px rgba(0,0,0,.15);
-}
-
-.galerie-carte img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-
-    transition: transform .5s ease;
-}
-
-/ Grow au survol /
-.galerie-carte:hover {
-    transform: translateY(-7px) scale(1.07);
-    box-shadow:
-        0 18px 35px rgba(0,0,0,.35);
-    z-index: 5;
-}
-
-.galerie-carte:hover img {
-    transform: scale(1.12);
-}
-
-
-
-
-/ Flèches */
-.galerie-arrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 20;
-
-    width: 48px;
-    height: 56px;
-    border: 1px solid rgba(255,255,255,.25);
-    border-radius: 14px;
-
-    background: rgba(20,25,40,.85);
-    backdrop-filter: blur(10px);
-    color: white;
-    font-size: 25px;
-    cursor: pointer;
-
-    transition:
-        background .25s,
-        box-shadow .25s,
-        transform .25s;
-}
-
-.galerie-arrow-left {
-    left: 3px;
-}
-
-.galerie-arrow-right {
-    right: 3px;
-}
-
-.galerie-arrow:hover {
-    background: #7950c8;
-    box-shadow: 0 8px 25px rgba(0,0,0,.3);
-    transform: translateY(-50%) scale(1.08);
-}
-.galerie-carte {
-    display: block;
-    flex: 0 0 161px; // <--- la hauteur des cadres
-    overflow: hidden;
-    border-radius: 8px;
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-.galerie-slider {{
-        display: flex;
-        align-items: center;
-        gap: 10px;
-}}
-
-.galerie {{
-        display: flex;
-        flex: 1;
-        gap: 16px;
-        overflow-x: auto;
-        scroll-behavior: smooth;
-        padding: 16px 8px;
-}}
-
-
-.galerie-carte img {{
-      display: block;
-        width: 100%;
-        height: 160px;
-        object-fit: cover;
-}}
-
-.galerie-arrow-left,
-.galerie-arrow-right {{
-        flex: 0 0 auto;
-        border: 0;
-        background: transparent;
-        cursor: pointer;
-        font-size: 2rem;
-        padding: 8px;
-}}
