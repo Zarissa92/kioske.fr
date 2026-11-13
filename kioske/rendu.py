@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 from . import immuable
 from .config import DOMAINE, DOSSIER_RSS_CATEGORIES, NOM_SITE, SLOGAN, URL_SITE, CFG
 from .sources import AUTRES, ordre_des_categories
-from .texte import cle_alphabetique, esc, slugs_categories, truncate_label
+from .texte import cle_alphabetique, esc, slugs_categories, truncate_label, article_id, slug_article
 from .themes import charger_themes, choix_theme_html, css_des_themes, rain
 
 # Icône des flux RSS par catégorie, aux couleurs du drapeau trans.
@@ -29,13 +29,10 @@ ICONE_RSS = (
 
 
 def render_card(item: dict, preview: dict, ident: str, prev_ident: str | None = None, next_ident: str | None = None) -> tuple[str, str]:
-    """Une carte (bouton) et le panneau de l'article qu'elle ouvre.
-    Renvoie (carte, panneau) : le panneau reste hors de la grille, à côté de la fenêtre de catégorie.
-    Le bouton ne contient que des <span> : un <button> n'accepte pas de <div>, <p> ou <h3>.
-    prev_ident et next_ident permettent la navigation au sein de la source."""
+    """Une carte décoractive non cliquable (juste l'affichage).
+    Renvoie (carte, "") : pas de lien, pas de panneau."""
     title = preview.get("title") or item["title"]
     summary = item["summary"] or preview.get("description", "")
-    contenu = item.get("content") or summary
     image = preview.get("image") or item["image"] or ""
     date = item["date"]
     host = urlparse(item["link"]).netloc.removeprefix("www.")
@@ -46,48 +43,25 @@ def render_card(item: dict, preview: dict, ident: str, prev_ident: str | None = 
         media = f'<span class="lettre">{esc((item["source"][:1] or "•").upper())}</span>'
     date_paris = date.astimezone(ZoneInfo("Europe/Paris")) if date else None
     date_html = f'<time datetime="{date.isoformat()}">{date_paris:%d/%m/%Y}</time> · ' if date_paris else ""
-    cible = f"art-{ident}"
 
     carte = (
-        f'<button type="button" class="carte" data-article-id="{cible}">'
+        f'<div class="carte" style="cursor: default;">'
         f'<span class="carte-image" aria-hidden="true">{media}</span>'
         f'<span class="carte-corps"><span class="meta">{date_html}{esc(host)}</span>'
-        f'<span class="carte-titre">{esc(title)}</span><span class="carte-extrait">{esc(summary)}</span></span>'
-        f'<span class="carte-plus" aria-hidden="true">+</span></button>'
+        f'<span class="carte-titre">{esc(title)}</span><span class="carte-extrait">{esc(summary)}</span></span></div>'
     )
-    nav_buttons = '<div class="article-nav">'
-    if prev_ident:
-        nav_buttons += f'<button type="button" class="nav-btn nav-prev" data-article-id="art-{prev_ident}" aria-label="Article precedent">Precedent</button>'
-    nav_buttons += f'<button type="button" class="fav-heart" data-article-id="{cible}" aria-label="Marquer comme favori" onclick="event.stopPropagation(); toggleFavorite(event)">♡</button>'
-    if next_ident:
-        nav_buttons += f'<button type="button" class="nav-btn nav-next" data-article-id="art-{next_ident}" aria-label="Article suivant">Suivant</button>'
-    nav_buttons += '</div>'
 
-    panneau = (
-        f'<div class="article-container" id="container-{cible}" hidden>'
-        f'<div class="article-backdrop" data-close-article="{cible}"></div>'
-        f'<div id="{cible}" class="article-panneau" aria-labelledby="{cible}-titre">'
-        f'<button type="button" class="categorie-fermer" data-article-id="{cible}" aria-label="Fermer">×</button>'
-        f'<div class="article-image">{media}</div>'
-        f'<p class="meta">{date_html}{esc(host)}</p>'
-        f'<h2 id="{cible}-titre">{esc(title)}</h2>'
-        f'<p class="article-texte">{esc(contenu)}</p>'
-        f'<p><a class="article-lien" href="{esc(item["link"])}" target="_blank" rel="noopener noreferrer">'
-        f'Lire l\'article sur {esc(host)} →</a></p>'
-        f'{nav_buttons}</div></div>'
-    )
-    return carte, panneau
+    return carte, ""
 
 
 def render_galerie(items: list[dict], previews: dict[str, dict]) -> tuple[str, list[str]]:
-    """Galerie horizontale des 10 derniers articles avec image. Renvoie (html_galerie, panneaux)."""
+    """Galerie horizontale des 12 derniers articles avec image. Renvoie (html_galerie, [])."""
     cartes_galerie = []
-    panneaux_galerie = []
-    gal_idx = 0
-    gal_indices = []  # Indice réels des articles avec image pour la navigation
+    gal_count = 0
+    gal_indices = []  # Indice réels des articles avec image
 
-    for item in items:
-        if gal_idx >= 10:
+    for real_idx, item in enumerate(items):
+        if gal_count >= 12:
             break
         title = previews.get(item["link"], {}).get("title") or item["title"]
         image = previews.get(item["link"], {}).get("image") or item["image"] or ""
@@ -96,58 +70,28 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> tuple[str, l
         if not image:
             continue
 
-        gal_indices.append(gal_idx)
-        gal_idx += 1
+        gal_indices.append(real_idx)
+        gal_count += 1
 
-    # Créer les cartes et panneaux avec navigation
+    # Créer les cartes qui linkent directement vers les articles
     for display_idx, real_idx in enumerate(gal_indices):
         item = items[real_idx]
         title = previews.get(item["link"], {}).get("title") or item["title"]
         image = previews.get(item["link"], {}).get("image") or item["image"] or ""
-        cible = f"gal-{real_idx}"
         media = f'<img src="{esc(image)}" alt="{esc(title)}" loading="lazy" referrerpolicy="no-referrer">'
 
+        # Lien vers la page d'article
+        art_id = article_id(item["link"])
+        art_slug = slug_article(title, item["link"])
+        article_url = f"/articles/{art_id}-{art_slug}/"
+
         cartes_galerie.append(
-            f'<button type="button" class="galerie-carte" data-article-id="{cible}" title="{esc(title)}">'
-            f'{media}</button>'
+            f'<a href="{esc(article_url)}" class="galerie-carte" title="{esc(title)}">'
+            f'{media}</a>'
         )
 
-        # Boutons de navigation pour la galerie
-        nav_buttons = ""
-        if display_idx > 0:
-            prev_idx = gal_indices[display_idx - 1]
-            nav_buttons += f'<button type="button" class="nav-btn nav-prev" data-article-id="gal-{prev_idx}" aria-label="Article precedent">Precedent</button>'
-        nav_buttons += f'<button type="button" class="fav-heart" data-article-id="gal-{real_idx}" aria-label="Marquer comme favori" onclick="event.stopPropagation(); toggleFavorite(event)">♡</button>'
-        if display_idx < len(gal_indices) - 1:
-            next_idx = gal_indices[display_idx + 1]
-            nav_buttons += f'<button type="button" class="nav-btn nav-next" data-article-id="gal-{next_idx}" aria-label="Article suivant">Suivant</button>'
-
-        nav_buttons = f'<div class="article-nav">{nav_buttons}</div>'
-
-        # Panneau avec navigation
-        contenu = item.get("content") or item["summary"] or previews.get(item["link"], {}).get("description", "")
-        date = item["date"]
-        host = urlparse(item["link"]).netloc.removeprefix("www.")
-        date_paris = date.astimezone(ZoneInfo("Europe/Paris")) if date else None
-        date_html = f'<time datetime="{date.isoformat()}">{date_paris:%d/%m/%Y}</time> · ' if date_paris else ""
-
-        panneau = (
-            f'<div class="article-container" id="container-{cible}" hidden>'
-            f'<div class="article-backdrop" data-close-article="{cible}"></div>'
-            f'<div id="{cible}" class="article-panneau" aria-labelledby="{cible}-titre">'
-            f'<button type="button" class="categorie-fermer" data-article-id="{cible}" aria-label="Fermer">×</button>'
-            f'<div class="article-image">{media}</div>'
-            f'<p class="meta">{date_html}{esc(host)}</p>'
-            f'<h2 id="{cible}-titre">{esc(title)}</h2>'
-            f'<p class="article-texte">{esc(contenu)}</p>'
-            f'<p><a class="article-lien" href="{esc(item["link"])}" target="_blank" rel="noopener noreferrer">'
-            f'Lire l\'article sur {esc(host)} →</a></p>'
-            f'{nav_buttons}</div></div>'
-        )
-        panneaux_galerie.append(panneau)
-
-    html = f'<section class="galerie" aria-label="10 derniers articles">{"".join(cartes_galerie)}</section>'
-    return html, panneaux_galerie
+    html = f'<section class="galerie" aria-label="12 derniers articles">{"".join(cartes_galerie)}</section>'
+    return html, []
 
 
 def render_page(items: list[dict], previews: dict[str, dict],
@@ -174,38 +118,22 @@ def render_page(items: list[dict], previews: dict[str, dict],
     slugs = slugs_categories(ordre_categories)
 
     tags_par_categorie: dict[str, list[str]] = {c: [] for c in ordre_categories}
-    fenetres = []
-    n = 0  # numéro global de la source : sert à l'identifiant de sa fenêtre
     for categorie in ordre_categories:
+        # Créer les étiquettes des sources
         for cle in par_categorie[categorie]:
             source = noms[cle]
             articles = groupes[cle]
-            rendus = []
-            for k, i in enumerate(articles):
-                prev_ident = f"{n}-{k-1}" if k > 0 else None
-                next_ident = f"{n}-{k+1}" if k < len(articles) - 1 else None
-                rendus.append(render_card(i, previews.get(i["link"], {}), f"{n}-{k}", prev_ident, next_ident))
-            cartes = "".join(carte for carte, _ in rendus)
-            panneaux_articles = "".join(panneau for _, panneau in rendus)
             nb = len(articles)
+            # Encoder la clé pour l'utiliser comme attribut HTML et JS
+            cle_encodee = esc(cle).replace('"', '&quot;')
             tags_par_categorie[categorie].append(
-                f'<button type="button" class="tag" data-article-id="cat-{n}">'
+                f'<button type="button" class="tag" data-source-key="{cle_encodee}" data-source-name="{esc(truncate_label(source))}">'
                 f'{esc(truncate_label(source))} <span class="nb">×{nb}</span></button>'
             )
-            fenetres.append(
-                f'<div class="categorie-container" id="container-cat-{n}" hidden>'
-                f'<div class="categorie-backdrop" data-close-source="cat-{n}"></div>'
-                f'<div id="cat-{n}" class="categorie-panneau">'
-                f'<button type="button" class="categorie-fermer" data-article-id="cat-{n}" aria-label="Fermer">×</button>'
-                f'<h2>{esc(source)} <span class="compte">({nb})</span></h2>'
-                f'<div class="grille">{cartes}</div></div></div>'
-            )
-            fenetres.append(panneaux_articles)
-            n += 1
 
     blocs = "".join(
         f'<section class="groupe">'
-        f'<h2>{esc(c)} <span class="compte">({len(par_categorie[c])})</span></h2>'
+        f'<h2>{esc(c)} <span class="compte">({len(par_categorie[c])})</span> <button type="button" class="tag-categorie" data-category-name="{esc(c)}" style="margin-left: auto; padding: 0.2rem 0.5rem; font-size: 0.8rem; background: #000; border: 1px solid var(--red); color: var(--red); cursor: pointer; font-weight: normal;">+</button></h2>'
         f'<div class="nuage" aria-label="{esc(c)}">{"".join(tags_par_categorie[c])}</div></section>'
         for c in ordre_categories
     )
@@ -230,8 +158,76 @@ def render_page(items: list[dict], previews: dict[str, dict],
     taille_defaut = CFG.getint("site", "taille_defaut", fallback=90)
     largeur_carte_ouverte = CFG.get("site", "largeur_carte_ouverte", fallback="min(600px, 85vw)")
     hauteur_carte_ouverte = CFG.getint("site", "hauteur_carte_ouverte", fallback=115)
+    bordure_panneau_epaisseur = CFG.getint("site", "bordure_panneau_epaisseur", fallback=8)
+    espacement_panneau_vertical = CFG.get("site", "espacement_panneau_vertical", fallback="2.4rem")
+
+    # Préparer les données des groupes pour le JavaScript
+    groupes_json = {}
+    for cle in ordre:
+        articles_data = []
+        for item in groupes[cle]:
+            title = previews.get(item["link"], {}).get("title") or item["title"]
+            image = previews.get(item["link"], {}).get("image") or item["image"] or ""
+            summary = item["summary"] or previews.get(item["link"], {}).get("description", "")
+            date = item["date"]
+            host = urlparse(item["link"]).netloc.removeprefix("www.")
+            date_paris = date.astimezone(ZoneInfo("Europe/Paris")) if date else None
+            date_str = date_paris.strftime("%d/%m/%Y") if date_paris else ""
+
+            art_id = article_id(item["link"])
+            art_slug = slug_article(title, item["link"])
+            article_url = f"/articles/{art_id}-{art_slug}/"
+
+            articles_data.append({
+                "id": art_id,
+                "title": title,
+                "image": image,
+                "summary": summary,
+                "date": date_str,
+                "host": host,
+                "url": article_url,
+                "source": item["source"]
+            })
+        groupes_json[cle] = articles_data
+
+    # Préparer les données des catégories pour le JavaScript
+    categories_json = {}
+    for categorie in ordre_categories:
+        articles_data = []
+        for cle in par_categorie[categorie]:
+            for item in groupes[cle]:
+                title = previews.get(item["link"], {}).get("title") or item["title"]
+                image = previews.get(item["link"], {}).get("image") or item["image"] or ""
+                summary = item["summary"] or previews.get(item["link"], {}).get("description", "")
+                date = item["date"]
+                host = urlparse(item["link"]).netloc.removeprefix("www.")
+                date_paris = date.astimezone(ZoneInfo("Europe/Paris")) if date else None
+                date_str = date_paris.strftime("%d/%m/%Y") if date_paris else ""
+
+                art_id = article_id(item["link"])
+                art_slug = slug_article(title, item["link"])
+                article_url = f"/articles/{art_id}-{art_slug}/"
+
+                articles_data.append({
+                    "id": art_id,
+                    "title": title,
+                    "image": image,
+                    "summary": summary,
+                    "date": date_str,
+                    "host": host,
+                    "url": article_url,
+                    "source": item["source"]
+                })
+        # Trier par date (plus récents d'abord)
+        articles_data.sort(key=lambda a: a["date"], reverse=True)
+        categories_json[categorie] = articles_data
+
+    import json
+    groupes_json_str = json.dumps(groupes_json, ensure_ascii=False)
+    categories_json_str = json.dumps(categories_json, ensure_ascii=False)
+
     return f"""<!DOCTYPE html>
-<html lang="fr" style="--largeur-carte-ouverte: {largeur_carte_ouverte}; --hauteur-carte-ouverte: {hauteur_carte_ouverte / 100};">
+<html lang="fr" style="--largeur-carte-ouverte: {largeur_carte_ouverte}; --hauteur-carte-ouverte: {hauteur_carte_ouverte / 100}; --bordure-panneau-epaisseur: {bordure_panneau_epaisseur}px; --espacement-panneau-vertical: {espacement_panneau_vertical};">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -269,6 +265,10 @@ if ('serviceWorker' in navigator) {{
     navigator.serviceWorker.register('sw.js').catch(() => {{}});
   }});
 }}
+// Données des articles groupés par source (clé)
+window.sourcesData = {groupes_json_str};
+// Données des articles groupés par catégorie
+window.categoriesData = {categories_json_str};
 </script>
 </head>
 <body>
@@ -278,6 +278,9 @@ if ('serviceWorker' in navigator) {{
   <h1><span class="titre-ligne"><span class="drapeau" aria-hidden="true">🏳️‍⚧️</span><span class="glow">{DOMAINE}</span><span class="drapeau" aria-hidden="true">🏳️‍⚧️</span></span></h1>
   <p class="sub">{len(items)} éléments · {len(groupes)} sources</p>
   <p class="sub-petit">Mis à jour le {generated}</p>
+  <div style="margin: 1rem 0; text-align: center;">
+    <input type="text" id="recherche" class="recherche" placeholder="Chercher..." aria-label="Barre de recherche" style="width: 100%; max-width: 400px;">
+  </div>
   {galerie_html}
   {nuage}
 </main>
@@ -286,9 +289,6 @@ if ('serviceWorker' in navigator) {{
   <div id="bloc-infos" class="popover-infos">
     <button type="button" class="infos-fermer" data-close-infos="bloc-infos" aria-label="Fermer">×</button>
     <div class="popover-contenu">
-    <div class="popover-section">
-      <input type="text" id="recherche" class="recherche" placeholder="Chercher..." aria-label="Barre de recherche">
-    </div>
     <div class="popover-section">
       {choix}
     </div>
@@ -332,9 +332,7 @@ if ('serviceWorker' in navigator) {{
 </div>
 <input type="file" id="fav-file-input" accept=".json" style="display: none;" aria-label="Charger un fichier de favoris">
 
-<section class="cartes" aria-label="Fenêtres des sources">
-{"".join(panneaux_galerie)}
-{"".join(fenetres)}
+<section class="cartes" aria-label="Conteneur des panneaux">
 </section>
 <p class="mentions">Chaque article renvoie vers sa source d'origine. Textes, images et vidéos : leurs auteur.ice.s et sites respectifs.</p>
 <p class="mentions"><a href="https://github.com/Zarissa92/kioske.fr" target="_blank" rel="noopener noreferrer">GitHub du projet (GPL v3)</a></p>
@@ -358,13 +356,14 @@ function showPopover(id) {{
       container.hidden = false;
       openPopover = container;
     }}
-  }} else if (id.startsWith('cat-') || id === 'search-results' || id === 'favoris') {{
+  }} else if (id.startsWith('cat-') || id.startsWith('source-') || id === 'search-results' || id === 'favoris') {{
     const container = document.getElementById('container-' + id);
     if (container) {{
       container.hidden = false;
       openPopover = container;
-      const panel = document.getElementById(id);
-      if (panel && scrollPositions[id] !== undefined) {{
+      const panel = document.getElementById(id + '-panneau');
+      if (!panel) return;
+      if (scrollPositions[id] !== undefined) {{
         setTimeout(() => {{ panel.scrollTop = scrollPositions[id]; }}, 0);
       }}
     }}
@@ -478,6 +477,322 @@ document.addEventListener('keydown', e => {{
     }}
   }}
 }});
+// Crée un panneau pour afficher les articles d'une source
+function createSourcePanel(sourceKey, sourceName) {{
+  const normalized = sourceKey.replace(/[^a-z0-9-]/gi, '_');
+  const sourceId = 'source-' + normalized;
+  const containerId = 'container-' + sourceId;
+
+  if (document.getElementById(containerId)) return;
+  const container = document.createElement('div');
+  container.id = containerId;
+  container.className = 'categorie-container';
+  container.hidden = true;
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'categorie-backdrop';
+  backdrop.setAttribute('data-close-source', sourceKey);
+  backdrop.addEventListener('click', (e) => {{ if (e.target === backdrop) closePopover(); }});
+
+  const panneau = document.createElement('div');
+  panneau.id = sourceId + '-panneau';
+  panneau.className = 'categorie-panneau';
+
+  const header = document.createElement('div');
+  header.style.display = 'flex';
+  header.style.flexDirection = 'column';
+  header.style.marginBottom = '1rem';
+
+  const titre = document.createElement('h2');
+  titre.textContent = sourceName;
+  titre.style.textAlign = 'center';
+  titre.style.margin = '0 0 0.8rem 0';
+
+  const fermer = document.createElement('button');
+  fermer.type = 'button';
+  fermer.className = 'categorie-fermer';
+  fermer.setAttribute('data-article-id', sourceId);
+  fermer.setAttribute('aria-label', 'Fermer');
+  fermer.textContent = '×';
+  fermer.style.position = 'static';
+  fermer.style.width = 'auto';
+  fermer.style.height = 'auto';
+  fermer.style.padding = '0.4rem 0.8rem';
+  fermer.addEventListener('click', () => closePopover());
+
+  const grille = document.createElement('div');
+  grille.className = 'grille';
+  grille.id = sourceId + '-grille';
+
+  // Conteneur scrollable pour la grille seulement
+  const grilleContainer = document.createElement('div');
+  grilleContainer.style.flex = '1';
+  grilleContainer.style.overflow = 'auto';
+  grilleContainer.style.minHeight = '0';
+  grilleContainer.appendChild(grille);
+
+  // Restructurer le panneau avec flexbox
+  panneau.style.display = 'flex';
+  panneau.style.flexDirection = 'column';
+
+  header.appendChild(titre);
+  header.appendChild(fermer);
+  panneau.appendChild(header);
+  panneau.appendChild(grilleContainer);
+  container.appendChild(backdrop);
+  container.appendChild(panneau);
+  document.body.appendChild(container);
+
+  fermer.addEventListener('click', () => closePopover());
+
+  // Remplir la grille avec les articles avec pagination
+  const articles = window.sourcesData[sourceKey] || [];
+  const articlesPerPage = 30;
+  let currentPage = 1;
+  const totalPages = Math.ceil(articles.length / articlesPerPage);
+
+  // Créer le conteneur de pagination
+  const paginationContainer = document.createElement('div');
+  paginationContainer.style.display = 'flex';
+  paginationContainer.style.justifyContent = 'center';
+  paginationContainer.style.alignItems = 'center';
+  paginationContainer.style.gap = '1rem';
+  paginationContainer.style.marginTop = '1rem';
+  paginationContainer.style.padding = '0.5rem';
+
+  const btnPrecedentes = document.createElement('button');
+  btnPrecedentes.type = 'button';
+  btnPrecedentes.className = 'pagination-btn';
+  btnPrecedentes.textContent = '← Pages précédentes';
+  btnPrecedentes.style.padding = '0.4rem 0.8rem';
+  btnPrecedentes.style.background = '#0a0000';
+  btnPrecedentes.style.border = '1px solid var(--red-dim)';
+  btnPrecedentes.style.color = 'var(--red)';
+  btnPrecedentes.style.cursor = 'pointer';
+  btnPrecedentes.style.font = 'inherit';
+
+  const pageInfo = document.createElement('span');
+  pageInfo.style.minWidth = '80px';
+  pageInfo.style.textAlign = 'center';
+  pageInfo.style.color = 'var(--red)';
+
+  const btnSuivantes = document.createElement('button');
+  btnSuivantes.type = 'button';
+  btnSuivantes.className = 'pagination-btn';
+  btnSuivantes.textContent = 'Pages suivantes →';
+  btnSuivantes.style.padding = '0.4rem 0.8rem';
+  btnSuivantes.style.background = '#0a0000';
+  btnSuivantes.style.border = '1px solid var(--red-dim)';
+  btnSuivantes.style.color = 'var(--red)';
+  btnSuivantes.style.cursor = 'pointer';
+  btnSuivantes.style.font = 'inherit';
+
+  function afficherPage(page) {{
+    currentPage = Math.max(1, Math.min(page, totalPages));
+    grille.innerHTML = '';
+
+    const start = (currentPage - 1) * articlesPerPage;
+    const end = start + articlesPerPage;
+    const articlesPage = articles.slice(start, end);
+
+    articlesPage.forEach(article => {{
+      const carte = document.createElement('a');
+      carte.href = article.url;
+      carte.className = 'carte';
+      carte.style.textDecoration = 'none';
+      carte.style.color = 'inherit';
+
+      const media = article.image
+        ? `<img src="${{article.image}}" alt="" loading="lazy" referrerpolicy="no-referrer">`
+        : `<span class="lettre">${{article.source.charAt(0).toUpperCase() || '•'}}</span>`;
+
+      carte.innerHTML =
+        `<span class="carte-image" aria-hidden="true">${{media}}</span>` +
+        `<span class="carte-corps">` +
+        `<span class="meta">${{article.date}} · ${{article.host}}</span>` +
+        `<span class="carte-titre">${{article.title}}</span>` +
+        `<span class="carte-extrait">${{article.summary}}</span>` +
+        `</span>`;
+
+      grille.appendChild(carte);
+    }});
+
+    pageInfo.textContent = `Page ${{currentPage}} / ${{totalPages}}`;
+    btnPrecedentes.disabled = currentPage === 1;
+    btnSuivantes.disabled = currentPage === totalPages;
+    btnPrecedentes.style.opacity = currentPage === 1 ? '0.5' : '1';
+    btnSuivantes.style.opacity = currentPage === totalPages ? '0.5' : '1';
+  }}
+
+  btnPrecedentes.addEventListener('click', () => afficherPage(currentPage - 1));
+  btnSuivantes.addEventListener('click', () => afficherPage(currentPage + 1));
+
+  paginationContainer.appendChild(btnPrecedentes);
+  paginationContainer.appendChild(pageInfo);
+  paginationContainer.appendChild(btnSuivantes);
+  panneau.appendChild(paginationContainer);
+
+  afficherPage(1);
+}}
+
+// Crée un panneau pour afficher les articles d'une catégorie
+function createCategoryPanel(categoryName) {{
+  const normalized = categoryName.replace(/[^a-z0-9-]/gi, '_');
+  const categoryId = 'cat-' + normalized;
+  const containerId = 'container-' + categoryId;
+
+  if (document.getElementById(containerId)) return;
+  const container = document.createElement('div');
+  container.id = containerId;
+  container.className = 'categorie-container';
+  container.hidden = true;
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'categorie-backdrop';
+  backdrop.setAttribute('data-close-source', categoryName);
+  backdrop.addEventListener('click', (e) => {{ if (e.target === backdrop) closePopover(); }});
+
+  const panneau = document.createElement('div');
+  panneau.id = categoryId + '-panneau';
+  panneau.className = 'categorie-panneau';
+
+  const header = document.createElement('div');
+  header.style.display = 'flex';
+  header.style.flexDirection = 'column';
+  header.style.marginBottom = '1rem';
+
+  const titre = document.createElement('h2');
+  titre.textContent = categoryName;
+  titre.style.textAlign = 'center';
+  titre.style.margin = '0 0 0.8rem 0';
+
+  const fermer = document.createElement('button');
+  fermer.type = 'button';
+  fermer.className = 'categorie-fermer';
+  fermer.setAttribute('data-article-id', categoryId);
+  fermer.setAttribute('aria-label', 'Fermer');
+  fermer.textContent = '×';
+  fermer.style.position = 'static';
+  fermer.style.width = 'auto';
+  fermer.style.height = 'auto';
+  fermer.style.padding = '0.4rem 0.8rem';
+  fermer.addEventListener('click', () => closePopover());
+
+  const grille = document.createElement('div');
+  grille.className = 'grille';
+  grille.id = categoryId + '-grille';
+
+  // Conteneur scrollable pour la grille seulement
+  const grilleContainer = document.createElement('div');
+  grilleContainer.style.flex = '1';
+  grilleContainer.style.overflow = 'auto';
+  grilleContainer.style.minHeight = '0';
+  grilleContainer.appendChild(grille);
+
+  // Restructurer le panneau avec flexbox
+  panneau.style.display = 'flex';
+  panneau.style.flexDirection = 'column';
+
+  header.appendChild(titre);
+  header.appendChild(fermer);
+  panneau.appendChild(header);
+  panneau.appendChild(grilleContainer);
+  container.appendChild(backdrop);
+  container.appendChild(panneau);
+  document.body.appendChild(container);
+
+  fermer.addEventListener('click', () => closePopover());
+
+  // Remplir la grille avec les articles avec pagination
+  const articles = window.categoriesData[categoryName] || [];
+  const articlesPerPage = 30;
+  let currentPage = 1;
+  const totalPages = Math.ceil(articles.length / articlesPerPage);
+
+  // Créer le conteneur de pagination
+  const paginationContainer = document.createElement('div');
+  paginationContainer.style.display = 'flex';
+  paginationContainer.style.justifyContent = 'center';
+  paginationContainer.style.alignItems = 'center';
+  paginationContainer.style.gap = '1rem';
+  paginationContainer.style.marginTop = '1rem';
+  paginationContainer.style.padding = '0.5rem';
+
+  const btnPrecedentes = document.createElement('button');
+  btnPrecedentes.type = 'button';
+  btnPrecedentes.className = 'pagination-btn';
+  btnPrecedentes.textContent = '← Pages précédentes';
+  btnPrecedentes.style.padding = '0.4rem 0.8rem';
+  btnPrecedentes.style.background = '#0a0000';
+  btnPrecedentes.style.border = '1px solid var(--red-dim)';
+  btnPrecedentes.style.color = 'var(--red)';
+  btnPrecedentes.style.cursor = 'pointer';
+  btnPrecedentes.style.font = 'inherit';
+
+  const pageInfo = document.createElement('span');
+  pageInfo.style.minWidth = '80px';
+  pageInfo.style.textAlign = 'center';
+  pageInfo.style.color = 'var(--red)';
+
+  const btnSuivantes = document.createElement('button');
+  btnSuivantes.type = 'button';
+  btnSuivantes.className = 'pagination-btn';
+  btnSuivantes.textContent = 'Pages suivantes →';
+  btnSuivantes.style.padding = '0.4rem 0.8rem';
+  btnSuivantes.style.background = '#0a0000';
+  btnSuivantes.style.border = '1px solid var(--red-dim)';
+  btnSuivantes.style.color = 'var(--red)';
+  btnSuivantes.style.cursor = 'pointer';
+  btnSuivantes.style.font = 'inherit';
+
+  function afficherPage(page) {{
+    currentPage = Math.max(1, Math.min(page, totalPages));
+    grille.innerHTML = '';
+
+    const start = (currentPage - 1) * articlesPerPage;
+    const end = start + articlesPerPage;
+    const articlesPage = articles.slice(start, end);
+
+    articlesPage.forEach(article => {{
+      const carte = document.createElement('a');
+      carte.href = article.url;
+      carte.className = 'carte';
+      carte.style.textDecoration = 'none';
+      carte.style.color = 'inherit';
+
+      const media = article.image
+        ? `<img src="${{article.image}}" alt="" loading="lazy" referrerpolicy="no-referrer">`
+        : `<span class="lettre">${{article.source.charAt(0).toUpperCase() || '•'}}</span>`;
+
+      carte.innerHTML =
+        `<span class="carte-image" aria-hidden="true">${{media}}</span>` +
+        `<span class="carte-corps">` +
+        `<span class="meta">${{article.date}} · ${{article.host}}</span>` +
+        `<span class="carte-titre">${{article.title}}</span>` +
+        `<span class="carte-extrait">${{article.summary}}</span>` +
+        `</span>`;
+
+      grille.appendChild(carte);
+    }});
+
+    pageInfo.textContent = `Page ${{currentPage}} / ${{totalPages}}`;
+    btnPrecedentes.disabled = currentPage === 1;
+    btnSuivantes.disabled = currentPage === totalPages;
+    btnPrecedentes.style.opacity = currentPage === 1 ? '0.5' : '1';
+    btnSuivantes.style.opacity = currentPage === totalPages ? '0.5' : '1';
+  }}
+
+  btnPrecedentes.addEventListener('click', () => afficherPage(currentPage - 1));
+  btnSuivantes.addEventListener('click', () => afficherPage(currentPage + 1));
+
+  paginationContainer.appendChild(btnPrecedentes);
+  paginationContainer.appendChild(pageInfo);
+  paginationContainer.appendChild(btnSuivantes);
+  panneau.appendChild(paginationContainer);
+
+  afficherPage(1);
+}}
+
 // Crée un panneau de résultats de recherche
 function createSearchResultsPanel() {{
   if (document.getElementById('container-search-results')) return;
@@ -512,6 +827,38 @@ function createSearchResultsPanel() {{
   // Attacher le listener au bouton fermer
   fermer.addEventListener('click', () => closePopover());
 }}
+// Gestion des tags cliquables (sources)
+document.querySelectorAll('.nuage .tag').forEach(tag => {{
+  tag.addEventListener('click', (e) => {{
+    const sourceKey = tag.getAttribute('data-source-key');
+    const sourceName = tag.getAttribute('data-source-name');
+    if (sourceKey && sourceName) {{
+      createSourcePanel(sourceKey, sourceName);
+      const sourceId = 'source-' + sourceKey.replace(/[^a-z0-9-]/gi, '_');
+      showPopover(sourceId);
+      // Fermer le menu +
+      const infosContainer = document.getElementById('bloc-infos-container');
+      if (infosContainer) infosContainer.hidden = true;
+    }}
+  }});
+}});
+
+// Gestion des boutons "+ " des catégories
+document.querySelectorAll('.tag-categorie').forEach(btn => {{
+  btn.addEventListener('click', (e) => {{
+    e.preventDefault();
+    const categoryName = btn.getAttribute('data-category-name');
+    if (categoryName) {{
+      createCategoryPanel(categoryName);
+      const categoryId = 'cat-' + categoryName.replace(/[^a-z0-9-]/gi, '_');
+      showPopover(categoryId);
+      // Fermer le menu +
+      const infosContainer = document.getElementById('bloc-infos-container');
+      if (infosContainer) infosContainer.hidden = true;
+    }}
+  }});
+}});
+
 // Barre de recherche
 const rechercheInput = document.getElementById('recherche');
 if (rechercheInput) {{
@@ -520,31 +867,75 @@ if (rechercheInput) {{
     e.preventDefault();
     const query = rechercheInput.value.toLowerCase().trim();
     if (!query) return;
+
+    console.log('Recherche lancée pour: ' + query);
+
+    // Créer le panneau s'il n'existe pas
     createSearchResultsPanel();
-    const cards = document.querySelectorAll('[data-article-id^="art-"]');
-    const grille = document.getElementById('search-results-grille');
-    grille.innerHTML = '';
-    let count = 0;
-    cards.forEach(card => {{
-      const text = card.textContent.toLowerCase();
-      if (text.includes(query)) {{
-        const clone = card.cloneNode(true);
-        grille.appendChild(clone);
-        // Réattacher les listeners à la carte clonée
-        clone.addEventListener('click', (e) => {{
-          const target = clone.getAttribute('data-article-id');
-          showPopover(target);
+
+    // Charger l'index JSON et filtrer les articles
+    fetch('/articles-index.json')
+      .then(response => {{
+        if (!response.ok) throw new Error(`HTTP ${{response.status}}`);
+        return response.json();
+      }})
+      .then(articles => {{
+        const resultGrid = document.getElementById('search-results-grille');
+        if (!resultGrid) {{
+          console.error('Grille de résultats non trouvée');
+          return;
+        }}
+        resultGrid.innerHTML = '';
+
+        // Filtrer les articles par query
+        const results = articles.filter(article => {{
+          const searchText = (article.title + ' ' + article.summary + ' ' + article.source).toLowerCase();
+          return searchText.includes(query);
         }});
-        count++;
-      }}
-    }});
-    if (count > 0) {{
-      document.querySelector('#search-results-panneau h2 .compte').textContent = `(${{count}})`;
-      // Fermer le menu +
-      const infosContainer = document.getElementById('bloc-infos-container');
-      if (infosContainer) infosContainer.hidden = true;
-      showPopover('search-results');
-    }}
+
+        console.log(`Trouvé ${{results.length}} résultats pour "${{query}}"`);
+
+        // Créer les cartes au format Pokémon
+        results.forEach(article => {{
+          const carte = document.createElement('a');
+          carte.href = article.url;
+          carte.className = 'carte';
+          carte.style.textDecoration = 'none';
+          carte.style.color = 'inherit';
+
+          const media = article.image
+            ? `<img src="${{article.image}}" alt="" loading="lazy" referrerpolicy="no-referrer">`
+            : `<span class="lettre">${{article.source.charAt(0).toUpperCase() || '•'}}</span>`;
+
+          carte.innerHTML =
+            `<span class="carte-image" aria-hidden="true">${{media}}</span>` +
+            `<span class="carte-corps">` +
+            `<span class="meta">${{article.date}} · ${{article.host}}</span>` +
+            `<span class="carte-titre">${{article.title}}</span>` +
+            `<span class="carte-extrait">${{article.summary}}</span>` +
+            `</span>`;
+
+          resultGrid.appendChild(carte);
+        }});
+
+        if (results.length > 0) {{
+          const compte = document.querySelector('#search-results-panneau h2 .compte');
+          if (compte) {{
+            compte.textContent = `(${{results.length}})`;
+          }}
+          console.log('Panneau de résultats affichés');
+          showPopover('search-results');
+          // Fermer le menu +
+          const infosContainer = document.getElementById('bloc-infos-container');
+          if (infosContainer) infosContainer.hidden = true;
+        }} else {{
+          alert('Aucun résultat trouvé pour: ' + query);
+        }}
+      }})
+      .catch(err => {{
+        console.error('Erreur lors du chargement de l\\\'index:', err);
+        alert('Erreur lors de la recherche. Vérifiez votre connexion.');
+      }});
   }});
 }}
 

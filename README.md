@@ -1,9 +1,10 @@
 # kioske.fr
 
 Le **KiosKe** : une veille automatique des médias indépendants, des luttes et des voix LGBTQIA+.
-Une seule page statique (HTML5, CSS et JavaScript minimal), reconstruite toutes les 30 minutes sur
-le serveur à partir de flux RSS et de chaînes Twitch. Les images sont hébergées par le site : la page
-ne charge rien d'un autre site, sans publicité ni pistage.
+Pages HTML statiques (HTML5, CSS et JavaScript minimal) générées toutes les 30 minutes sur le serveur
+à partir de flux RSS et de chaînes Twitch. Une page d'accueil + une page par catégorie + une page par article
+(~1035 pages au total). Les images sont hébergées par le site : les pages ne chargent rien d'un autre site,
+sans publicité ni pistage.
 
 **Mots-clés** : kioske, veille, médias indépendants, LGBTQIA+, RSS, Twitch, informatique libre.
 
@@ -15,6 +16,14 @@ modifié par le build.
 > **À vérifier :** l'`origin` du dépôt git pointe encore vers `kit-gauchiasses.fr`.
 >
 > **Modifications récentes** :
+> - **Panneaux de catégories dynamiques** (2026-11-13 nuit) : boutons "+" des catégories → panneaux JS avec pagination (30 articles/page) identiques aux sources. Données injectées en JSON `window.categoriesData`. Cache service worker v12.
+> - **Liens recherche corrigés** (2026-11-13 nuit) : les slugs de l'index JSON utilisent maintenant les titres des previews (comme les pages statiques). Résout les 404 sur les liens de recherche. Cache service worker v9.
+> - **Galerie augmentée** (2026-11-13 nuit) : 10 → 12 articles. Cache service worker v8.
+> - **Pages catégories refondues** (2026-11-13 nuit) : articles mélangés et triés par date (sans groupement par source). Tous les articles d'une catégorie dans une seule grille. Cache service worker v7.
+> - **Cache PWA v6** (2026-11-13 nuit) : incrémentation du service worker pour forcer mise à jour.
+> - **Corrections barre de recherche + cartes mobile** (2026-11-13 nuit) : fetch `/articles-index.json` (chemin absolu), vérification HTTP, alertes utilisateur. Cartes 2 fois plus petites sur mobile (2 par ligne, hauteur image −50%). Cache service worker v5.
+> - **Navigation hiérarchique** (2026-11-13 matin) : pages statiques pour articles et catégories. Bouton retour en haut à gauche menant au parent (article → catégorie, catégorie → accueil).
+> - **Typographie et interface** (2026-11-13 après-midi) : titres réduits (h1/h2 à 1.1rem), titre des cartes augmenté (1rem), étiquettes redessinées (fond blanc, texte noir, bordure rouge), slider hauteur carte supprimé, barre de recherche globale (accessible depuis chaque page, redirige vers l'accueil), galerie scroll horizontal fixé, cache service worker v4.
 > - Menu "+" avec barre de recherche, choix des thèmes, sliders de taille, lien Discord, lien RSS et charte (2026-11-12 matin).
 > - Page `rss.html` : découverte des flux RSS par catégories avec icônes aux couleurs du drapeau trans (2026-11-12 soir).
 > - Toutes les heures affichées en **heure de Paris** (CET/CEST selon la saison).
@@ -61,7 +70,7 @@ carte ouvre l'article dans la page (texte du flux, lien vers l'original).
 | `bin/` | Points d'entrée : `build_site.py`, `publier_public.py`, `garde_immuable.py`. Quelques lignes chacun. |
 | `deploy/` | Scripts du serveur : `kioske.sh` (point d'entrée), `installer_serveur.sh`, `deployer_nginx.sh`, `verifier_serveur.sh`, `lib_config.sh`, `systemd/`, `fail2ban/`. |
 | `data/` | `immuable.json` (empreinte du bloc, suivie par git) ; `historique.db`, `cache/`, `build.lock` (locaux, jamais publiés). |
-| `build/` | **Le site généré**, complet : `index.html` (page d'accueil), `rss.html` (découverte des flux RSS), `rss.xml`, `rss/` (flux par catégories), `img/veille/`, copie de `static/`, `robots.txt`, `sitemap.xml`. Hors git, jamais édité à la main, jamais envoyé au serveur. |
+| `build/` | **Le site généré**, complet : `index.html` (accueil), `rss.html` (découverte des flux RSS), `articles/{id}-{slug}/index.html` (pages d'articles, ~1028), `categories/{slug}/index.html` (pages de catégories, 7), `rss.xml`, `rss/{slug}.xml` (flux par catégories), `img/veille/`, copie de `static/`, `robots.txt`, `sitemap.xml`. Hors git, jamais édité à la main, jamais envoyé au serveur. |
 | `requirements.txt` | Dépendances Python (`feedparser`, `yt-dlp`, `legacy-cgi`). |
 | `apercu/preview.svg` | Source de `static/preview.png` (image de partage social) : générer avec `rsvg-convert -w 1200 -h 630 apercu/preview.svg -o static/preview.png`. |
 | `docs/img/` | Captures de ce README. |
@@ -77,7 +86,8 @@ Le paquet `kioske/` :
 | `images.py` | Téléchargement des images dans `build/img/veille/`, et purge de celles qui ne servent plus. |
 | `historique.py` | Base SQLite de tout ce qui a été récupéré. |
 | `themes.py`, `style.css`, `pluie.css` | Thèmes et CSS de la page. |
-| `rendu.py`, `rss.py`, `texte.py` | HTML de la page, flux RSS produits, outils de texte. |
+| `rendu.py`, `rss.py`, `texte.py` | HTML de la page d'accueil, flux RSS produits, outils de texte (slugs, IDs, échappement HTML). |
+| `rendu_statique.py` | HTML des pages statiques pour articles et catégories. Navigation hiérarchique (retour au parent). |
 | `immuable.py` | Garde du bloc immuable. |
 | `verrou.py` | Un seul build ou une seule publication à la fois. |
 | `construction.py`, `publication.py` | Le build (`build/`) et la copie vers la racine web. |
@@ -190,6 +200,18 @@ Tant que l'empreinte n'est pas réenregistrée après une modification, rien n'e
 - **Page de découverte des flux** : `rss.html` liste le flux principal et tous les flux par catégorie,
   avec icônes RSS aux couleurs du drapeau trans. Accessible depuis le lien « Découvrir les flux RSS »
   dans le menu "+" (bloc immuable).
+
+**Pages statiques et navigation hiérarchique :**
+- **Architecture** : le site génère ~1035 pages HTML statiques lors du build :
+  - 1 page d'accueil (`index.html`)
+  - ~1028 pages d'articles (`articles/{id}-{slug}/index.html`)
+  - 7 pages de catégories (`categories/{slug}/index.html`)
+- **Navigation** : chaque page a un bouton retour en haut à gauche menant à son parent :
+  - **Article** → retour à la catégorie (texte: « ← Retour à la catégorie »)
+  - **Catégorie** → retour à l'accueil (texte: « ← Accueil »)
+  - **Accueil** → pas de bouton retour
+- **Paramètre de contexte** : les articles passent un param `from` URL-encodé pour mémoriser leur catégorie parente. Ex: `/articles/abc123-titre/?from=%2Fcategories%2Fmedias%2F`.
+- **Identifiants persistants** : chaque article a un ID unique (12 caractères du hash SHA256 du lien), et un slug lisible (titre + 8 car du hash). Les catégories ont un slug issu du nom.
 
 - **Cartes d'articles** : format «carte à jouer» (ratio 2.5:3.5) avec image fixe en haut (35% de la hauteur), contenu scrollable au milieu, boutons de navigation en bas. Structure flexbox uniforme pour tous les articles.
 - **Navigation** : boutons Précédent/Suivant pour naviguer dans les articles d'une même source, ou entre articles de la galerie, sans recharger la page. Position de scroll préservée au retour à une source.

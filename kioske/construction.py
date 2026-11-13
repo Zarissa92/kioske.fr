@@ -207,15 +207,15 @@ def ecrire_pages_categories(items: list[dict], previews: dict[str, dict],
 
     for categorie, sources_keys in par_categorie.items():
         cat_slug = cat_slugs[categorie]
-        # Assembler les sources et articles de la catégorie
-        sources_with_articles = []
-        for source_key in sorted(sources_keys, key=lambda k: cle_alphabetique(noms[k])):
-            source_articles = sorted(groupes[source_key],
-                                    key=lambda i: i["date"] or datetime.min.replace(tzinfo=timezone.utc),
-                                    reverse=True)
-            sources_with_articles.append((noms[source_key], source_articles))
+        # Assembler TOUS les articles de la catégorie et les trier par date
+        all_articles = []
+        for source_key in sources_keys:
+            all_articles.extend(groupes[source_key])
 
-        page = render_category_page(categorie, sources_with_articles, previews)
+        # Trier par date décroissante (plus récents d'abord)
+        all_articles.sort(key=lambda i: i["date"] or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
+
+        page = render_category_page(categorie, all_articles, previews)
         sortie = categories_dossier / cat_slug / "index.html"
         ecrire_si_change(sortie, page)
         written += 1
@@ -241,7 +241,8 @@ def ecrire_index_articles(items: list[dict], previews: dict[str, dict], categori
         from urllib.parse import urlparse
         from zoneinfo import ZoneInfo
 
-        title = item.get("title", "")
+        # Utiliser le titre du preview si disponible (pour que les slugs correspondent)
+        title = previews.get(item["link"], {}).get("title") or item.get("title", "")
         summary = item.get("summary", "")
         source = item.get("source", "")
         category = categories.get(item["key"], "")
