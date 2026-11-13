@@ -169,41 +169,6 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> tuple[str, l
     """
 
     html = f"""
-    <style>
-      .galerie-slider {{
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }}
-
-      .galerie {{
-        display: flex;
-        flex: 1;
-        gap: 16px;
-        overflow-x: auto;
-        scroll-behavior: smooth;
-        padding: 16px 8px;
-      }}
-
-
-      .galerie-carte img {{
-        display: block;
-        width: 100%;
-        height: 160px;
-        object-fit: cover;
-      }}
-
-      .galerie-arrow-left,
-      .galerie-arrow-right {{
-        flex: 0 0 auto;
-        border: 0;
-        background: transparent;
-        cursor: pointer;
-        font-size: 2rem;
-        padding: 8px;
-      }}
-    </style>
-
     <section class="galerie-slider" aria-label="12 derniers articles">
       <button class="galerie-arrow-left" type="button" aria-label="Défiler vers la gauche">
         &lt;
