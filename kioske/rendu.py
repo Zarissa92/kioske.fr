@@ -185,6 +185,7 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> tuple[str, l
 
     {script_galerie}
 
+
     <script>
       history.pushState({{interception: true}}, "", location.href);
       window.addEventListener("popstate", () => {{
@@ -192,7 +193,7 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> tuple[str, l
       }});
     </script>
     """
-
+## Script ci dessus temporaire, le temps de regler lhistoire du retour. 
     return html, []
 
 
