@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fr" ${attributs_html} style="${variables_html} --largeur-carte-ouverte: ${largeur_carte_ouverte}; --hauteur-carte-ouverte: 1.15;">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="content-language" content="fr">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${categorie} - ${nom_site}</title>
+<meta name="description" content="Catégorie ${categorie} du ${nom_site}">
+<link rel="canonical" href="${adresse_canonique}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="${nom_site_echappe}">
+<meta property="og:title" content="${categorie} - ${nom_site}">
+<meta property="og:url" content="${adresse_canonique}">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KiosKe.fr">
+<style>${css}</style>
+${script_theme}
+<script>
+${js_service_worker}</script>
+</head>
+<body>
+<div class="recherche-globale">
+  <form id="form-recherche" class="recherche-form">
+    <input type="text" id="recherche-input" class="recherche" placeholder="Chercher..." aria-label="Barre de recherche globale" autocomplete="off">
+    <button type="submit" class="recherche-bouton">🔍</button>
+  </form>
+</div>
+<main class="panel panel-category">
+  <button id="btn-retour" class="btn-retour" aria-label="Retour à l'accueil">← Accueil</button>
+  <h1>${categorie}</h1>
+  ${grille}
+</main>
+<script src="/app.js" defer></script>
+<script>
+${js_carte_ouverte}
+${js_retour_app}
+${js_page_categorie}</script>
+</body>
+</html>

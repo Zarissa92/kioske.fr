@@ -1,5 +1,7 @@
 {
   "name": "KiosKe.fr",
+  "lang": "fr",
+  "dir": "ltr",
   "short_name": "KiosKe",
   "description": "Veille automatique des médias indépendants, des luttes et des voix LGBTQIA+.",
   "start_url": "/",

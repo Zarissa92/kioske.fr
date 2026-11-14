@@ -59,7 +59,6 @@ def entier(section: str, cle: str) -> int:
 DOMAINE = valeur("site", "domaine")
 URL_SITE = f"https://{DOMAINE}"
 NOM_SITE = valeur("site", "nom")
-SLOGAN = valeur("site", "slogan")
 RACINE_WEB = Path(valeur("serveur", "racine_web"))
 
 RSS_MAX = entier("veille", "articles_flux_rss")

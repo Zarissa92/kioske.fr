@@ -1,4 +1,7 @@
-"""Rendu HTML de la page d'accueil (le KiosKe). HTML5 et CSS seulement, aucun JavaScript."""
+"""Rendu HTML de la page d'accueil (le KiosKe) et de la page des flux RSS.
+
+Le squelette des pages est dans kioske/gabarits/ (accueil.html, rss.html), le CSS dans kioske/style.css
+et le JavaScript dans kioske/js/. Ce module fabrique les morceaux qui dépendent des articles."""
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -7,11 +10,13 @@ from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
 from . import immuable
-from .config import DOMAINE, DOSSIER_RSS_CATEGORIES, NOM_SITE, SLOGAN, URL_SITE, CFG
-from .rendu_statique import CSS_CARTE_OUVERTE, CSS_CARTE_SUPERPOSEE, JS_CARTE_OUVERTE
+from .config import DOMAINE, DOSSIER_RSS_CATEGORIES, NOM_SITE, URL_SITE, CFG
+from .gabarits import remplir
+from .javascript import (JS_ACCUEIL, JS_CARTE_OUVERTE, JS_DONNEES_ACCUEIL, JS_GALERIE, JS_INSTALLATION_PWA,
+                         JS_PAGE_RSS, JS_RETOUR_APP, JS_SERVICE_WORKER, json_pour_page)
 from .sources import AUTRES, ordre_des_categories
 from .texte import cle_alphabetique, esc, slugs_categories, truncate_label, article_id, slug_article
-from .themes import charger_themes, choix_theme_html, css_des_themes, rain
+from .themes import ATTRIBUTS_HTML, CHOIX_THEME, CSS, SCRIPT_THEME, VARIABLES_HTML
 
 # Chemin vers le code de conduite
 CODE_DE_CONDUITE_PATH = Path(__file__).parent.parent / "accueil" / "code-de-conduite.html"
@@ -33,34 +38,45 @@ ICONE_RSS = (
 )
 
 
-def render_card(item: dict, preview: dict, ident: str, prev_ident: str | None = None, next_ident: str | None = None) -> tuple[str, str]:
-    """Une carte décoractive non cliquable (juste l'affichage).
-    Renvoie (carte, "") : pas de lien, pas de panneau."""
-    title = preview.get("title") or item["title"]
-    summary = item["summary"] or preview.get("description", "")
-    image = preview.get("image") or item["image"] or ""
-    date = item["date"]
-    host = urlparse(item["link"]).netloc.removeprefix("www.")
+# Nombre d'images dans la galerie de chaque bloc de catégorie de l'accueil
+NB_GALERIE_BLOC = 12
 
-    if image:
-        media = f'<img src="{esc(image)}" alt="" loading="lazy" referrerpolicy="no-referrer">'
-    else:
-        media = f'<span class="lettre">{esc((item["source"][:1] or "•").upper())}</span>'
-    date_paris = date.astimezone(ZoneInfo("Europe/Paris")) if date else None
-    date_html = f'<time datetime="{date.isoformat()}">{date_paris:%d/%m/%Y}</time> · ' if date_paris else ""
 
-    carte = (
-        f'<div class="carte" style="cursor: default;">'
-        f'<span class="carte-image" aria-hidden="true">{media}</span>'
-        f'<span class="carte-corps"><span class="meta">{date_html}{esc(host)}</span>'
-        f'<span class="carte-titre">{esc(title)}</span><span class="carte-extrait">{esc(summary)}</span></span></div>'
+def render_galerie_bloc(categorie: str, items: list[dict], previews: dict[str, dict]) -> str:
+    """Petite galerie d'un bloc de catégorie de l'accueil : ses derniers articles ayant une image.
+
+    « items » : les articles de la catégorie, du plus récent au plus ancien. Chaîne vide si aucun
+    n'a d'image. Même balisage que la grande galerie (flèches < et >) : le script de celle-ci,
+    brancherGalerie(), branche toutes les « .galerie-slider » de la page.
+    """
+    cartes = []
+    for item in items:
+        if len(cartes) >= NB_GALERIE_BLOC:
+            break
+        apercu = previews.get(item["link"], {})
+        image = apercu.get("image") or item["image"] or ""
+        if not image:
+            continue
+        title = apercu.get("title") or item["title"]
+        article_url = f'/articles/{article_id(item["link"])}-{slug_article(title, item["link"])}/'
+        cartes.append(
+            f'<a href="{esc(article_url)}" class="galerie-carte" title="{esc(title)}">'
+            f'<img src="{esc(image)}" alt="{esc(title)}" loading="lazy" referrerpolicy="no-referrer"></a>'
+        )
+    if not cartes:
+        return ""
+    return (
+        f'<section class="galerie-slider galerie-slider-bloc" '
+        f'aria-label="Derniers articles en images : {esc(categorie)}">'
+        '<button class="galerie-arrow-left" type="button" aria-label="Défiler vers la gauche">&lt;</button>'
+        f'<div class="galerie galerie-bloc">{"".join(cartes)}</div>'
+        '<button class="galerie-arrow-right" type="button" aria-label="Défiler vers la droite">&gt;</button>'
+        '</section>'
     )
 
-    return carte, ""
 
-
-def render_galerie(items: list[dict], previews: dict[str, dict]) -> tuple[str, list[str]]:
-    """Galerie horizontale des 12 derniers articles avec image. Renvoie (html_galerie, [])."""
+def render_galerie(items: list[dict], previews: dict[str, dict]) -> str:
+    """Galerie horizontale des 12 derniers articles avec image."""
     cartes_galerie = []
     gal_count = 0
     gal_indices = []  # Indice réels des articles avec image
@@ -78,7 +94,7 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> tuple[str, l
         gal_indices.append(real_idx)
         gal_count += 1
 
-    for display_idx, real_idx in enumerate(gal_indices):
+    for real_idx in gal_indices:
           item = items[real_idx]
           title = previews.get(item["link"], {}).get("title") or item["title"]
           image = previews.get(item["link"], {}).get("image") or item["image"] or ""
@@ -99,75 +115,7 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> tuple[str, l
           )
 
       # Ajouter une seule fois le script de retour, pas une fois par carte
-    script_galerie = """
-    <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        document.querySelectorAll(".galerie-slider").forEach(slider => {
-            const galerie = slider.querySelector(".galerie");
-            const gauche = slider.querySelector(".galerie-arrow-left");
-            const droite = slider.querySelector(".galerie-arrow-right");
-
-            if (!galerie || !gauche || !droite) return;
-
-            let direction = 0;
-            let animationId = null;
-            let lastTime = 0;
-            const vitesse = 420; // pixels par seconde
-
-            function animation(time) {
-                if (direction === 0) return;
-
-                if (lastTime) {
-                    const delta = Math.min(time - lastTime, 50);
-                    galerie.scrollLeft += direction * vitesse * delta / 1000;
-                }
-
-                lastTime = time;
-                animationId = requestAnimationFrame(animation);
-            }
-
-            function arreter() {
-                direction = 0;
-                lastTime = 0;
-
-                if (animationId !== null) {
-                    cancelAnimationFrame(animationId);
-                    animationId = null;
-                }
-            }
-
-            function demarrer(sens) {
-                arreter();
-
-                if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-                    return;
-                }
-
-                direction = sens;
-                animationId = requestAnimationFrame(animation);
-            }
-
-            gauche.addEventListener("mouseenter", () => demarrer(-1));
-            droite.addEventListener("mouseenter", () => demarrer(1));
-
-            gauche.addEventListener("mouseleave", arreter);
-            droite.addEventListener("mouseleave", arreter);
-
-            gauche.addEventListener("click", () => {
-                arreter();
-                galerie.scrollBy({ left: -250, behavior: "smooth" });
-            });
-
-            droite.addEventListener("click", () => {
-                arreter();
-                galerie.scrollBy({ left: 250, behavior: "smooth" });
-            });
-
-            window.addEventListener("blur", arreter);
-        });
-    });
-    </script>
-    """
+    script_galerie = f"<script>\n{JS_GALERIE}</script>"
 
     html = f"""
     <section class="galerie-slider" aria-label="12 derniers articles">
@@ -186,7 +134,7 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> tuple[str, l
 
     {script_galerie}
     """
-    return html, []
+    return html
 
 
 
@@ -228,9 +176,15 @@ def render_page(items: list[dict], previews: dict[str, dict],
                 f'{esc(truncate_label(source))} <span class="nb">×{nb}</span></button>'
             )
 
+    # Articles de chaque catégorie, du plus récent au plus ancien (« items » est déjà trié)
+    articles_par_categorie: dict[str, list[dict]] = {c: [] for c in ordre_categories}
+    for item in items:
+        articles_par_categorie[categories.get(item["key"], AUTRES)].append(item)
+
     blocs = "".join(
         f'<section class="groupe">'
-        f'<h2>{esc(c)} <span class="compte">({len(par_categorie[c])})</span> <button type="button" class="tag-categorie" data-category-name="{esc(c)}" style="margin-left: auto; padding: 0.2rem 0.5rem; font-size: 0.8rem; background: #000; border: 1px solid var(--red); color: var(--red); cursor: pointer; font-weight: normal;">+</button></h2>'
+        f'<h2>{esc(c)} <span class="compte">({len(par_categorie[c])})</span> <button type="button" class="tag-categorie" data-category-name="{esc(c)}">+</button></h2>'
+        f'{render_galerie_bloc(c, articles_par_categorie[c], previews)}'
         f'<div class="nuage" aria-label="{esc(c)}">{"".join(tags_par_categorie[c])}</div></section>'
         for c in ordre_categories
     )
@@ -241,22 +195,20 @@ def render_page(items: list[dict], previews: dict[str, dict],
     )
     nuage = f'<div class="groupes">{blocs}</div>'
 
-    generated = datetime.now(ZoneInfo("Europe/Paris")).strftime("%d/%m/%Y %H:%M %Z")
     bloc, bas = immuable.parties()
-    galerie_html, panneaux_galerie = render_galerie(items, previews)
+    galerie_html = render_galerie(items, previews)
     # Référencement : le titre et la description décrivent le contenu réel (sources et catégories du jour).
     titre_page = f"{NOM_SITE} ({DOMAINE})"
     description = "Le KiosKe : une veille automatique des médias indépendants, des luttes et des voix LGBTQIA+. Une seule page statique (HTML5, CSS et JavaScript minimal), reconstruite toutes les 30 minutes sur le serveur à partir de flux RSS et de chaînes Twitch. Les images sont hébergées par le site : la page ne charge rien d'un autre site, sans publicité ni pistage."
     keywords = "kioske, veille, médias indépendants, LGBTQIA+, Mélenchon, RSS, Twitch, informatique libre"
-    themes, defaut = charger_themes()
-    css = css_des_themes(themes, defaut)
-    pluie = rain() if any(t["pluie"] for t in themes) else ""
-    choix = choix_theme_html(themes, defaut)
-    taille_defaut = CFG.getint("site", "taille_defaut", fallback=90)
+    # Taille du site et hauteur des cartes : réglées dans kioske.cfg seulement (bornées à 75-125 %),
+    # écrites dans l'attribut style de <html>. Les visiteurs ne peuvent plus les changer.
+    taille_defaut = min(125, max(75, CFG.getint("site", "taille_defaut", fallback=90)))
     largeur_carte_ouverte = CFG.get("site", "largeur_carte_ouverte", fallback="min(600px, 85vw)")
-    hauteur_carte_ouverte = CFG.getint("site", "hauteur_carte_ouverte", fallback=115)
+    hauteur_carte_ouverte = min(125, max(75, CFG.getint("site", "hauteur_carte_ouverte", fallback=115)))
     bordure_panneau_epaisseur = CFG.getint("site", "bordure_panneau_epaisseur", fallback=8)
     espacement_panneau_vertical = CFG.get("site", "espacement_panneau_vertical", fallback="2.4rem")
+    espacement_panneau_horizontal = CFG.get("site", "espacement_panneau_horizontal", fallback="0.5rem")
 
     # Réseaux sociaux
     lien_discord = CFG.get("reseaux", "discord", fallback="")
@@ -325,14 +277,14 @@ def render_page(items: list[dict], previews: dict[str, dict],
         articles_data.sort(key=lambda a: a.pop("_tri"), reverse=True)
         categories_json[categorie] = articles_data
 
-    import json
-    groupes_json_str = json.dumps(groupes_json, ensure_ascii=False)
-    categories_json_str = json.dumps(categories_json, ensure_ascii=False)
-
     # Charger le contenu du code de conduite
     conduite_html = ""
     if CODE_DE_CONDUITE_PATH.exists():
         conduite_html = CODE_DE_CONDUITE_PATH.read_text(encoding="utf-8")
+
+    # Données lues par kioske/js/donnees_accueil.js
+    donnees_json = json_pour_page(
+        {"sources": groupes_json, "categories": categories_json, "conduite": conduite_html})
 
     # Générer les boutons de réseaux sociaux conditionnellement
     boutons_reseaux = ""
@@ -343,1160 +295,41 @@ def render_page(items: list[dict], previews: dict[str, dict],
     if lien_mastodon:
         boutons_reseaux += f'<a class="menu-button" href="{esc(lien_mastodon)}" target="_blank" rel="noopener noreferrer">🦣 Mastodon</a>\n      '
 
-    # Générer la navbar
-    navbar_html = f"""<nav class="kioske-navbar">
-  <a href="/" class="navbar-brand">
-    <span class="flag">🏳️‍⚧️</span>
-    <span>{DOMAINE}</span>
-    <span class="navbar-stats">{len(items)} · {len(groupes)} sources</span>
-  </a>
-
-  <div class="navbar-search">
-    <input type="text" id="recherche" placeholder="Chercher..." aria-label="Barre de recherche">
-  </div>
-
-  <div class="navbar-controls">
-    <button type="button" class="btn-favs" title="Mes favoris" onclick="openFavoritesPanel()">♡</button>
-    <button type="button" class="btn-menu" title="Menu" aria-label="Menu" aria-controls="navbar-menu" aria-expanded="false">≡</button>
-  </div>
-
-  <div class="navbar-menu" id="navbar-menu">
-    <div class="navbar-menu-group">
-      <div class="navbar-menu-title">🎨 Thèmes</div>
-      <div class="theme-options">
-        {choix}
-      </div>
-    </div>
-
-    <div class="navbar-menu-group">
-      {boutons_reseaux}<button type="button" class="menu-button" id="btn-open-conduite">📖 Code de conduite</button>
-    </div>
-  </div>
-</nav>"""
-
-    return f"""<!DOCTYPE html>
-<html lang="fr" style="--largeur-carte-ouverte: {largeur_carte_ouverte}; --hauteur-carte-ouverte: {hauteur_carte_ouverte / 100}; --bordure-panneau-epaisseur: {bordure_panneau_epaisseur}px; --espacement-panneau-vertical: {espacement_panneau_vertical};">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{esc(titre_page)}</title>
-<meta name="description" content="{esc(description)}">
-<meta name="keywords" content="{keywords}">
-<link rel="canonical" href="{URL_SITE}/">
-<meta name="theme-color" content="#000000">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="{esc(NOM_SITE)}">
-<meta property="og:title" content="{esc(titre_page)}">
-<meta property="og:description" content="{esc(description)}">
-<meta property="og:url" content="{URL_SITE}/">
-<meta property="og:image" content="{URL_SITE}/preview.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:locale" content="fr_FR">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="{esc(titre_page)}">
-<meta name="twitter:description" content="{esc(description)}">
-<meta name="twitter:image" content="{URL_SITE}/preview.png">
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="alternate" type="application/rss+xml" title="{DOMAINE} (flux RSS)" href="rss.xml">
-{liens_rss}
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="manifest" href="manifest.json">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="KiosKe.fr">
-<style>
-{css}
-/* Styles pour le code de conduite */
-.conduct-panneau h2 {{ font-size: clamp(1.1rem, 2.6vw, 1.3rem); color: #fff; margin: 0; padding: 0; }}
-.conduct-panneau h3 {{ font-size: 1rem; color: #fff; margin: 1.2rem 0 0.4rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--red-dim); }}
-.conduct-panneau p {{ margin: 0.5rem 0; line-height: 1.5; }}
-.conduct-panneau ul {{ margin: 0.5rem 0 0.5rem 1.2rem; }}
-.conduct-panneau li {{ margin-bottom: 0.3rem; }}
-.conduct-panneau blockquote {{ margin: 0.5rem 0; padding: 0.6rem 0.9rem; border-left: 3px solid var(--red); background: rgba(255, 255, 255, .05); font-style: italic; }}
-.conduct-panneau strong {{ color: #fff; }}
-{CSS_CARTE_OUVERTE}{CSS_CARTE_SUPERPOSEE}</style>
-<script>
-if ('serviceWorker' in navigator) {{
-  window.addEventListener('load', () => {{
-    navigator.serviceWorker.register('sw.js').catch(() => {{}});
-  }});
-}}
-// Données des articles groupés par source (clé)
-window.sourcesData = {groupes_json_str};
-// Données des articles groupés par catégorie
-window.categoriesData = {categories_json_str};
-// Contenu du code de conduite
-window.conductCode = {json.dumps(conduite_html, ensure_ascii=False)};
-</script>
-</head>
-<body>
-{pluie}{navbar_html}
-<main class="panel">
-  {galerie_html}
-  {nuage}
-</main>
-<div id="bloc-infos-container" class="infos-container" hidden>
-  <div class="infos-backdrop" data-close-infos="bloc-infos"></div>
-  <div id="bloc-infos" class="popover-infos">
-    <button type="button" class="infos-fermer" data-close-infos="bloc-infos" aria-label="Fermer">×</button>
-    <div class="popover-contenu">
-    <div class="popover-section">
-      {choix}
-    </div>
-    <div class="popover-section">
-      <div class="taille-controle">
-        <label for="taille-site">Taille du site</label>
-        <input type="range" id="taille-site" class="taille-slider" min="75" max="125" value="{taille_defaut}" aria-label="Taille du site (75% à 125%)">
-        <span class="taille-valeur">{taille_defaut}%</span>
-      </div>
-      <div class="taille-controle">
-        <label for="hauteur-carte">Hauteur carte</label>
-        <input type="range" id="hauteur-carte" class="taille-slider" min="75" max="125" value="{hauteur_carte_ouverte}" aria-label="Hauteur de la carte ouverte (75% à 125%)">
-        <span class="taille-valeur">{hauteur_carte_ouverte}%</span>
-      </div>
-    </div>
-    <div class="popover-section">
-      <button type="button" class="btn-mes-favoris" onclick="openFavoritesPanel()">♡ Mes favoris</button>
-    </div>
-    <div class="popover-section">
-      <button type="button" class="btn-install-pwa" id="btn-install-pwa">⬇ Installer l'app</button>
-    </div>
-    <div class="popover-section">
-      {bloc}
-      {bas}
-    </div>
-  </div>
-  </div>
-</div>
-<div class="categorie-container" id="container-favoris" hidden>
-  <div class="categorie-backdrop" data-close-source="favoris"></div>
-  <div id="favoris" class="categorie-panneau">
-    <button type="button" class="categorie-fermer" data-article-id="favoris" aria-label="Fermer">×</button>
-    <h2>Mes favoris</h2>
-    <div class="grille" id="fav-grille"></div>
-    <div class="fav-controls" style="padding: 1rem 0; border-top: 1px solid var(--red-dim); text-align: center; gap: 0.5rem; display: flex; flex-direction: column;">
-      <button type="button" class="fav-export" id="fav-export-btn">Télécharger mes favoris</button>
-      <button type="button" class="fav-import" id="fav-import-btn" onclick="document.getElementById('fav-file-input').click()">Charger des favoris</button>
-      <button type="button" class="fav-export" id="fav-clear-btn">Effacer tous les favoris</button>
-    </div>
-  </div>
-</div>
-<input type="file" id="fav-file-input" accept=".json" style="display: none;" aria-label="Charger un fichier de favoris">
-
-<section class="cartes" aria-label="Conteneur des panneaux">
-</section>
-<p class="mentions">Chaque article renvoie vers sa source d'origine. Textes, images et vidéos : leurs auteur.ice.s et sites respectifs.</p>
-<p class="mentions"><a href="https://github.com/Zarissa92/kioske.fr" target="_blank" rel="noopener noreferrer">GitHub du projet (GPL v3)</a></p>
-<script>
-let openPopover = null;
-let scrollPositions = {{}};
-function majAdresse(ancre) {{
-  const adresse = location.pathname + location.search + (ancre ? '#' + ancre : '');
-  try {{ history.replaceState(null, '', adresse); }} catch (e) {{}}
-}}
-function closePopover() {{
-  if (openPopover) {{
-    openPopover.hidden = true;
-    openPopover = null;
-    majAdresse('');
-  }}
-}}
-function showPopover(id) {{
-  // Fermer le menu navbar quand on ouvre un panneau
-  const navbarMenu = document.querySelector('.navbar-menu');
-  if (navbarMenu) navbarMenu.classList.remove('open');
-
-  if (openPopover && !openPopover.classList.contains('article-container') && !openPopover.classList.contains('categorie-container')) {{
-    scrollPositions[openPopover.id] = openPopover.scrollTop;
-  }}
-  closePopover();
-  if (id.startsWith('art-') || id.startsWith('gal-')) {{
-    const container = document.getElementById('container-' + id);
-    if (container) {{
-      container.hidden = false;
-      openPopover = container;
-    }}
-  }} else if (id.startsWith('cat-') || id.startsWith('source-') || id === 'search-results' || id === 'favoris' || id === 'conduct') {{
-    const container = document.getElementById('container-' + id);
-    if (container) {{
-      container.hidden = false;
-      openPopover = container;
-      if (container.ancre) majAdresse(container.ancre());
-      const panel = document.getElementById(id + '-panneau');
-      if (!panel) return;
-      if (scrollPositions[id] !== undefined) {{
-        setTimeout(() => {{ panel.scrollTop = scrollPositions[id]; }}, 0);
-      }}
-    }}
-  }}
-}}
-function closeArticleAndShowSource(articleId) {{
-  if (!articleId) return;
-  // Fermer l'article et revenir à l'index du site
-  closePopover();
-}}
-// Menu de la barre du haut : ouverture au bouton, fermeture au clic dehors.
-// aria-expanded suit la classe « open », quel que soit le code qui la change.
-const menuNavbar = document.querySelector('.navbar-menu');
-const btnMenuNavbar = document.querySelector('.btn-menu');
-if (menuNavbar && btnMenuNavbar) {{
-  new MutationObserver(() => {{
-    btnMenuNavbar.setAttribute('aria-expanded', String(menuNavbar.classList.contains('open')));
-  }}).observe(menuNavbar, {{ attributes: true, attributeFilter: ['class'] }});
-  btnMenuNavbar.addEventListener('click', () => menuNavbar.classList.toggle('open'));
-  document.addEventListener('click', (e) => {{
-    const navbar = document.querySelector('.kioske-navbar');
-    if (navbar && !navbar.contains(e.target)) menuNavbar.classList.remove('open');
-  }});
-}}
-
-// Taille du site (zoom global) - slider du popover
-const tailleSlider = document.getElementById('taille-site');
-const tailleValeur = document.querySelector('.taille-valeur');
-if (tailleSlider) {{
-  const tailleSauvegardee = localStorage.getItem('kioske-taille') || tailleSlider.value;
-  tailleSlider.value = tailleSauvegardee;
-  document.documentElement.style.zoom = (tailleSauvegardee / 100);
-  if (tailleValeur) tailleValeur.textContent = tailleSauvegardee + '%';
-
-  tailleSlider.addEventListener('input', (e) => {{
-    const valeur = e.target.value;
-    document.documentElement.style.zoom = (valeur / 100);
-    if (tailleValeur) tailleValeur.textContent = valeur + '%';
-    localStorage.setItem('kioske-taille', valeur);
-  }});
-}}
-// Hauteur de la carte ouverte
-const hauteurSlider = document.getElementById('hauteur-carte');
-const hauteurValeursSpans = document.querySelectorAll('.taille-valeur');
-const hauteurValeur = hauteurValeursSpans[hauteurValeursSpans.length - 1];
-if (hauteurSlider) {{
-  // Charger la hauteur sauvegardée ou utiliser la valeur par défaut
-  const hauteurSauvegardee = localStorage.getItem('kioske-hauteur-carte');
-  if (hauteurSauvegardee) {{
-    hauteurSlider.value = hauteurSauvegardee;
-    document.documentElement.style.setProperty('--hauteur-carte-ouverte', (hauteurSauvegardee / 100));
-    hauteurValeur.textContent = hauteurSauvegardee + '%';
-  }}
-  hauteurSlider.addEventListener('input', (e) => {{
-    const valeur = e.target.value;
-    document.documentElement.style.setProperty('--hauteur-carte-ouverte', (valeur / 100));
-    hauteurValeur.textContent = valeur + '%';
-    localStorage.setItem('kioske-hauteur-carte', valeur);
-  }});
-}}
-// Gestion du bouton d'infos (+)
-const btnInfos = document.querySelector('.btn-infos');
-if (btnInfos) {{
-  btnInfos.addEventListener('click', (e) => {{
-    const container = document.getElementById('bloc-infos-container');
-    if (container) {{
-      container.hidden = false;
-    }}
-  }});
-}}
-// Fermeture du conteneur d'infos
-document.querySelectorAll('[data-close-infos]').forEach(elem => {{
-  elem.addEventListener('click', (e) => {{
-    const container = document.getElementById('bloc-infos-container');
-    if (container) {{
-      container.hidden = true;
-    }}
-  }});
-}});
-document.querySelectorAll('[data-article-id]').forEach(btn => {{
-  // Ne pas affecter le bouton + (qui gère le menu séparément)
-  if (btn.classList.contains('btn-infos')) return;
-  btn.addEventListener('click', (e) => {{
-    const target = btn.getAttribute('data-article-id');
-    // Fermer le menu + pour toute ouverture de panneau
-    const infosContainer = document.getElementById('bloc-infos-container');
-    if (infosContainer) infosContainer.hidden = true;
-    if (btn.classList.contains('nav-btn')) {{
-      showPopover(target);
-    }} else if (btn.classList.contains('categorie-fermer')) {{
-      if (btn.closest('.article-panneau')) {{
-        closeArticleAndShowSource(target);
-      }} else {{
-        closePopover();
-      }}
-    }} else {{
-      showPopover(target);
-    }}
-  }});
-}});
-document.querySelectorAll('.article-backdrop').forEach(backdrop => {{
-  backdrop.addEventListener('click', (e) => {{
-    if (e.target === backdrop) {{
-      const articleId = backdrop.getAttribute('data-close-article');
-      closeArticleAndShowSource(articleId);
-    }}
-  }});
-}});
-document.querySelectorAll('.categorie-backdrop').forEach(backdrop => {{
-  backdrop.addEventListener('click', (e) => {{
-    if (e.target === backdrop) {{
-      closePopover();
-    }}
-  }});
-}});
-document.addEventListener('keydown', e => {{
-  if (e.key === 'Escape') {{
-    if (carteOuverte && !carteOuverte.hidden) {{
-      fermerCarte();
-    }} else if (openPopover && openPopover.classList.contains('article-container')) {{
-      const articleId = openPopover.querySelector('.article-panneau').id;
-      closeArticleAndShowSource(articleId);
-    }} else {{
-      closePopover();
-    }}
-  }}
-}});
-// Crée un panneau pour afficher les articles d'une source
-function createSourcePanel(sourceKey, sourceName) {{
-  const normalized = sourceKey.replace(/[^a-z0-9-]/gi, '_');
-  const sourceId = 'source-' + normalized;
-  const containerId = 'container-' + sourceId;
-
-  if (document.getElementById(containerId)) return;
-  const container = document.createElement('div');
-  container.id = containerId;
-  container.className = 'categorie-container';
-  container.hidden = true;
-
-  const backdrop = document.createElement('div');
-  backdrop.className = 'categorie-backdrop';
-  backdrop.setAttribute('data-close-source', sourceKey);
-  backdrop.addEventListener('click', (e) => {{ if (e.target === backdrop) closePopover(); }});
-
-  const panneau = document.createElement('div');
-  panneau.id = sourceId + '-panneau';
-  panneau.className = 'categorie-panneau';
-
-  const header = document.createElement('div');
-  header.style.display = 'flex';
-  header.style.flexDirection = 'column';
-  header.style.marginBottom = '1rem';
-
-  const titre = document.createElement('h2');
-  titre.textContent = sourceName;
-  titre.style.textAlign = 'center';
-  titre.style.margin = '0 0 0.8rem 0';
-
-  const fermer = document.createElement('button');
-  fermer.type = 'button';
-  fermer.className = 'categorie-fermer';
-  fermer.setAttribute('data-article-id', sourceId);
-  fermer.setAttribute('aria-label', 'Fermer');
-  fermer.textContent = '×';
-  fermer.style.position = 'static';
-  fermer.style.width = 'auto';
-  fermer.style.height = 'auto';
-  fermer.style.padding = '0.4rem 0.8rem';
-  fermer.addEventListener('click', () => closePopover());
-
-  const grille = document.createElement('div');
-  grille.className = 'grille';
-  grille.id = sourceId + '-grille';
-
-  // Conteneur scrollable pour la grille seulement
-  const grilleContainer = document.createElement('div');
-  grilleContainer.style.flex = '1';
-  grilleContainer.style.overflow = 'auto';
-  grilleContainer.style.minHeight = '0';
-  grilleContainer.appendChild(grille);
-
-  // Restructurer le panneau avec flexbox
-  panneau.style.display = 'flex';
-  panneau.style.flexDirection = 'column';
-
-  header.appendChild(titre);
-  header.appendChild(fermer);
-  panneau.appendChild(header);
-  panneau.appendChild(grilleContainer);
-  container.appendChild(backdrop);
-  container.appendChild(panneau);
-  document.body.appendChild(container);
-
-  fermer.addEventListener('click', () => closePopover());
-
-  // Remplir la grille avec les articles avec pagination
-  const articles = window.sourcesData[sourceKey] || [];
-  const articlesPerPage = 30;
-  let currentPage = 1;
-  const totalPages = Math.ceil(articles.length / articlesPerPage);
-  container.ancre = () => 'source=' + encodeURIComponent(sourceKey) + '&p=' + currentPage;
-
-  // Créer le conteneur de pagination
-  const paginationContainer = document.createElement('div');
-  paginationContainer.style.display = 'flex';
-  paginationContainer.style.justifyContent = 'center';
-  paginationContainer.style.alignItems = 'center';
-  paginationContainer.style.gap = '1rem';
-  paginationContainer.style.marginTop = '1rem';
-  paginationContainer.style.padding = '0.5rem';
-
-  const btnPrecedentes = document.createElement('button');
-  btnPrecedentes.type = 'button';
-  btnPrecedentes.className = 'pagination-btn';
-  btnPrecedentes.textContent = '← Pages précédentes';
-  btnPrecedentes.style.padding = '0.4rem 0.8rem';
-  btnPrecedentes.style.background = '#0a0000';
-  btnPrecedentes.style.border = '1px solid var(--red-dim)';
-  btnPrecedentes.style.color = 'var(--red)';
-  btnPrecedentes.style.cursor = 'pointer';
-  btnPrecedentes.style.font = 'inherit';
-
-  const pageInfo = document.createElement('span');
-  pageInfo.style.minWidth = '80px';
-  pageInfo.style.textAlign = 'center';
-  pageInfo.style.color = 'var(--red)';
-
-  const btnSuivantes = document.createElement('button');
-  btnSuivantes.type = 'button';
-  btnSuivantes.className = 'pagination-btn';
-  btnSuivantes.textContent = 'Pages suivantes →';
-  btnSuivantes.style.padding = '0.4rem 0.8rem';
-  btnSuivantes.style.background = '#0a0000';
-  btnSuivantes.style.border = '1px solid var(--red-dim)';
-  btnSuivantes.style.color = 'var(--red)';
-  btnSuivantes.style.cursor = 'pointer';
-  btnSuivantes.style.font = 'inherit';
-
-  function afficherPage(page) {{
-    currentPage = Math.max(1, Math.min(page, totalPages));
-    grille.innerHTML = '';
-
-    const start = (currentPage - 1) * articlesPerPage;
-    const end = start + articlesPerPage;
-    const articlesPage = articles.slice(start, end);
-
-    articlesPage.forEach(article => {{
-      const carte = document.createElement('a');
-      carte.href = article.url + '?from=' + encodeURIComponent('/#' + container.ancre());
-      carte.className = 'carte';
-      carte.style.textDecoration = 'none';
-      carte.style.color = 'inherit';
-
-      const media = article.image
-        ? `<img src="${{article.image}}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-        : `<span class="lettre">${{article.source.charAt(0).toUpperCase() || '•'}}</span>`;
-
-      carte.innerHTML =
-        `<span class="carte-image" aria-hidden="true">${{media}}</span>` +
-        `<span class="carte-corps">` +
-        `<span class="meta">${{article.date}} · ${{article.host}}</span>` +
-        `<span class="carte-titre">${{article.title}}</span>` +
-        `<span class="carte-extrait">${{article.summary}}</span>` +
-        `</span>`;
-
-      grille.appendChild(carte);
-    }});
-
-    pageInfo.textContent = `Page ${{currentPage}} / ${{totalPages}}`;
-    btnPrecedentes.disabled = currentPage === 1;
-    btnSuivantes.disabled = currentPage === totalPages;
-    btnPrecedentes.style.opacity = currentPage === 1 ? '0.5' : '1';
-    btnSuivantes.style.opacity = currentPage === totalPages ? '0.5' : '1';
-    if (openPopover === container) majAdresse(container.ancre());
-  }}
-  container.afficherPage = afficherPage;
-
-  btnPrecedentes.addEventListener('click', () => afficherPage(currentPage - 1));
-  btnSuivantes.addEventListener('click', () => afficherPage(currentPage + 1));
-
-  paginationContainer.appendChild(btnPrecedentes);
-  paginationContainer.appendChild(pageInfo);
-  paginationContainer.appendChild(btnSuivantes);
-  panneau.appendChild(paginationContainer);
-
-  afficherPage(1);
-}}
-
-// Crée un panneau pour afficher les articles d'une catégorie
-function createCategoryPanel(categoryName) {{
-  const normalized = categoryName.replace(/[^a-z0-9-]/gi, '_');
-  const categoryId = 'cat-' + normalized;
-  const containerId = 'container-' + categoryId;
-
-  if (document.getElementById(containerId)) return;
-  const container = document.createElement('div');
-  container.id = containerId;
-  container.className = 'categorie-container';
-  container.hidden = true;
-
-  const backdrop = document.createElement('div');
-  backdrop.className = 'categorie-backdrop';
-  backdrop.setAttribute('data-close-source', categoryName);
-  backdrop.addEventListener('click', (e) => {{ if (e.target === backdrop) closePopover(); }});
-
-  const panneau = document.createElement('div');
-  panneau.id = categoryId + '-panneau';
-  panneau.className = 'categorie-panneau';
-
-  const header = document.createElement('div');
-  header.style.display = 'flex';
-  header.style.flexDirection = 'column';
-  header.style.marginBottom = '1rem';
-
-  const titre = document.createElement('h2');
-  titre.textContent = categoryName;
-  titre.style.textAlign = 'center';
-  titre.style.margin = '0 0 0.8rem 0';
-
-  const fermer = document.createElement('button');
-  fermer.type = 'button';
-  fermer.className = 'categorie-fermer';
-  fermer.setAttribute('data-article-id', categoryId);
-  fermer.setAttribute('aria-label', 'Fermer');
-  fermer.textContent = '×';
-  fermer.style.position = 'static';
-  fermer.style.width = 'auto';
-  fermer.style.height = 'auto';
-  fermer.style.padding = '0.4rem 0.8rem';
-  fermer.addEventListener('click', () => closePopover());
-
-  const grille = document.createElement('div');
-  grille.className = 'grille';
-  grille.id = categoryId + '-grille';
-
-  // Conteneur scrollable pour la grille seulement
-  const grilleContainer = document.createElement('div');
-  grilleContainer.style.flex = '1';
-  grilleContainer.style.overflow = 'auto';
-  grilleContainer.style.minHeight = '0';
-  grilleContainer.appendChild(grille);
-
-  // Restructurer le panneau avec flexbox
-  panneau.style.display = 'flex';
-  panneau.style.flexDirection = 'column';
-
-  header.appendChild(titre);
-  header.appendChild(fermer);
-  panneau.appendChild(header);
-  panneau.appendChild(grilleContainer);
-  container.appendChild(backdrop);
-  container.appendChild(panneau);
-  document.body.appendChild(container);
-
-  fermer.addEventListener('click', () => closePopover());
-
-  // Remplir la grille avec les articles avec pagination
-  const articles = window.categoriesData[categoryName] || [];
-  const articlesPerPage = 30;
-  let currentPage = 1;
-  const totalPages = Math.ceil(articles.length / articlesPerPage);
-  container.ancre = () => 'cat=' + encodeURIComponent(categoryName) + '&p=' + currentPage;
-
-  // Créer le conteneur de pagination
-  const paginationContainer = document.createElement('div');
-  paginationContainer.style.display = 'flex';
-  paginationContainer.style.justifyContent = 'center';
-  paginationContainer.style.alignItems = 'center';
-  paginationContainer.style.gap = '1rem';
-  paginationContainer.style.marginTop = '1rem';
-  paginationContainer.style.padding = '0.5rem';
-
-  const btnPrecedentes = document.createElement('button');
-  btnPrecedentes.type = 'button';
-  btnPrecedentes.className = 'pagination-btn';
-  btnPrecedentes.textContent = '← Pages précédentes';
-  btnPrecedentes.style.padding = '0.4rem 0.8rem';
-  btnPrecedentes.style.background = '#0a0000';
-  btnPrecedentes.style.border = '1px solid var(--red-dim)';
-  btnPrecedentes.style.color = 'var(--red)';
-  btnPrecedentes.style.cursor = 'pointer';
-  btnPrecedentes.style.font = 'inherit';
-
-  const pageInfo = document.createElement('span');
-  pageInfo.style.minWidth = '80px';
-  pageInfo.style.textAlign = 'center';
-  pageInfo.style.color = 'var(--red)';
-
-  const btnSuivantes = document.createElement('button');
-  btnSuivantes.type = 'button';
-  btnSuivantes.className = 'pagination-btn';
-  btnSuivantes.textContent = 'Pages suivantes →';
-  btnSuivantes.style.padding = '0.4rem 0.8rem';
-  btnSuivantes.style.background = '#0a0000';
-  btnSuivantes.style.border = '1px solid var(--red-dim)';
-  btnSuivantes.style.color = 'var(--red)';
-  btnSuivantes.style.cursor = 'pointer';
-  btnSuivantes.style.font = 'inherit';
-
-  function afficherPage(page) {{
-    currentPage = Math.max(1, Math.min(page, totalPages));
-    grille.innerHTML = '';
-
-    const start = (currentPage - 1) * articlesPerPage;
-    const end = start + articlesPerPage;
-    const articlesPage = articles.slice(start, end);
-
-    articlesPage.forEach(article => {{
-      const carte = document.createElement('a');
-      carte.href = article.url + '?from=' + encodeURIComponent('/#' + container.ancre());
-      carte.className = 'carte';
-      carte.style.textDecoration = 'none';
-      carte.style.color = 'inherit';
-
-      const media = article.image
-        ? `<img src="${{article.image}}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-        : `<span class="lettre">${{article.source.charAt(0).toUpperCase() || '•'}}</span>`;
-
-      carte.innerHTML =
-        `<span class="carte-image" aria-hidden="true">${{media}}</span>` +
-        `<span class="carte-corps">` +
-        `<span class="meta">${{article.date}} · ${{article.host}}</span>` +
-        `<span class="carte-titre">${{article.title}}</span>` +
-        `<span class="carte-extrait">${{article.summary}}</span>` +
-        `</span>`;
-
-      grille.appendChild(carte);
-    }});
-
-    pageInfo.textContent = `Page ${{currentPage}} / ${{totalPages}}`;
-    btnPrecedentes.disabled = currentPage === 1;
-    btnSuivantes.disabled = currentPage === totalPages;
-    btnPrecedentes.style.opacity = currentPage === 1 ? '0.5' : '1';
-    btnSuivantes.style.opacity = currentPage === totalPages ? '0.5' : '1';
-    if (openPopover === container) majAdresse(container.ancre());
-  }}
-  container.afficherPage = afficherPage;
-
-  btnPrecedentes.addEventListener('click', () => afficherPage(currentPage - 1));
-  btnSuivantes.addEventListener('click', () => afficherPage(currentPage + 1));
-
-  paginationContainer.appendChild(btnPrecedentes);
-  paginationContainer.appendChild(pageInfo);
-  paginationContainer.appendChild(btnSuivantes);
-  panneau.appendChild(paginationContainer);
-
-  afficherPage(1);
-}}
-
-// Crée un panneau de résultats de recherche
-function createSearchResultsPanel() {{
-  if (document.getElementById('container-search-results')) return;
-  const container = document.createElement('div');
-  container.id = 'container-search-results';
-  container.className = 'categorie-container';
-  container.hidden = true;
-  const backdrop = document.createElement('div');
-  backdrop.className = 'categorie-backdrop';
-  backdrop.setAttribute('data-close-source', 'search-results');
-  backdrop.addEventListener('click', (e) => {{ if (e.target === backdrop) closePopover(); }});
-  const panneau = document.createElement('div');
-  panneau.id = 'search-results-panneau';
-  panneau.className = 'categorie-panneau';
-  const fermer = document.createElement('button');
-  fermer.type = 'button';
-  fermer.className = 'categorie-fermer';
-  fermer.setAttribute('data-article-id', 'search-results');
-  fermer.setAttribute('aria-label', 'Fermer');
-  fermer.textContent = '×';
-  const titre = document.createElement('h2');
-  titre.innerHTML = 'Résultats <span class="compte">(0)</span>';
-  const grille = document.createElement('div');
-  grille.className = 'grille';
-  grille.id = 'search-results-grille';
-  panneau.appendChild(fermer);
-  panneau.appendChild(titre);
-  panneau.appendChild(grille);
-  container.appendChild(backdrop);
-  container.appendChild(panneau);
-  document.body.appendChild(container);
-  // Attacher le listener au bouton fermer
-  fermer.addEventListener('click', () => closePopover());
-}}
-
-// Crée un panneau pour afficher le code de conduite
-function createConductPanel() {{
-  if (document.getElementById('container-conduct')) return;
-  const container = document.createElement('div');
-  container.id = 'container-conduct';
-  container.className = 'categorie-container';
-  container.hidden = true;
-
-  const backdrop = document.createElement('div');
-  backdrop.className = 'categorie-backdrop';
-  backdrop.addEventListener('click', (e) => {{ if (e.target === backdrop) closePopover(); }});
-
-  const panneau = document.createElement('div');
-  panneau.id = 'conduct-panneau';
-  panneau.className = 'categorie-panneau conduct-panneau';
-
-  const header = document.createElement('div');
-  header.style.display = 'flex';
-  header.style.flexDirection = 'row';
-  header.style.alignItems = 'center';
-  header.style.justifyContent = 'space-between';
-  header.style.marginBottom = '1rem';
-
-  const titre = document.createElement('h2');
-  titre.textContent = 'Code de conduite du Discord';
-  titre.style.margin = '0';
-
-  const fermer = document.createElement('button');
-  fermer.type = 'button';
-  fermer.className = 'categorie-fermer';
-  fermer.setAttribute('aria-label', 'Fermer');
-  fermer.textContent = '×';
-  fermer.style.position = 'static';
-  fermer.style.width = 'auto';
-  fermer.style.height = 'auto';
-  fermer.style.padding = '0.4rem 0.8rem';
-  fermer.addEventListener('click', () => closePopover());
-
-  header.appendChild(titre);
-  header.appendChild(fermer);
-  panneau.appendChild(header);
-
-  const contenuContainer = document.createElement('div');
-  contenuContainer.style.flex = '1';
-  contenuContainer.style.overflow = 'auto';
-  contenuContainer.style.minHeight = '0';
-  contenuContainer.innerHTML = window.conductCode || '<p>Contenu non disponible</p>';
-  panneau.appendChild(contenuContainer);
-
-  // Ajouter les boutons de partage
-  const buttonsContainer = document.createElement('div');
-  buttonsContainer.style.display = 'flex';
-  buttonsContainer.style.gap = '0.8rem';
-  buttonsContainer.style.marginTop = '1rem';
-  buttonsContainer.style.borderTop = '1px solid var(--red-dim)';
-  buttonsContainer.style.paddingTop = '1rem';
-  buttonsContainer.style.justifyContent = 'center';
-
-  const btnShare = document.createElement('button');
-  btnShare.type = 'button';
-  btnShare.textContent = '📤 Partager';
-  btnShare.style.padding = '0.6rem 1rem';
-  btnShare.style.background = '#0a0000';
-  btnShare.style.border = '1px solid var(--red-dim)';
-  btnShare.style.color = 'var(--red)';
-  btnShare.style.cursor = 'pointer';
-  btnShare.style.font = 'inherit';
-  btnShare.style.transition = 'all 0.2s ease';
-  btnShare.addEventListener('mouseover', () => {{ btnShare.style.background = 'var(--red)'; btnShare.style.color = '#000'; }});
-  btnShare.addEventListener('mouseout', () => {{ btnShare.style.background = '#0a0000'; btnShare.style.color = 'var(--red)'; }});
-  btnShare.addEventListener('click', () => {{
-    if (navigator.share) {{
-      navigator.share({{
-        title: 'Code de conduite du Discord',
-        url: window.location.href
-      }}).catch(err => console.log('Partage annulé'));
-    }} else {{
-      alert('Le partage n\\'est pas disponible sur ce navigateur');
-    }}
-  }});
-
-  const btnCopy = document.createElement('button');
-  btnCopy.type = 'button';
-  btnCopy.textContent = '🔗 Copier le lien';
-  btnCopy.style.padding = '0.6rem 1rem';
-  btnCopy.style.background = '#0a0000';
-  btnCopy.style.border = '1px solid var(--red-dim)';
-  btnCopy.style.color = 'var(--red)';
-  btnCopy.style.cursor = 'pointer';
-  btnCopy.style.font = 'inherit';
-  btnCopy.style.transition = 'all 0.2s ease';
-  btnCopy.addEventListener('mouseover', () => {{ btnCopy.style.background = 'var(--red)'; btnCopy.style.color = '#000'; }});
-  btnCopy.addEventListener('mouseout', () => {{ btnCopy.style.background = '#0a0000'; btnCopy.style.color = 'var(--red)'; }});
-  btnCopy.addEventListener('click', () => {{
-    navigator.clipboard.writeText(window.location.href).then(() => {{
-      const originalText = btnCopy.textContent;
-      btnCopy.textContent = '✓ Copié !';
-      btnCopy.style.color = '#00ff00';
-      setTimeout(() => {{
-        btnCopy.textContent = originalText;
-        btnCopy.style.color = 'var(--red)';
-      }}, 2000);
-    }}).catch(() => {{
-      alert('Erreur lors de la copie du lien');
-    }});
-  }});
-
-  buttonsContainer.appendChild(btnShare);
-  buttonsContainer.appendChild(btnCopy);
-  panneau.appendChild(buttonsContainer);
-
-  container.appendChild(backdrop);
-  container.appendChild(panneau);
-  document.body.appendChild(container);
-  fermer.addEventListener('click', () => closePopover());
-}}
-// Gestion des tags cliquables (sources)
-document.querySelectorAll('.nuage .tag').forEach(tag => {{
-  tag.addEventListener('click', (e) => {{
-    const sourceKey = tag.getAttribute('data-source-key');
-    const sourceName = tag.getAttribute('data-source-name');
-    if (sourceKey && sourceName) {{
-      createSourcePanel(sourceKey, sourceName);
-      const sourceId = 'source-' + sourceKey.replace(/[^a-z0-9-]/gi, '_');
-      showPopover(sourceId);
-      // Fermer le menu +
-      const infosContainer = document.getElementById('bloc-infos-container');
-      if (infosContainer) infosContainer.hidden = true;
-    }}
-  }});
-}});
-
-// Gestion des boutons "+ " des catégories
-document.querySelectorAll('.tag-categorie').forEach(btn => {{
-  btn.addEventListener('click', (e) => {{
-    e.preventDefault();
-    const categoryName = btn.getAttribute('data-category-name');
-    if (categoryName) {{
-      createCategoryPanel(categoryName);
-      const categoryId = 'cat-' + categoryName.replace(/[^a-z0-9-]/gi, '_');
-      showPopover(categoryId);
-      // Fermer le menu +
-      const infosContainer = document.getElementById('bloc-infos-container');
-      if (infosContainer) infosContainer.hidden = true;
-    }}
-  }});
-}});
-
-// Barre de recherche
-const rechercheInput = document.getElementById('recherche');
-function lancerRecherche(texte) {{
-    const query = (texte || '').toLowerCase().trim();
-    if (!query) return;
-
-    console.log('Recherche lancée pour: ' + query);
-
-    // Créer le panneau s'il n'existe pas
-    createSearchResultsPanel();
-
-    // Charger l'index JSON et filtrer les articles
-    fetch('/articles-index.json')
-      .then(response => {{
-        if (!response.ok) throw new Error(`HTTP ${{response.status}}`);
-        return response.json();
-      }})
-      .then(articles => {{
-        const resultGrid = document.getElementById('search-results-grille');
-        if (!resultGrid) {{
-          console.error('Grille de résultats non trouvée');
-          return;
-        }}
-        resultGrid.innerHTML = '';
-
-        // Filtrer les articles par query
-        const results = articles.filter(article => {{
-          const searchText = (article.title + ' ' + article.summary + ' ' + article.source).toLowerCase();
-          return searchText.includes(query);
-        }});
-
-        console.log(`Trouvé ${{results.length}} résultats pour "${{query}}"`);
-
-        // Créer les cartes au format Pokémon
-        results.forEach(article => {{
-          const carte = document.createElement('a');
-          carte.href = article.url;
-          carte.className = 'carte';
-          carte.style.textDecoration = 'none';
-          carte.style.color = 'inherit';
-
-          const media = article.image
-            ? `<img src="${{article.image}}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-            : `<span class="lettre">${{article.source.charAt(0).toUpperCase() || '•'}}</span>`;
-
-          carte.innerHTML =
-            `<span class="carte-image" aria-hidden="true">${{media}}</span>` +
-            `<span class="carte-corps">` +
-            `<span class="meta">${{article.date}} · ${{article.host}}</span>` +
-            `<span class="carte-titre">${{article.title}}</span>` +
-            `<span class="carte-extrait">${{article.summary}}</span>` +
-            `</span>`;
-
-          resultGrid.appendChild(carte);
-        }});
-
-        if (results.length > 0) {{
-          const compte = document.querySelector('#search-results-panneau h2 .compte');
-          if (compte) {{
-            compte.textContent = `(${{results.length}})`;
-          }}
-          console.log('Panneau de résultats affichés');
-          showPopover('search-results');
-          // Fermer le menu +
-          const infosContainer = document.getElementById('bloc-infos-container');
-          if (infosContainer) infosContainer.hidden = true;
-        }} else {{
-          alert('Aucun résultat trouvé pour: ' + query);
-        }}
-      }})
-      .catch(err => {{
-        console.error('Erreur lors du chargement de l\\\'index:', err);
-        alert('Erreur lors de la recherche. Vérifiez votre connexion.');
-      }});
-}}
-if (rechercheInput) {{
-  rechercheInput.addEventListener('keydown', (e) => {{
-    if (e.key !== 'Enter') return;
-    e.preventDefault();
-    lancerRecherche(rechercheInput.value);
-  }});
-}}
-
-// Au chargement : rouvrir le panneau indiqué par l'adresse, ou lancer la recherche /?q=…
-function ouvrirDepuisAdresse() {{
-  const ancre = new URLSearchParams(location.hash.slice(1));
-  const page = parseInt(ancre.get('p'), 10) || 1;
-  const sourceKey = ancre.get('source');
-  const categoryName = ancre.get('cat');
-  let id = null;
-  if (sourceKey && Object.hasOwn(window.sourcesData, sourceKey)) {{
-    const tag = Array.from(document.querySelectorAll('.nuage .tag'))
-      .find(t => t.getAttribute('data-source-key') === sourceKey);
-    createSourcePanel(sourceKey, tag ? tag.getAttribute('data-source-name') : sourceKey);
-    id = 'source-' + sourceKey.replace(/[^a-z0-9-]/gi, '_');
-  }} else if (categoryName && Object.hasOwn(window.categoriesData, categoryName)) {{
-    createCategoryPanel(categoryName);
-    id = 'cat-' + categoryName.replace(/[^a-z0-9-]/gi, '_');
-  }}
-  if (id) {{
-    showPopover(id);
-    const container = document.getElementById('container-' + id);
-    if (container && container.afficherPage) container.afficherPage(page);
-    return;
-  }}
-  const q = new URLSearchParams(location.search).get('q');
-  if (q) {{
-    if (rechercheInput) rechercheInput.value = q;
-    lancerRecherche(q);
-  }}
-}}
-ouvrirDepuisAdresse();
-
-// Gestion des favoris
-function getFavorites() {{
-  const fav = localStorage.getItem('kioske_favoris');
-  return fav ? JSON.parse(fav) : {{}};
-}}
-
-function saveFavorites(fav) {{
-  localStorage.setItem('kioske_favoris', JSON.stringify(fav));
-  updateHearts();
-}}
-
-function toggleFavorite(event) {{
-  event.stopPropagation();
-  const heart = event.target;
-  const articleLink = heart.getAttribute('data-article-link');
-  if (!articleLink) return;
-
-  const favorites = getFavorites();
-  if (favorites[articleLink]) {{
-    delete favorites[articleLink];
-  }} else {{
-    const carte = heart.closest('.panel-article');
-    const titre = carte?.querySelector('h1')?.textContent || 'Sans titre';
-    const meta = (carte?.querySelector('.meta')?.textContent || '').split(' · ');
-    favorites[articleLink] = {{
-      titre: titre,
-      title: titre,
-      lien: articleLink,
-      url: location.pathname.startsWith('/articles/') ? location.pathname : articleLink,
-      image: carte?.querySelector('.article-image img')?.getAttribute('src') || '',
-      date: meta.length > 2 ? meta[0] : '',
-      host: meta.length > 2 ? meta[1] : (meta[0] || ''),
-      source: meta[meta.length - 1] || '',
-      timestamp: new Date().toISOString()
-    }};
-  }}
-  saveFavorites(favorites);
-}}
-
-function updateHearts() {{
-  const favorites = getFavorites();
-  document.querySelectorAll('.fav-heart').forEach(heart => {{
-    const articleLink = heart.getAttribute('data-article-link');
-    heart.classList.toggle('active', Boolean(articleLink && favorites[articleLink]));
-  }});
-}}
-
-function openFavoritesPanel() {{
-  // Fermer le menu navbar quand on ouvre le panneau des favoris
-  const navbarMenu = document.querySelector('.navbar-menu');
-  if (navbarMenu) navbarMenu.classList.remove('open');
-
-  closePopover();
-  document.getElementById('bloc-infos-container').hidden = true;
-
-  afficherFavoris(getFavorites());
-  showPopover('favoris');
-  completerFavoris();
-}}
-
-function afficherFavoris(favorites) {{
-  const favGrille = document.getElementById('fav-grille');
-  favGrille.innerHTML = '';
-
-  if (Object.keys(favorites).length === 0) {{
-    favGrille.innerHTML = '<p style="grid-column: 1/-1; color: #888; padding: 2rem; text-align: center;">Aucun favori pour le moment</p>';
-    return;
-  }}
-  Object.entries(favorites).forEach(([favKey, data]) => {{
-    // Créer la carte depuis les données stockées (avec fallback pour données incomplètes)
-    const carte = document.createElement('a');
-    carte.href = data.url || data.lien || '#';
-    carte.className = 'carte';
-    carte.style.textDecoration = 'none';
-    carte.style.color = 'inherit';
-
-    const source = data.source || 'Article';
-    const media = data.image
-      ? `<img src="${{data.image}}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-      : `<span class="lettre">${{source.charAt(0).toUpperCase() || '•'}}</span>`;
-
-    const metaText = [data.date, data.host].filter(x => x).join(' · ') || 'Sans date';
-    const title = data.title || data.titre || 'Sans titre';
-    const summary = data.summary || '';
-
-    carte.innerHTML =
-      `<span class="carte-image" aria-hidden="true">${{media}}</span>` +
-      `<span class="carte-corps">` +
-      `<span class="meta">${{metaText}}</span>` +
-      `<span class="carte-titre">${{title}}</span>` +
-      `<span class="carte-extrait">${{summary}}</span>` +
-      `</span>`;
-
-    favGrille.appendChild(carte);
-  }});
-}}
-
-// Anciens favoris : seul le lien du site d'origine était enregistré. L'index des articles
-// donne la page du KiosKe correspondante (et l'image, la date, le résumé).
-function completerFavoris() {{
-  const favorites = getFavorites();
-  const incomplets = Object.entries(favorites)
-    .filter(([cle, data]) => !String(data.url || '').startsWith('/articles/'));
-  if (incomplets.length === 0) return;
-  fetch('/articles-index.json')
-    .then(r => {{
-      if (!r.ok) throw new Error(`HTTP ${{r.status}}`);
-      return r.json();
-    }})
-    .then(articles => {{
-      const parLien = new Map(articles.map(a => [a.link, a]));
-      let change = false;
-      incomplets.forEach(([cle, data]) => {{
-        const a = parLien.get(data.lien) || parLien.get(cle);
-        if (!a) return;
-        favorites[cle] = Object.assign({{}}, data, {{
-          title: a.title, titre: a.title, lien: a.link, url: a.url, image: a.image,
-          summary: a.summary, date: a.date, host: a.host, source: a.source
-        }});
-        change = true;
-      }});
-      if (!change) return;
-      saveFavorites(favorites);
-      const conteneur = document.getElementById('container-favoris');
-      if (conteneur && !conteneur.hidden) afficherFavoris(favorites);
-    }})
-    .catch(err => console.error('Favoris non complétés :', err));
-}}
-
-function exportFavorites() {{
-  const favorites = getFavorites();
-  if (Object.keys(favorites).length === 0) {{
-    alert('Aucun favori à exporter');
-    return;
-  }}
-  const data = JSON.stringify(favorites, null, 2);
-  const blob = new Blob([data], {{type: 'application/json'}});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'kioske-favoris.json';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}}
-
-function importFavorites() {{
-  const file = document.getElementById('fav-file-input').files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (e) => {{
-    try {{
-      const data = JSON.parse(e.target.result);
-      const favorites = getFavorites();
-      Object.assign(favorites, data);
-      saveFavorites(favorites);
-      openFavoritesPanel();
-      alert('Favoris importés avec succès !');
-    }} catch (err) {{
-      alert('Erreur lors de l\\'import : format JSON invalide');
-    }}
-  }};
-  reader.readAsText(file);
-}}
-
-function clearFavorites() {{
-  if (confirm('Êtes-vous sûr de vouloir effacer tous vos favoris ?')) {{
-    localStorage.removeItem('kioske_favoris');
-    updateHearts();
-    openFavoritesPanel();
-  }}
-}}
-
-// Boutons
-document.getElementById('fav-export-btn')?.addEventListener('click', exportFavorites);
-document.getElementById('fav-file-input')?.addEventListener('change', importFavorites);
-document.getElementById('fav-clear-btn')?.addEventListener('click', clearFavorites);
-
-// Initialiser les cœurs
-updateHearts();
-
-// Gestionnaire pour le bouton "Code de conduite"
-const btnOpenConduct = document.getElementById('btn-open-conduite');
-if (btnOpenConduct) {{
-  btnOpenConduct.addEventListener('click', () => {{
-    createConductPanel();
-    showPopover('conduct');
-    // Fermer le menu
-    const menu = document.querySelector('.navbar-menu');
-    if (menu) menu.classList.remove('open');
-  }});
-}}
-
-{JS_CARTE_OUVERTE}// Gestion de l'installation PWA
-let installPromptEvent = null;
-const btnInstallPWA = document.getElementById('btn-install-pwa');
-
-window.addEventListener('beforeinstallprompt', (e) => {{
-  e.preventDefault();
-  installPromptEvent = e;
-}});
-
-if (btnInstallPWA) {{
-  btnInstallPWA.addEventListener('click', async () => {{
-    if (!installPromptEvent) {{
-      alert('L\\'installation PWA n\\'est pas disponible sur ce navigateur ou ce contexte.');
-      return;
-    }}
-    installPromptEvent.prompt();
-    const choix = await installPromptEvent.userChoice;
-    if (choix.outcome === 'accepted') {{
-      console.log('PWA installée');
-    }}
-    installPromptEvent = null;
-  }});
-}}
-
-window.addEventListener('appinstalled', () => {{
-  console.log('PWA installée avec succès');
-}});
-</script>
-</body>
-</html>
-"""
+    return remplir(
+        "accueil.html",
+        attributs_html=ATTRIBUTS_HTML,
+        variables_html=VARIABLES_HTML,
+        zoom=taille_defaut / 100,
+        largeur_carte_ouverte=largeur_carte_ouverte,
+        hauteur_carte_ouverte=hauteur_carte_ouverte / 100,
+        bordure_panneau_epaisseur=bordure_panneau_epaisseur,
+        espacement_panneau_vertical=espacement_panneau_vertical,
+        espacement_panneau_horizontal=espacement_panneau_horizontal,
+        titre=esc(titre_page),
+        description=esc(description),
+        mots_cles=keywords,
+        url_site=URL_SITE,
+        nom_site=esc(NOM_SITE),
+        domaine=DOMAINE,
+        liens_rss=liens_rss,
+        css=CSS,
+        script_theme=SCRIPT_THEME,
+        donnees_json=donnees_json,
+        js_donnees_accueil=JS_DONNEES_ACCUEIL,
+        js_service_worker=JS_SERVICE_WORKER,
+        nb_articles=len(items),
+        nb_sources=len(groupes),
+        choix_theme=CHOIX_THEME,
+        boutons_reseaux=boutons_reseaux,
+        galerie=galerie_html,
+        nuage=nuage,
+        bloc_immuable=bloc,
+        bas_immuable=bas,
+        js_accueil=JS_ACCUEIL,
+        js_carte_ouverte=JS_CARTE_OUVERTE,
+        js_retour_app=JS_RETOUR_APP,
+        js_installation_pwa=JS_INSTALLATION_PWA,
+    )
 
 
 def render_rss_page(categories: dict[str, str] | None = None, items: list[dict] | None = None) -> str:
@@ -1507,10 +340,6 @@ def render_rss_page(categories: dict[str, str] | None = None, items: list[dict] 
     ordre_categories = ordre_des_categories(items or [], categories)
     slugs = slugs_categories(ordre_categories)
 
-    themes, defaut = charger_themes()
-    css = css_des_themes(themes, defaut)
-    pluie = rain() if any(t["pluie"] for t in themes) else ""
-    choix = choix_theme_html(themes, defaut)
 
     # Lien vers le flux RSS principal
     flux_principal = f'<a href="rss.xml" class="rss-lien rss-principal"><svg viewBox="0 0 20 20" aria-hidden="true"><rect y="0" width="20" height="4" fill="#5BCEFA"/><rect y="4" width="20" height="4" fill="#F5A9B8"/><rect y="8" width="20" height="4" fill="#FFFFFF"/><rect y="12" width="20" height="4" fill="#F5A9B8"/><rect y="16" width="20" height="4" fill="#5BCEFA"/><g fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round"><circle cx="4.5" cy="15.5" r="1.8" fill="#000" stroke="none"/><path d="M3 10.5a6.5 6.5 0 0 1 6.5 6.5"/><path d="M3 4.5a12.5 12.5 0 0 1 12.5 12.5"/></g></svg> {esc(DOMAINE)}</a>'
@@ -1523,79 +352,21 @@ def render_rss_page(categories: dict[str, str] | None = None, items: list[dict] 
 
     bloc, bas = immuable.parties()
 
-    return f"""<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Flux RSS — {esc(NOM_SITE)}</title>
-<meta name="description" content="Tous les flux RSS du {esc(DOMAINE)}, organisés par catégories.">
-<link rel="canonical" href="{URL_SITE}/rss.html">
-<meta name="theme-color" content="#000000">
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="manifest" href="manifest.json">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="KiosKe.fr">
-<style>
-{css}
-.rss-page {{ max-width: 560px; margin: 2rem auto; padding: 2rem; }}
-.rss-page h2 {{ font-size: 1.8rem; margin-bottom: 1.5rem; }}
-.rss-page h3 {{ font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }}
-.rss-lien {{ display: block; padding: 0.8rem 1rem; margin-bottom: 0.5rem; border: 1px solid var(--red-dim); color: var(--red-light); text-decoration: none; transition: all 0.2s; }}
-.rss-lien:hover {{ background: var(--red); color: #000; }}
-.rss-lien svg {{ display: inline-block; width: 1.2rem; height: 1.2rem; margin-right: 0.5rem; vertical-align: middle; }}
-.rss-principal {{ border: 2px solid var(--red); font-weight: bold; }}
-</style>
-<script>
-if ('serviceWorker' in navigator) {{
-  window.addEventListener('load', () => {{
-    navigator.serviceWorker.register('sw.js').catch(() => {{}});
-  }});
-}}
-</script>
-</head>
-<body>
-{pluie}<main class="panel">
-  <p><a class="rss-lien" href="/">← Accueil</a></p>
-  {choix}
-  <p class="kicker">// {DOMAINE} flux RSS</p>
-  <h1>{esc(NOM_SITE)}</h1>
-  <p class="sub">Découvrez tous les flux RSS du {esc(DOMAINE)}</p>
-
-  <div class="rss-page">
-    <h2>📡 Flux RSS</h2>
-
-    <h3>Principal</h3>
-    {flux_principal}
-
-    <h3>Par catégorie</h3>
-    {flux_categories}
-  </div>
-
-  {bloc}
-  {bas}
-</main>
-<p class="mentions">Chaque flux renvoie vers sa source d'origine. Textes, images et vidéos : leurs auteur.ice.s et sites respectifs.</p>
-<script>
-let openPopover = null;
-document.querySelectorAll('[data-article-id]').forEach(btn => {{
-  btn.addEventListener('click', (e) => {{ closePopover(); }});
-}});
-function closePopover() {{
-  if (openPopover) {{
-    openPopover.hidden = true;
-    openPopover = null;
-  }}
-}}
-
-// Gestion de l'installation PWA (rss.html n'a pas de popover, on laisse juste le message du navigateur)
-window.addEventListener('beforeinstallprompt', (e) => {{
-  e.preventDefault();
-  console.log('L\'app est installable');
-}});
-</script>
-</body>
-</html>
-"""
+    return remplir(
+        "rss.html",
+        attributs_html=ATTRIBUTS_HTML,
+        variables_html=VARIABLES_HTML,
+        nom_site=esc(NOM_SITE),
+        domaine_echappe=esc(DOMAINE),
+        url_site=URL_SITE,
+        css=CSS,
+        script_theme=SCRIPT_THEME,
+        js_service_worker=JS_SERVICE_WORKER,
+        choix_theme=CHOIX_THEME,
+        domaine=DOMAINE,
+        flux_principal=flux_principal,
+        flux_categories=flux_categories,
+        bloc_immuable=bloc,
+        bas_immuable=bas,
+        js_page_rss=JS_PAGE_RSS,
+    )

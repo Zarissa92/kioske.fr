@@ -7,6 +7,9 @@ Pages HTML statiques (HTML5, CSS, JavaScript sans dépendance) générées toute
 sans publicité ni pistage. Le JavaScript sert à la navigation (panneaux, cartes, recherche, favoris) ; sans
 lui, les pages statiques d'articles et de catégories restent lisibles par leurs liens.
 
+**Langue** : le site et le projet sont en français — pages (`lang="fr"`), flux RSS, code, commentaires
+et documentation.
+
 **Mots-clés** : kioske, veille, médias indépendants, LGBTQIA+, RSS, Twitch, informatique libre.
 
 En haut de la page, le **bloc immuable** (cagnotte, lien Discord, code de conduite) n'est jamais
@@ -17,6 +20,22 @@ modifié par le build.
 > **À vérifier :** l'`origin` du dépôt git pointe encore vers `kit-gauchiasses.fr`.
 >
 > **Modifications récentes** :
+> - **Squelettes des pages dans `kioske/gabarits/`** (2026-11-14) : le HTML complet des quatre types de page est sorti du code Python, dans `accueil.html` (barre du haut comprise), `article.html`, `categorie.html` et `rss.html`. Ce sont des fichiers HTML ordinaires où `${nom}` marque l'endroit d'une valeur (`string.Template`, bibliothèque standard, aucune dépendance) ; `kioske/gabarits.py` les lit et les remplit (`remplir()`). Les morceaux répétés ou conditionnels (cartes, étiquettes, galeries, boutons, balises d'image de partage) restent fabriqués en Python. Vérifié sur les 1311 pages du build local : l'accueil et `rss.html` sont identiques à l'octet près, les pages d'article et de catégorie aussi, à un saut de ligne final près (elles se terminent maintenant par un saut de ligne).
+> - **Tout le JavaScript dans `kioske/js/`** (2026-11-14) : plus aucun script écrit dans le code Python. Les scripts des pages sont des fichiers de `kioske/js/` (`accueil.js`, `galerie.js`, `carte_ouverte.js`, `retour_app.js`, `installation_pwa.js`, `donnees_accueil.js`, `service_worker.js`, `page_article.js`, `page_categorie.js`, `page_rss.js`) ; `kioske/javascript.py` les lit et `rendu.py` / `rendu_statique.py` insèrent leur contenu dans les pages, comme pour `style.css`. Les pages construites sont les mêmes qu'avant, à trois détails près : les données de l'accueil (articles par source et par catégorie, code de conduite) sont écrites en JSON dans `<script type="application/json" id="kioske-donnees">` et lues par `donnees_accueil.js` ; les `onclick` écrits par Python (♡ et 📤 de la carte, ♡ de la barre, « Mes favoris », « Charger des favoris ») sont remplacés par des écouteurs dans les fichiers JS ; le service worker est enregistré partout par `/sw.js`. Reste un `onclick` dans `accueil/bloc_immuable.html` (bloc protégé, non modifié). `static/app.js`, `static/theme.js` et `static/sw.js` ne bougent pas : ils sont servis comme fichiers à part. Testé dans jsdom (accueil, page d'article, page de catégorie, page RSS).
+> - **Tailles réglées dans `kioske.cfg` seulement** (2026-11-14) : les curseurs « Taille du site » et « Hauteur carte », leur script (accueil et `static/app.js`) et leur style sont supprimés. `taille_defaut` et `hauteur_carte_ouverte` restent dans `kioske.cfg` (bornés à 75-125 %) et sont écrits au build dans l'attribut `style` de `<html>` (`zoom` et `--hauteur-carte-ouverte`) : plus de script pour le zoom, et les valeurs autrefois enregistrées dans le navigateur des visiteurs (`kioske-taille`, `kioske-hauteur-carte`) ne sont plus lues. Cache du service worker : v21.
+> - **Menu ≡ : boutons de thème remis à leur place** (2026-11-14) : ils remontaient par-dessus le titre « Thèmes » et débordaient du menu (marge haute négative de la règle générale `.choix-theme`). Dans le menu, ils sont maintenant en colonne sous le titre (`.theme-options .choix-theme` dans `kioske/style.css`). Non vérifié à l'écran.
+> - **Galerie dans chaque bloc de catégorie de l'accueil** (2026-11-14) : sous le titre de chaque bloc, avant les étiquettes, une rangée de petites vignettes (5,5 × 4 rem ; 4,6 × 3,4 rem sous 600 px) des 12 derniers articles de la catégorie ayant une image (`NB_GALERIE_BLOC` et `render_galerie_bloc()` dans `kioske/rendu.py`). Écrite dans le HTML au build, avec les flèches < et > de la grande galerie (même balisage, même script `brancherGalerie()`) ; elle défile aussi au doigt ou à la barre de défilement. Style du bloc conservé : bordure fine de la couleur du thème, coins des étiquettes, pas d'agrandissement au survol (classe `.galerie-bloc` dans `kioske/style.css`). Pas de galerie si la catégorie n'a aucune image. Testé dans jsdom ; le rendu visuel n'a pas pu être vérifié.
+> - **Galerie par catégorie** (2026-11-14) : le panneau d'une catégorie (bouton « + » de l'accueil) affiche, au-dessus de ses cartes, une galerie horizontale des 12 derniers articles de la catégorie ayant une image (`NB_GALERIE_CATEGORIE` dans `kioske/js/accueil.js`). Elle est plus petite que la galerie de l'accueil (130 × 95 px, 100 × 74 px sous 600 px de large ; classe `.galerie-panneau` dans `kioske/style.css`), défile avec la grille et n'apparaît pas si aucun article de la catégorie n'a d'image. Un clic ouvre la carte de l'article, comme partout. Le script des flèches est devenu une fonction, `brancherGalerie()`, commune aux deux galeries. Testé dans jsdom ; le rendu visuel (tailles, marges) n'a pas pu être vérifié.
+> - **× qui remontait trop loin** (2026-11-14) : le bouton × des panneaux de source, de catégorie et du code de conduite avait deux écouteurs de clic, donc deux `history.back()` : on remontait une entrée de trop (panneau d'avant sauté, ou sortie du site). Écouteurs en double retirés ; `closePopover()` et `fermerCarte()` masquent maintenant le panneau ou la carte avant `history.back()`, si bien qu'un double appui ne remonte qu'une entrée. Testé dans jsdom, pas sur un téléphone.
+> - **`from` retiré du bouton précédent** (2026-11-14) : dans l'app installée, le retour du téléphone sur une page d'article ouverte en premier ramène à l'accueil, sans lire le paramètre `from`. Le bouton précédent (navigateur, téléphone) suit donc toujours l'historique ; `from` ne sert plus qu'au bouton « ← Retour » des pages d'article et à Précédent/Suivant, qui le transmettent.
+> - **nginx : en-tête `Content-Language: fr`** (2026-11-14, à déployer) : envoyé sur les pages HTML seulement, par une table `map $sent_http_content_type $kioske_langue` et un `add_header` au niveau `server` (aucun dans les blocs `location`). Ajouté dans `deploy/kioske-nginx.conf`, `deploy/deployer_nginx.sh` et `deploy/kioske.nginx.conf`. Non testé avec nginx sur le PC.
+> - **Thème en JavaScript, pluie hors du HTML, langue déclarée** (2026-11-14) : les navigateurs prenaient le site pour du japonais, à cause des caractères de la pluie matricielle écrits dans chaque page. La pluie est maintenant fabriquée par `static/theme.js` ; ses signes sont dans un attribut (`data-g`) et affichés par CSS (`::before`) : la page ne contient plus aucun texte japonais. Le même script applique le thème choisi par le visiteur, gardé dans `localStorage` (clé `kioske-theme`) et valable sur toutes les pages ; les boutons radio et les règles `:has()` sont remplacés par des boutons (`.theme-bouton`). `kioske/themes.py` est réduit : plus de CSS généré ni de marqueurs `__FOND__`/`__PANNEAU__` dans `style.css`, `kioske/pluie.css` fusionné dans `style.css` et supprimé, thèmes lus une seule fois au lieu d'une fois par page. Langue : `<meta http-equiv="content-language" content="fr">` sur toutes les pages, `"lang": "fr"` dans `manifest.json`. Erreur de syntaxe corrigée dans le script de la page des flux. Cache service worker v20 (il liste `theme.js` et `app.js` à la place de `style.css` et `pluie.css`, qui n'existent pas dans `build/`).
+> - **Code mort retiré** (2026-11-14) : réglage `slogan` (lu, mais plus utilisé nulle part) supprimé de `kioske.cfg` et de `kioske/config.py` ; dans le script de l'accueil, restes des anciens panneaux d'article (`article-container`, `closeArticleAndShowSource`, mémoire de défilement jamais alimentée) et leurs règles `.article-panneau` dans `kioske/style.css`. La page des flux n'a plus de script de panneau.
+> - **Tout le CSS dans `kioske/style.css`, Python nettoyé** (2026-11-14) : les blocs `<style>` et les constantes CSS de `rendu.py` et `rendu_statique.py` (`CSS_CARTE_OUVERTE`, `CSS_CARTE_SUPERPOSEE`, `CSS_PAGE_ARTICLE`, styles du code de conduite, de la page des flux et des pages de catégorie), les attributs `style="…"` et les styles posés par le script des panneaux (`element.style.…`) sont devenus des règles et des classes à la fin de `style.css` (`.panneau-entete`, `.panneau-titre`, `.fermer-entete`, `.panneau-defilant`, `.pagination`, `.pagination-info`, `.panneau-actions`, `.panneau-bouton`, `.grille-vide`, `.tag-categorie`, `.recherche-form`, `.recherche-bouton`). Les règles propres à une page sont limitées par `:where(.panel-category)` et `:where(.page-article)` (classe ajoutée au `<body>` des pages d'article). Restent hors du fichier : les valeurs venues de `kioske.cfg` (variables sur `<html>`), le zoom réglé par le visiteur, les gouttes de pluie (positions tirées au hasard) et le bloc immuable. Python : imports et variables inutilisés retirés, fonction morte `render_card` supprimée, `render_galerie` renvoie seulement son HTML.
+> - **Plus de vide autour des cartes sur ordinateur** (2026-11-14) : une carte occupait 75 % de sa colonne, centrée. Elle la remplit maintenant, et la grille gagne une colonne pour garder des cartes de taille voisine : 5 colonnes au-delà de 960 px (au lieu de 4), 4 entre 641 et 960 px (au lieu de 3). Téléphone inchangé (`.grille`, `.carte` dans `kioske/style.css`).
+> - **Marges horizontales des panneaux réduites et réglables** (2026-11-14) : nouveau réglage `espacement_panneau_horizontal` dans `kioske.cfg` (`[site]`, défaut `0.5rem`, au lieu de 2rem sur ordinateur et 0,6 à 1rem sur téléphone). Il vaut pour tous les panneaux (source, catégorie, recherche, favoris, code de conduite) et toutes les tailles d'écran.
+> - **Cartes superposées dans les favoris et la recherche** (2026-11-14) : dans ces deux panneaux, la grille est directement dans le panneau et défile ; ses lignes se tassaient sous la hauteur des cartes, qui se chevauchaient. Corrigé par `grid-auto-rows: max-content` sur `.categorie-panneau > .grille` (`kioske/style.css`). Non vérifié à l'écran.
+> - **Bouton précédent du téléphone** (2026-11-14) : sur l'accueil, ouvrir un panneau (source, catégorie, recherche, favoris, code de conduite) ajoute une entrée d'historique ; le bouton précédent referme le panneau et ramène au panneau d'avant, ou à l'accueil, au lieu de quitter le site. ×, Échap et le clic sur le fond remontent la même entrée. Dans l'app installée (PWA), le bouton précédent ne ferme plus l'app : sur l'accueil on y reste, sur une page d'article ou de catégorie ouverte en premier on remonte à la page parente (`JS_RETOUR_APP` dans `kioske/rendu_statique.py`). Testé dans jsdom, pas sur un téléphone.
 > - **Panneaux en plein écran** (2026-11-13) : les panneaux de source, de catégorie, de recherche, des favoris et du code de conduite remplissent l'écran et passent au-dessus de la barre du haut (`.categorie-container`, `.categorie-panneau` dans `kioske/style.css`). La carte d'article ouverte garde son format « carte à jouer ».
 > - **Menu et page des flux vérifiés et corrigés** (2026-11-13) : les entrées Flux RSS, Discord et Mastodon du menu ≡ sont de vrais liens (`<a>`) et non plus des boutons avec `onclick` ; les liens externes s'ouvrent avec `rel="noopener noreferrer"`. Le bouton ≡ porte `aria-expanded`. `rss.html` ne liste plus que les catégories dont le flux est réellement écrit (le lien « Des Liens » menait à une page introuvable) et a un lien « ← Accueil ». Favoris et résultats de recherche : les cartes défilent dans le panneau.
 > - **nginx : en-têtes de sécurité et politique de contenu corrigés** (2026-11-13, à déployer) : les blocs `location` contenaient un `add_header Cache-Control`, ce qui annulait tous les en-têtes du niveau `server` (HSTS, CSP, `nosniff`…) sur les pages. La durée de cache passe par une table `map` et un seul `add_header` au niveau `server` ; plus aucun `add_header` dans un `location`. La CSP autorise maintenant ce dont le site a besoin : `script-src 'self' 'unsafe-inline'`, `connect-src 'self'`, `manifest-src 'self'`, `worker-src 'self'`. `app.js` n'est plus mis en cache un an. Sauvegarde des anciens fichiers : `old/nginx-avant-csp-2026-11-13/`.
@@ -74,8 +93,8 @@ carte ouvre l'article par-dessus la page, au format « carte à jouer » (texte 
 | `kioske.cfg` | **Tous les réglages** : domaine, thèmes, veille, serveur. Lu par Python et par les scripts bash. |
 | `sources/` | Ce que la veille suit : `RSS_feeds.txt`, `Twitch_feeds.txt`, `flux_corrige_main.txt`. Écrits à la main. |
 | `accueil/bloc_immuable.html` | Source du bloc immuable. |
-| `static/` | Fichiers publiés tels quels : `favicon.svg`, `apple-touch-icon.png`, `preview.png`, `fonts/`, `app.js` (favoris et réglages des pages d'article et de catégorie), `sw.js` et `manifest.json` (PWA), icônes `icon-*.png`. |
-| `kioske/` | Le code (paquet Python) et les feuilles de style `style.css`, `pluie.css`. Voir ci-dessous. |
+| `static/` | Fichiers publiés tels quels : `favicon.svg`, `apple-touch-icon.png`, `preview.png`, `fonts/`, `app.js` (favoris et réglages des pages d'article et de catégorie), `theme.js` (thème choisi par le visiteur et pluie matricielle, sur toutes les pages), `sw.js` et `manifest.json` (PWA), icônes `icon-*.png`. |
+| `kioske/` | Le code (paquet Python), la feuille de style `style.css`, les squelettes HTML des pages (`gabarits/`) et leur JavaScript (`js/`). Voir ci-dessous. |
 | `bin/` | Points d'entrée : `build_site.py`, `publier_public.py`, `garde_immuable.py`. Quelques lignes chacun. |
 | `deploy/` | Scripts du serveur : `kioske.sh` (point d'entrée), `installer_serveur.sh`, `deployer_nginx.sh`, `verifier_serveur.sh`, `lib_config.sh`, `systemd/`, `fail2ban/`. |
 | `data/` | `immuable.json` (empreinte du bloc, suivie par git) ; `historique.db`, `cache/`, `build.lock` (locaux, jamais publiés). |
@@ -94,9 +113,11 @@ Le paquet `kioske/` :
 | `flux.py`, `twitch.py`, `apercus.py`, `reseau.py` | Récupération : flux RSS, vidéos Twitch (yt-dlp), aperçus Open Graph. |
 | `images.py` | Téléchargement des images dans `build/img/veille/`, et purge de celles qui ne servent plus. |
 | `historique.py` | Base SQLite de tout ce qui a été récupéré. |
-| `themes.py`, `style.css`, `pluie.css` | Thèmes et CSS de la page. |
-| `rendu.py`, `rss.py`, `texte.py` | HTML et JavaScript de la page d'accueil et de `rss.html`, flux RSS produits, outils de texte (slugs, IDs, échappement HTML). |
-| `rendu_statique.py` | HTML des pages statiques d'articles et de catégories (retour au parent). Contient aussi le style et le script partagés de la carte ouverte : `CSS_CARTE_OUVERTE`, `CSS_CARTE_SUPERPOSEE`, `JS_CARTE_OUVERTE`. |
+| `themes.py`, `style.css` | Thèmes et CSS. `themes.py` lit les thèmes de `kioske.cfg` et prépare ce que chaque page reprend (attributs de `<html>`, liste des thèmes pour `static/theme.js`, boutons de choix). `style.css` contient **tout** le CSS du site, pluie et thèmes compris : le code Python n'en écrit pas. |
+| `rendu.py`, `rss.py`, `texte.py` | Contenu de la page d'accueil et de `rss.html` (étiquettes, galeries, données ; le squelette est dans `gabarits/`), flux RSS produits, outils de texte (slugs, IDs, échappement HTML). |
+| `rendu_statique.py` | Contenu des pages statiques d'articles et de catégories (image, navigation, cartes ; le squelette est dans `gabarits/`). Aucun CSS (il est dans `style.css`) ni JavaScript (il est dans `js/`). |
+| `gabarits.py`, `gabarits/` | Squelettes HTML des pages : `accueil.html`, `article.html`, `categorie.html`, `rss.html`. `${nom}` marque l'endroit d'une valeur ; ni boucle ni condition dans un gabarit. `gabarits.py` fournit `remplir("page.html", nom=valeur, …)` : une valeur manquante arrête le build, et le texte est échappé par Python (`esc()`) avant d'être passé. Un vrai signe dollar s'écrit `$$`. Pour modifier le HTML fixe d'une page, éditer son gabarit ; pour y ajouter une valeur, écrire `${nom}` dans le gabarit et passer `nom=…` dans l'appel `remplir()` de `rendu.py` ou `rendu_statique.py`. |
+| `javascript.py`, `js/` | Tout le JavaScript écrit dans les pages. `js/` : un fichier par rôle — `accueil.js` (panneaux, recherche, favoris, menu), `galerie.js` (flèches des galeries), `carte_ouverte.js` (carte d'article par-dessus la page), `retour_app.js` (bouton précédent dans l'app installée), `installation_pwa.js`, `donnees_accueil.js` (lit le JSON des articles), `service_worker.js`, `page_article.js`, `page_categorie.js`, `page_rss.js`. `javascript.py` les lit (constantes `JS_…`) et fournit `json_pour_page()` pour les données. Pour ajouter un script : créer le fichier dans `js/`, ajouter sa constante dans `javascript.py`, l'insérer dans la page voulue. |
 | `immuable.py` | Garde du bloc immuable. |
 | `verrou.py` | Un seul build ou une seule publication à la fois. |
 | `construction.py`, `publication.py` | Le build (`build/`) et la copie vers la racine web. |
@@ -107,7 +128,7 @@ Format INI, commenté dans le fichier. Une valeur manquante ou invalide arrête 
 
 | Section | Clés |
 | --- | --- |
-| `[site]` | `domaine`, `nom`, `slogan` (titre de l'onglet et référencement), `theme` (thème par défaut), `taille_defaut` (zoom en %, min 75, max 125, défaut 115), `largeur_carte_ouverte` (largeur max du panneau article, ex: `min(600px, 85vw)`), `hauteur_carte_ouverte` (zoom de la hauteur des cartes, min 75, max 125, défaut 115), `bordure_panneau_epaisseur` (défaut 8), `espacement_panneau_vertical` (défaut `2.4rem`). |
+| `[site]` | `domaine`, `nom`, `theme` (thème par défaut), `taille_defaut` (zoom de l'accueil en %, min 75, max 125, défaut 90 ; réglage du site, pas des visiteurs), `largeur_carte_ouverte` (largeur max du panneau article, ex: `min(600px, 85vw)`), `hauteur_carte_ouverte` (zoom de la hauteur des cartes, min 75, max 125, défaut 115), `bordure_panneau_epaisseur` (défaut 8), `espacement_panneau_vertical` (défaut `2.4rem`), `espacement_panneau_horizontal` (marge intérieure gauche et droite des panneaux, défaut `0.5rem`). |
 | `[veille]` | `articles_flux_rss` (100), `videos_par_chaine` (15), `articles_par_source` (0 = tous), `delai_nouvel_essai_heures` (24). |
 | `[serveur]` | `racine_web` (`/var/www/kioske.fr`), `ip_publique`, `intervalle_timer` (`30min`). |
 | `[reseaux]` | `discord` (URL du serveur Discord), `mastodon` (profil Mastodon), `rss` (chemin vers la page RSS, défaut `rss.html`). Laissez vide pour désactiver un lien. |
@@ -199,14 +220,26 @@ Tant que l'empreinte n'est pas réenregistrée après une modification, rien n'e
   recherche, bouton ♡ (favoris), menu ≡. Le menu contient le choix du thème, les liens Flux RSS, Discord et
   Mastodon (selon `[reseaux]` ; de vrais liens, les externes dans un nouvel onglet avec
   `rel="noopener noreferrer"`) et le code de conduite. Le bouton ≡ annonce l'état du menu (`aria-expanded`).
-- **Thème au choix du visiteur** : boutons radio cachés et règles `:root:has(#theme-<id>:checked)`, sans
-  JavaScript ni cookie. Le choix ne dure que la visite. Sans `:has()` (vieux navigateurs), seul le thème
-  par défaut s'affiche.
+- **Thème au choix du visiteur** : boutons `.theme-bouton`, gérés par `static/theme.js`. Le choix est gardé
+  dans `localStorage` (clé `kioske-theme`, aucun cookie) et s'applique à toutes les pages. Le build pose le
+  thème par défaut sur `<html>` (`data-fond`, `data-pluie`, `--panneau-opacite`) : sans JavaScript, c'est
+  lui qui s'affiche, sans pluie. Les règles sont dans la section « Thèmes » de `kioske/style.css`.
+- **Pluie matricielle** : colonnes créées par `static/theme.js`, signes affichés par CSS depuis un attribut.
+  La page ne contient aucun texte japonais (les navigateurs ne proposent plus de la traduire).
+- **`theme.js` est mis en cache** par le service worker : après l'avoir modifié, changer `CACHE_VERSION`
+  dans `static/sw.js`.
 - **Recherche** : taper puis Entrée. Le script charge `/articles-index.json` et cherche dans les titres,
   les résumés et les noms de sources ; les résultats s'affichent en cartes dans un panneau. Depuis une page
   d'article ou de catégorie, la recherche renvoie vers l'accueil (`/?q=…`), qui l'exécute.
 - **Galerie horizontale** : les 12 derniers articles ayant une image. Les flèches < et > font défiler au
   survol.
+- **Galerie des blocs de catégorie** : dans chaque bloc de l'accueil, entre le titre et les étiquettes, une
+  rangée de petites vignettes des 12 derniers articles de la catégorie ayant une image. Flèches < et >
+  comme sur la grande galerie ; elle défile aussi au doigt ou à la barre de défilement. Un clic ouvre la
+  carte de l'article.
+- **Galerie par catégorie** : dans le panneau d'une catégorie, la même galerie en plus petit, avec les 12
+  derniers articles de la catégorie ayant une image. Elle est placée au-dessus des cartes et défile avec
+  elles. Pas de galerie si la catégorie n'a aucune image.
 - **Étiquettes** : une par source, dans un bloc par catégorie. Un clic ouvre le panneau de la source
   (30 cartes par page, pagination). Le bouton « + » d'un titre de catégorie ouvre le panneau de la catégorie,
   toutes sources mélangées, du plus récent au plus ancien.
@@ -229,9 +262,9 @@ Tant que l'empreinte n'est pas réenregistrée après une modification, rien n'e
   défilant au milieu, boutons en bas (Précédent, ♡, 📤 partage, Suivant). Plein écran sur téléphone.
 - **Ouverture en JavaScript** (accueil et pages de catégorie) : un clic simple sur une carte charge la
   page statique de l'article (`fetch`), en extrait `main.panel-article` et l'affiche par-dessus la page,
-  dans `.carte-ouverte`. Le style et le script sont partagés avec la page statique (`CSS_CARTE_OUVERTE`,
-  `CSS_CARTE_SUPERPOSEE`, `JS_CARTE_OUVERTE` dans `kioske/rendu_statique.py`). La page qui inclut le script
-  fournit `updateHearts()` et `toggleFavorite()` (script de l'accueil, ou `static/app.js`) et ferme la
+  dans `.carte-ouverte`. Le style (section « Carte d'article ouverte » de `kioske/style.css`) et le script
+  (`kioske/js/carte_ouverte.js`) sont partagés avec la page statique. La page qui inclut le script
+  fournit `updateHearts()` et `toggleFavorite()` (`kioske/js/accueil.js`, ou `static/app.js`) et ferme la
   carte sur Échap.
 - **Adresse** : à l'ouverture, `history.pushState` met l'adresse de la page statique de l'article (lien
   partageable, rechargement possible). `popstate` referme ou rouvre la carte.
@@ -241,8 +274,30 @@ Tant que l'empreinte n'est pas réenregistrée après une modification, rien n'e
   même carte sans nouvelle entrée d'historique.
 - **Lien normal conservé** : Ctrl+clic, Maj+clic, clic molette et navigation sans JavaScript ouvrent la
   page statique. Si le chargement échoue, le navigateur ouvre aussi la page statique.
-- **Taille** : l'accueil est agrandi par `taille_defaut` ; ce zoom est annulé sur la carte ouverte pour
-  qu'elle ait la taille de la page statique.
+- **Taille** : l'accueil est agrandi par `taille_defaut` (`kioske.cfg`, écrit au build dans le `style` de
+  `<html>`, non modifiable par les visiteurs) ; ce zoom est annulé sur la carte ouverte pour qu'elle ait
+  la taille de la page statique.
+
+### Bouton précédent et historique
+
+- **Panneaux de l'accueil** : un panneau ouvert par un clic ajoute une entrée d'historique
+  (`history.pushState`, état `{ panneau, empile: true }`). Le bouton précédent du téléphone ou du
+  navigateur le referme : on retrouve le panneau d'avant (par exemple la catégorie ouverte avant les
+  favoris), sinon l'accueil. ×, Échap et le clic sur le fond sombre font `history.back()` : pas d'entrées
+  qui s'empilent. `history.back()` n'agit qu'un instant plus tard : le panneau (ou la carte) est masqué
+  avant l'appel, pour qu'un second appel (double appui, écouteur en double) ne remonte pas une entrée de
+  trop. Changer de page dans un panneau remplace l'entrée, sans en ajouter.
+- **Panneau rouvert au chargement** (adresse `/#cat=…`, retour depuis une page d'article) : aucune entrée
+  ajoutée ; × referme sur place.
+- **App installée** (`display-mode: standalone`), script `kioske/js/retour_app.js` inclus dans l'accueil, les pages
+  d'article et les pages de catégorie : quand la page est la première de l'historique, une entrée « socle »
+  est glissée dessous au premier geste (toucher, touche). Y revenir par le bouton précédent ramène à
+  l'accueil ; sur l'accueil, on y reste. Dans un navigateur ordinaire, le script ne fait rien : précédent
+  quitte le site normalement.
+- **`from` ne sert qu'aux boutons** : le bouton précédent du navigateur ou du téléphone ne lit jamais le
+  paramètre `from`, il suit l'historique. Seul le bouton « ← Retour » des pages d'article l'utilise.
+- **Limite** : Chrome saute les entrées d'historique ajoutées sans geste. Sans avoir touché l'écran
+  (défilement seul), ou en appuyant deux fois de suite sur précédent depuis l'accueil, l'app peut se fermer.
 
 ### Pages statiques
 
@@ -273,7 +328,7 @@ Tant que l'empreinte n'est pas réenregistrée après une modification, rien n'e
 - **Lisibilité** : cartes et panneaux opaques ; seul le grand panneau principal est translucide
   (`opacite_panneau`).
 
-Le CSS est dans `kioske/style.css` (et `kioske/pluie.css`), inséré dans la page au build. Celui du bloc
+Le CSS est dans `kioske/style.css`, inséré dans la page au build. Celui du bloc
 immuable est dans `accueil/bloc_immuable.html`.
 
 ## Données, caches et images
@@ -364,7 +419,7 @@ Le script est dans `~/Lenovo_scripts/redirections_gauchiasses.sh`, à lancer en 
 
 ## Référencement
 
-Le titre et la description de la page décrivent son contenu réel : `nom` et `slogan` de `kioske.cfg`,
+Le titre et la description de la page décrivent son contenu réel : `nom` de `kioske.cfg`,
 nombre de sources et noms des catégories du jour. La page a une adresse canonique, des balises Open
 Graph et Twitter (image `preview.png`), un `robots.txt` et un `sitemap.xml`. Chaque flux RSS est
 déclaré dans l'en-tête.
@@ -409,13 +464,12 @@ au prochain chargement.
 
 - **Configuration nginx à déployer et à vérifier** : la correction des en-têtes (voir « Déploiement ») n'a
   pas pu être testée avec nginx sur le PC. Après `bash deploy/deployer_nginx_simple.sh` sur le serveur, contrôler que
-  `curl -sI https://kioske.fr/` affiche `content-security-policy`, `strict-transport-security` et
-  `cache-control`, puis essayer la recherche et l'ouverture d'une carte. La CSP est appliquée aux pages
+  `curl -sI https://kioske.fr/` affiche `content-security-policy`, `strict-transport-security`,
+  `cache-control` et `content-language: fr`, puis essayer la recherche et l'ouverture d'une carte. La CSP est appliquée aux pages
   pour la première fois : si un élément ne s'affiche plus, la console du navigateur indique la règle en cause.
 - **Deux invitations Discord différentes** : le menu ≡ utilise `discord` de `kioske.cfg`, le bloc immuable
   en contient une autre. À harmoniser si l'une des deux est périmée.
-- **Panneau d'infos sans bouton** : les réglages « taille du site » et « hauteur carte » et le bouton
-  « Installer l'app » sont dans un panneau (`bloc-infos-container`) que plus aucun bouton n'ouvre.
+- **Panneau d'infos sans bouton** : le bouton « Installer l'app » est dans un panneau (`bloc-infos-container`) que plus aucun bouton n'ouvre.
 - **Cartes des pages de catégorie statiques** : la ligne sous l'image affiche l'adresse de l'article au lieu
   de « date · site ».
 - **Titres et résumés des flux** : insérés tels quels dans le HTML des panneaux par le JavaScript de

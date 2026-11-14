@@ -1,10 +1,10 @@
-const CACHE_VERSION = 'kioske-v19';
+const CACHE_VERSION = 'kioske-v21';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/rss.html',
-  '/style.css',
-  '/pluie.css',
+  '/theme.js',
+  '/app.js',
   '/favicon.svg',
   '/apple-touch-icon.png',
   '/preview.png',
