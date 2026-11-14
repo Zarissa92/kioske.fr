@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr" ${attributs_html} style="${variables_html}">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="content-language" content="fr">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flux RSS — ${nom_site}</title>
+<meta name="description" content="Tous les flux RSS du ${domaine_echappe}, organisés par catégories.">
+<link rel="canonical" href="${url_site}/rss.html">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KiosKe.fr">
+<style>
+${css}</style>
+${script_theme}
+<script>
+${js_service_worker}</script>
+</head>
+<body>
+<main class="panel">
+  <p><a class="rss-lien" href="/">← Accueil</a></p>
+  ${choix_theme}
+  <p class="kicker">// ${domaine} flux RSS</p>
+  <h1>${nom_site}</h1>
+  <p class="sub">Découvrez tous les flux RSS du ${domaine_echappe}</p>
+
+  <div class="rss-page">
+    <h2>📡 Flux RSS</h2>
+
+    <h3>Principal</h3>
+    ${flux_principal}
+
+    <h3>Par catégorie</h3>
+    ${flux_categories}
+  </div>
+
+  ${bloc_immuable}
+  ${bas_immuable}
+</main>
+<p class="mentions">Chaque flux renvoie vers sa source d'origine. Textes, images et vidéos : leurs auteur.ice.s et sites respectifs.</p>
+<script>
+${js_page_rss}</script>
+</body>
+</html>

@@ -1,40 +1,21 @@
 """Thèmes du site, décrits dans kioske.cfg (sections [theme.<nom>]).
 
-Le visiteur choisit son thème avec des boutons radio cachés : CSS seul, sans JavaScript ni cookie.
-Le CSS de base est dans kioske/style.css, celui de la pluie dans kioske/pluie.css.
+Le build pose le thème par défaut sur <html> (attributs data-…) et donne la liste des thèmes à
+static/theme.js, qui applique le choix du visiteur et fabrique la pluie. Tout le CSS, thèmes compris,
+est dans kioske/style.css : ce module n'en écrit pas.
 """
 from __future__ import annotations
 
 import configparser
-import random
+import json
 
 from .config import CFG, CONFIG, PAQUET
 from .texte import esc
 
-CSS = (PAQUET / "style.css").read_text(encoding="utf-8")        # contient les marqueurs __FOND__ et __PANNEAU__
-CSS_PLUIE = (PAQUET / "pluie.css").read_text(encoding="utf-8")  # ajouté seulement si un thème a pluie = oui
+CSS = (PAQUET / "style.css").read_text(encoding="utf-8")
 
-# Valeur de --bg pour chaque fond possible (clé `fond` d'un thème).
-
-FONDS = {
-    "etoiles": """radial-gradient(1px 1px at 12% 18%, #fff 50%, transparent 51%),
-    radial-gradient(1px 1px at 47% 63%, #ddd 50%, transparent 51%),
-    radial-gradient(1.5px 1.5px at 81% 27%, #fff 50%, transparent 51%),
-    radial-gradient(1px 1px at 64% 88%, #ccc 50%, transparent 51%),
-    radial-gradient(1px 1px at 29% 45%, #eee 50%, transparent 51%),
-    radial-gradient(1px 1px at 92% 71%, #fff 50%, transparent 51%),
-    radial-gradient(1px 1px at 6% 82%, #bbb 50%, transparent 51%),
-    radial-gradient(1.5px 1.5px at 38% 9%, #fff 50%, transparent 51%),
-    radial-gradient(1px 1px at 73% 52%, #ddd 50%, transparent 51%),
-    linear-gradient(-35deg, transparent 22%, rgba(200, 190, 255, .14) 38%, rgba(255, 245, 225, .30) 50%, rgba(200, 190, 255, .14) 62%, transparent 78%),
-    #000""",
-    "noir": "#000",
-}
-
-
-def fond_panneau(opacite: int) -> str:
-    """Fond du grand panneau principal : noir (#0a0000) à l'opacité donnée en % (kioske.cfg, opacite_panneau)."""
-    return f"rgba(10, 0, 0, {opacite / 100:g})"
+# Fonds possibles (clé `fond` d'un thème). Leur dessin est dans style.css : :root[data-fond="…"].
+FONDS = ("etoiles", "noir")
 
 
 def charger_themes(cfg: configparser.ConfigParser = CFG) -> tuple[list[dict], str]:
@@ -73,43 +54,30 @@ def charger_themes(cfg: configparser.ConfigParser = CFG) -> tuple[list[dict], st
     return themes, defaut
 
 
-def css_des_themes(themes: list[dict], defaut: str) -> str:
-    """CSS de la page : le thème par défaut dans :root, puis une règle par thème, activée par son bouton radio coché.
-    Sans :has() (vieux navigateurs), seul le thème par défaut s'affiche."""
+def _morceaux_de_page() -> tuple[str, str, str, str]:
+    """Les quatre morceaux que chaque page reprend tels quels (voir les constantes ci-dessous)."""
+    themes, defaut = charger_themes()
     d = next(t for t in themes if t["id"] == defaut)
-    css = CSS.replace("__FOND__", FONDS[d["fond"]]).replace("__PANNEAU__", fond_panneau(d["opacite_panneau"]))
-    regles = []
-    for t in themes:
-        cible = f":root:has(#theme-{t['id']}:checked)"
-        regles.append(f"{cible} {{ --bg: {FONDS[t['fond']]}; --panneau-fond: {fond_panneau(t['opacite_panneau'])}; }}")
-    if any(t["pluie"] for t in themes):
-        css += CSS_PLUIE
-        regles.append(f"#pluie {{ display: {'block' if d['pluie'] else 'none'}; }}")
-        for t in themes:
-            regles.append(f":root:has(#theme-{t['id']}:checked) #pluie {{ display: {'block' if t['pluie'] else 'none'}; }}")
-    return css + "\n" + "\n".join(regles) + "\n"
-
-
-def choix_theme_html(themes: list[dict], defaut: str) -> str:
-    """Boutons radio cachés et étiquettes cliquables : le visiteur choisit le thème sans JavaScript."""
+    attributs = f'data-theme="{esc(d["id"])}" data-fond="{d["fond"]}" data-pluie="{"oui" if d["pluie"] else "non"}"'
+    variables = f"--panneau-opacite: {d['opacite_panneau'] / 100:g};"
+    donnees = json.dumps(
+        {"defaut": defaut,
+         "themes": [{"id": t["id"], "fond": t["fond"], "pluie": t["pluie"], "opacite": t["opacite_panneau"]}
+                    for t in themes]},
+        ensure_ascii=False).replace("</", "<\\/")
+    script = (f'<script type="application/json" id="kioske-themes">{donnees}</script>\n'
+              '<script src="/theme.js"></script>')
     boutons = "".join(
-        f'<input type="radio" name="theme" id="theme-{t["id"]}" class="theme-input"'
-        f'{" checked" if t["id"] == defaut else ""}>'
-        f'<label for="theme-{t["id"]}">{esc(t["nom"])}</label>'
+        f'<button type="button" class="theme-bouton" data-theme-id="{esc(t["id"])}"'
+        f' aria-pressed="{"true" if t["id"] == defaut else "false"}">{esc(t["nom"])}</button>'
         for t in themes
     )
-    return f'<div class="choix-theme" role="radiogroup" aria-label="Thème du site">{boutons}</div>'
+    choix = f'<div class="choix-theme" role="group" aria-label="Thème du site">{boutons}</div>'
+    return attributs, variables, script, choix
 
 
-def rain(seed: int = 42, colonnes: int = 40) -> str:
-    """Colonnes de pluie rouge, générées une fois (page statique, même rendu à chaque build). Thème « pluie »."""
-    rnd = random.Random(seed)
-    chars = "アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789ABCDEFXYZ*+-=<>"
-    parts = []
-    for k in range(colonnes):
-        left = round(k * 100 / colonnes + rnd.uniform(-0.8, 0.8), 2)
-        duree = round(rnd.uniform(3.6, 9.6), 1)
-        retard = round(-rnd.uniform(0, 16), 1)
-        texte = "\n".join(rnd.choice(chars) for _ in range(rnd.randint(14, 30)))
-        parts.append(f'<i style="left:{left}%;animation-duration:{duree}s;animation-delay:{retard}s">{esc(texte)}</i>')
-    return '<div id="pluie" aria-hidden="true">' + "".join(parts) + "</div>"
+# ATTRIBUTS_HTML : attributs du thème par défaut, à poser sur <html>.
+# VARIABLES_HTML : sa variable CSS, à mettre dans l'attribut style de <html>.
+# SCRIPT_THEME   : à mettre dans <head> — liste des thèmes, puis static/theme.js.
+# CHOIX_THEME    : boutons de choix du thème (sans JavaScript, seul le thème par défaut s'affiche).
+ATTRIBUTS_HTML, VARIABLES_HTML, SCRIPT_THEME, CHOIX_THEME = _morceaux_de_page()

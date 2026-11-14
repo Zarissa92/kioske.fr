@@ -62,27 +62,6 @@ function updateHearts() {
 // Initialiser les cœurs au chargement
 document.addEventListener('DOMContentLoaded', updateHearts);
 
-// Gestion du zoom global (localStorage)
-function initializeZoom() {
-  const tailleSlider = document.getElementById('taille-site');
-  const tailleValeur = document.querySelector('.taille-valeur');
-  if (tailleSlider) {
-    const tailleSauvegardee = localStorage.getItem('kioske-taille') || tailleSlider.value;
-    tailleSlider.value = tailleSauvegardee;
-    document.documentElement.style.zoom = (tailleSauvegardee / 100);
-    if (tailleValeur) tailleValeur.textContent = tailleSauvegardee + '%';
-
-    tailleSlider.addEventListener('input', (e) => {
-      const valeur = e.target.value;
-      document.documentElement.style.zoom = (valeur / 100);
-      if (tailleValeur) tailleValeur.textContent = valeur + '%';
-      localStorage.setItem('kioske-taille', valeur);
-    });
-  }
-}
-
-document.addEventListener('DOMContentLoaded', initializeZoom);
-
 // Gestion du menu "+"
 function initializeMenuInfo() {
   const btnInfos = document.querySelector('.btn-infos');

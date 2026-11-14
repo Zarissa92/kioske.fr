@@ -12,9 +12,12 @@ from __future__ import annotations
 import argparse
 import concurrent.futures as cf
 import filecmp
+import json
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlparse
+from zoneinfo import ZoneInfo
 
 from . import apercus, immuable
 from .config import (ARTICLES_PAR_SOURCE, BUILD, CHAINES_TWITCH, DOMAINE, DOSSIER_RSS_CATEGORIES, FLUX_RSS,
@@ -26,10 +29,9 @@ from .rendu import render_page, render_rss_page
 from .rendu_statique import render_article_page, render_category_page
 from .rss import render_rss
 from .sources import AUTRES, ordre_des_categories, read_categories, read_feeds, read_local, read_twitch
-from .texte import slugs_categories, article_id, slug_article, cle_alphabetique
+from .texte import slugs_categories, article_id, slug_article
 from .twitch import load_twitch
 from .verrou import verrou
-from datetime import datetime, timezone
 
 
 def analyser_arguments(argv: list[str] | None = None) -> argparse.Namespace:
@@ -234,13 +236,8 @@ def ecrire_pages_categories(items: list[dict], previews: dict[str, dict],
 
 def ecrire_index_articles(items: list[dict], previews: dict[str, dict], categories: dict[str, str]) -> None:
     """Génère un index JSON de tous les articles pour la recherche JavaScript."""
-    import json
-
     index = []
     for item in items:
-        from urllib.parse import urlparse
-        from zoneinfo import ZoneInfo
-
         # Utiliser le titre du preview si disponible (pour que les slugs correspondent)
         title = previews.get(item["link"], {}).get("title") or item.get("title", "")
         summary = item.get("summary", "")

@@ -1,5 +1,5 @@
-/* Feuille de style du KiosKe, insérée dans la page par kioske/themes.py.
-   __FOND__ et __PANNEAU__ sont remplacés par les valeurs du thème par défaut (kioske.cfg). */
+/* Feuille de style du KiosKe : tout le CSS du site, inséré tel quel dans chaque page au build.
+   Les thèmes (fond, pluie, opacité du grand panneau) sont à la fin, section « Thèmes ». */
 /* Police uniforme du site : fichier local, servi depuis fonts/ (une copie à la racine publiée) */
 @font-face {
   font-family: "Russo One";
@@ -13,8 +13,10 @@ html, body, body * { font-family: "Russo One", "Courier New", monospace !importa
   --red: #ffffff;
   --red-dim: #ffffff;
   --red-light: #ffffff;
-  --bg: __FOND__;  /* valeur par défaut, choisie dans kioske.cfg (voir FONDS) */
-  --panneau-fond: __PANNEAU__;
+  /* Thème : --bg dépend de data-fond, --panneau-opacite est posée sur <html> (voir « Thèmes », en fin de fichier) */
+  --bg: #000;
+  --panneau-opacite: .7;
+  --panneau-fond: rgba(10, 0, 0, var(--panneau-opacite));
   --panel: #0a0000;
 }
 
@@ -166,8 +168,17 @@ html, body {
   flex-direction: column;
   gap: 0.4rem;
 }
-.theme-options .theme-input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.theme-options label {
+/* Boutons de thème dans le menu ≡ : en colonne sous le titre. Sans cela, la règle générale
+   « .choix-theme » (marge haute négative, boutons en ligne centrés) les fait remonter par-dessus le
+   titre « Thèmes » et déborder du menu. */
+.theme-options .choix-theme {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 0.4rem;
+  margin: 0;
+}
+.theme-options .theme-bouton {
   padding: 0.4rem 0.6rem;
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -179,12 +190,12 @@ html, body {
   transition: all 0.2s;
   text-align: left;
 }
-.theme-options label:hover {
+.theme-options .theme-bouton:hover {
   background: var(--red);
   color: #000;
   border-color: var(--red);
 }
-.theme-input:checked + label {
+.theme-bouton[aria-pressed="true"] {
   background: var(--red);
   color: #000;
   border-color: var(--red);
@@ -239,19 +250,12 @@ html, body {
 .popover-section .recherche { margin: 0 auto; }
 /* Thèmes dans le popover */
 .popover-section .choix-theme { margin-bottom: 0; }
-/* Contrôle de taille du site */
-.taille-controle { display: flex; align-items: center; gap: 0.8rem; }
-.taille-controle label { font-size: 0.85rem; min-width: 100px; }
-.taille-slider { flex: 1; height: 6px; border-radius: 3px; background: var(--red-dim); outline: none; cursor: pointer; }
-.taille-slider:hover { background: var(--red); }
-.taille-valeur { font-size: 0.85rem; min-width: 40px; text-align: right; font-weight: bold; }
 .kicker { font-size: 0.85rem; color: var(--red-light); opacity: 0.8; margin-bottom: 0.5rem; letter-spacing: 0.1em; }
-.theme-input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .choix-theme { display: flex; justify-content: center; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; margin-top: -3rem; }
-.choix-theme label { padding: .3rem .7rem; border: 1px solid var(--red-dim); color: var(--red-light); font-size: .8rem; cursor: pointer; }
-.choix-theme label:hover { background: var(--red); color: #000; }
-.theme-input:checked + label { background: var(--red); color: #000; box-shadow: 0 0 12px var(--red); }
-.theme-input:focus-visible + label { outline: 2px solid #fff; outline-offset: 2px; }
+.choix-theme .theme-bouton { padding: .3rem .7rem; border: 1px solid var(--red-dim); color: var(--red-light); background: transparent; font: inherit; font-size: .8rem; cursor: pointer; }
+.choix-theme .theme-bouton:hover { background: var(--red); color: #000; }
+.choix-theme .theme-bouton[aria-pressed="true"] { background: var(--red); color: #000; box-shadow: 0 0 12px var(--red); }
+.theme-bouton:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .recherche { display: block; width: 100%; max-width: 400px; margin: 0 auto 0.8rem; padding: .6rem .8rem; font-family: inherit; font-size: .9rem; color: #fff; background: #0a0000; border: 1px solid var(--red-dim); box-sizing: border-box; transition: all .2s; }
 .recherche:focus { outline: none; border-color: var(--red); box-shadow: 0 0 12px color-mix(in srgb, var(--red) 50%, transparent); }
 .recherche::placeholder { color: var(--red-light); opacity: .6; }
@@ -328,8 +332,9 @@ h1 { font-size: clamp(1.8rem, 6vw, 2.8rem); line-height: 1.2; margin-bottom: 0.6
 
 /* sources : une case par source ; le clic ouvre ses articles dans un panneau (popover, sans JavaScript) */
 .cartes { position: relative; z-index: 1; max-width: 1200px; width: calc(100% - 32px); margin: 0 auto 1rem; }
-.grille { --colonnes: 4; display: grid; grid-template-columns: repeat(var(--colonnes), minmax(0, 1fr)); gap: 1rem; }
-@media (max-width: 960px) { .grille { --colonnes: 3; } }
+/* Les cartes remplissent leur colonne : leur taille se règle par le nombre de colonnes. */
+.grille { --colonnes: 5; display: grid; grid-template-columns: repeat(var(--colonnes), minmax(0, 1fr)); gap: 1rem; }
+@media (max-width: 960px) { .grille { --colonnes: 4; } }
 @media (max-width: 640px) { .grille { --colonnes: 2; gap: .6rem; } }
 
 .categorie-titre { display: flex; align-items: center; gap: .5rem; width: 100%; margin: 0 0 .8rem;
@@ -350,17 +355,8 @@ h1 { font-size: clamp(1.8rem, 6vw, 2.8rem); line-height: 1.2; margin-bottom: 0.6
 /* panneau d'un article : s'ouvre au clic sur la carte, dans la page, sans aller sur le site */
 button.carte { font: inherit; padding: 0; cursor: pointer; }
 /* conteneur pour le backdrop et le panneau */
-.article-container, .categorie-container { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 100; }
-.article-backdrop, .categorie-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .7); cursor: pointer; }
-.article-panneau { position: relative; z-index: 1;
-  width: var(--largeur-carte-ouverte); height: auto; max-height: 85vh;
-  aspect-ratio: 2.5 / 3.5; padding: 0; box-sizing: border-box;
-  background: #0a0000; color: var(--red-light); border: 2px solid var(--red);
-  border-radius: 0.8rem;
-  scale: var(--hauteur-carte-ouverte);
-  box-shadow: 0 8px 32px color-mix(in srgb, var(--red) 80%, transparent), 0 0 50px color-mix(in srgb, var(--red) 60%, transparent), inset 0 0 20px color-mix(in srgb, var(--red) 10%, transparent);
-  font-size: .99rem; line-height: 1.4; text-align: left; pointer-events: auto;
-  display: flex; flex-direction: column; }
+.categorie-container { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 100; }
+.categorie-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .7); cursor: pointer; }
 .categorie-panneau {
 	position: relative;
 	z-index: 1;
@@ -369,7 +365,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 	max-height: 85vh;
 	display: flex;
 	flex-direction: column;
-	padding: var(--espacement-panneau-vertical, 2.4rem) 2rem var(--espacement-panneau-vertical, 2.4rem);
+	padding: var(--espacement-panneau-vertical, 2.4rem) var(--espacement-panneau-horizontal, .5rem);
 	box-sizing: border-box;
 	background: #0a0000;
 	color: var(--red-light);
@@ -385,13 +381,12 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 	pointer-events: auto;
 }
 @media (max-width: 640px) {
-  .categorie-panneau { width: 98vw; max-height: 85vh; padding: 1.2rem 1rem; }
+  .categorie-panneau { width: 98vw; max-height: 85vh; padding: 1.2rem var(--espacement-panneau-horizontal, .5rem); }
   .categorie-panneau h2 { font-size: 1.3rem; margin-bottom: 0.8rem; }
   .categorie-fermer { width: 2.2rem !important; height: 2.2rem !important; font-size: 1.4rem !important; }
-  .article-panneau { width: 98vw; max-height: 90vh; padding: 1.5rem 1rem 1rem; }
 }
 @media (max-width: 429px) {
-  .categorie-panneau { width: 96vw; max-height: 80vh; padding: 1rem 0.8rem; }
+  .categorie-panneau { width: 96vw; max-height: 80vh; padding: 1rem var(--espacement-panneau-horizontal, .5rem); }
   .categorie-panneau h2 { font-size: 1.2rem; margin-bottom: 0.6rem; }
   .categorie-fermer { width: 1.8rem !important; height: 1.8rem !important; font-size: 1.1rem !important; padding: 0.2rem 0.4rem !important; }
   .grille { --colonnes: 1; gap: 0.4rem; }
@@ -403,29 +398,21 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   }
 }
 @media (max-width: 300px) {
-  .categorie-panneau { width: 95vw; max-height: 75vh; padding: 0.8rem 0.6rem; }
+  .categorie-panneau { width: 95vw; max-height: 75vh; padding: 0.8rem var(--espacement-panneau-horizontal, .5rem); }
   .categorie-panneau h2 { font-size: 1.1rem; margin-bottom: 0.5rem; }
   .categorie-fermer { width: 1.6rem !important; height: 1.6rem !important; font-size: 1rem !important; padding: 0.1rem 0.3rem !important; }
   .pagination-btn { font-size: 0.65rem !important; padding: 0.2rem 0.4rem !important; }
 }
-.article-panneau .categorie-fermer { position: absolute; top: 0.5rem; right: 0.5rem; z-index: 300; width: 1.8rem; height: 1.8rem; border: 1px solid var(--red-dim); background: #000; color: var(--red); font: inherit; font-size: 1rem; cursor: pointer; }
-.article-panneau .categorie-fermer:hover { background: var(--red); color: #000; }
-.article-panneau .article-image { flex: 0 0 35%; border: 1px solid var(--red-dim); background: #140000; overflow: hidden; display: flex; align-items: center; justify-content: center; border-radius: 0.6rem; }
-.article-panneau .article-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.article-panneau .article-image .lettre { font: 700 2.5rem "Courier New", monospace; color: #fff; text-shadow: 0 0 6px var(--red), 0 0 22px var(--red); }
-.article-panneau > div:not(.article-image):not(.article-backdrop), .article-panneau > p:not(.article-texte) { padding: 0 0.8rem; }
-.article-panneau .meta { font-size: .75rem; opacity: .8; margin: 0.8rem 0.8rem 0.2rem; }
-.article-panneau h2 { font-size: 1.2rem; line-height: 1.2; color: #fff; margin: -3rem 0.8rem 0.6rem; overflow-wrap: anywhere; }
 .article-texte { flex: 1; margin: 0 0.99rem; overflow-wrap: anywhere; color: var(--red-light); overflow-y: auto; }
-/*.article-panneau > p:last-of-type { margin: 0.8rem 0.8rem 0 !important; }*/
 .article-lien { display: block; padding: 0.4rem 0.8rem; color: var(--red-light); border: 1px solid var(--red-dim); text-decoration: none; overflow-wrap: anywhere; text-align: center; font-size: 0.8rem; }
 .article-lien:hover, .article-lien:focus-visible { background: var(--red); color: #000; outline: none; box-shadow: 0 0 20px var(--red); }
 .article-nav { flex: 0 0 auto; display: flex; gap: 0.4rem; justify-content: center; padding: 0.8rem; border-top: 1px solid var(--red-dim); }
 
-/* taille des cartes : 75 % de l'ancienne ; tout (cadre, textes, marges, bouton) est réduit du même facteur */
+/* textes, marges et bouton des cartes : 75 % de l'ancienne taille. La carte occupe toute sa colonne
+   (une colonne de plus qu'avant dans la grille, plutôt qu'une carte à 75 % avec du vide autour). */
 .carte {
   position: relative; display: flex; flex-direction: column;
-  width: 75%; margin: 0 auto;
+  width: 100%; margin: 0;
   aspect-ratio: 3 / 4; overflow: hidden; text-align: left;
   color: inherit; text-decoration: none;
   background: rgba(8, 0, 0, .92);
@@ -544,7 +531,10 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
    @media ci-dessus, qui ne fixent plus que les marges intérieures. */
 .categorie-container { z-index: 500; align-items: stretch; }
 .categorie-panneau { flex: 1 1 auto; width: 100%; height: 100%; max-width: none; max-height: none; }
-.categorie-panneau > .grille { flex: 1 1 auto; min-height: 0; overflow-y: auto; align-content: start; overscroll-behavior: contain; }
+/* grid-auto-rows: max-content : la grille a ici une hauteur limitée (elle défile). Sans cela, ses lignes
+   « auto » se tassent sous la hauteur des cartes (les cartes ont overflow: hidden, donc une hauteur
+   minimale nulle) et les cartes se superposent. */
+.categorie-panneau > .grille { flex: 1 1 auto; min-height: 0; overflow-y: auto; align-content: start; grid-auto-rows: max-content; overscroll-behavior: contain; }
 .fav-export, .fav-import { display: block; padding: 0.6rem; border: 1px solid var(--red-dim); background: #000; color: var(--red-light); font: inherit; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; text-align: center; }
 .fav-export:hover, .fav-import:hover { background: var(--red); color: #000; border-color: var(--red); box-shadow: 0 0 8px var(--red); }
 #fav-file-input { display: none; }
@@ -731,3 +721,308 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
     border-radius: var(--rayon-carte);
     -webkit-overflow-scrolling: touch;
 }
+
+/* ==========================================================================
+   Règles venues du code Python (kioske/rendu.py, kioske/rendu_statique.py).
+   Tout le CSS du site est dans ce fichier ; l'ordre des blocs ci-dessous est
+   celui dans lequel ils étaient ajoutés aux pages.
+   ========================================================================== */
+
+/* --- Éléments des panneaux créés par le script de l'accueil --- */
+.panneau-entete { display: flex; flex-direction: column; margin-bottom: 1rem; }
+.panneau-entete-ligne { flex-direction: row; align-items: center; justify-content: space-between; }
+.categorie-panneau h2.panneau-titre { text-align: center; margin: -3rem 0 0.8rem 0; }
+/* bouton × placé dans l'en-tête (et non en haut à droite du panneau) */
+.categorie-panneau .categorie-fermer.fermer-entete { position: static; width: auto; height: auto; padding: 0.4rem 0.8rem; }
+.panneau-defilant { flex: 1; overflow: auto; min-height: 0; }
+/* Galerie d'un bloc de catégorie de l'accueil : petites vignettes entre le titre et les étiquettes,
+   dans le style du bloc (bordure fine de la couleur du thème, coins des étiquettes). Flèches < et >
+   de part et d'autre, comme la grande galerie ; défilement au doigt ou à la barre aussi, fine et de la
+   couleur du thème. Pas d'agrandissement au survol, il serait rogné par le bloc. */
+.galerie-slider-bloc { gap: .3rem; margin: .5rem 0; }
+.galerie-bloc { flex: 1 1 auto; min-width: 0; gap: .4rem; margin: 0; padding: 0 0 .35rem; scrollbar-width: thin;
+  scrollbar-color: var(--red-dim) transparent; }
+.galerie-bloc::-webkit-scrollbar { display: block; height: 6px; }
+.galerie-bloc .galerie-carte { flex: 0 0 5.5rem; height: 4rem; border: 1px solid var(--red); border-radius: .3rem;
+  background: #0a0000; box-shadow: none; -webkit-mask-image: none; }
+.galerie-bloc .galerie-carte:hover, .galerie-bloc .galerie-carte:focus-visible { transform: none;
+  box-shadow: none; filter: brightness(1.2); }
+.galerie-bloc .galerie-carte:focus-visible { outline: 2px solid var(--red); outline-offset: -2px; }
+.galerie-bloc .galerie-carte:hover img { transform: none; }
+@media (max-width: 600px) {
+  .galerie-bloc .galerie-carte { flex-basis: 4.6rem; height: 3.4rem; }
+}
+/* Galerie d'un panneau de catégorie : au-dessus de la grille, défile avec elle. Plus petite que la
+   galerie de l'accueil (cartes 220 × 160 px) pour laisser la place aux cartes du panneau. */
+.galerie-panneau { margin-bottom: 0.6rem; }
+.galerie-panneau .galerie { padding: 10px 8px 14px; gap: 10px; }
+.galerie-panneau .galerie-carte { flex-basis: 130px; height: 95px; }
+.galerie-panneau .galerie-carte:hover { transform: translateY(-3px) scale(1.04); }
+@media (max-width: 600px) {
+    .galerie-panneau .galerie { padding: 8px 4px 10px; gap: 8px; }
+    .galerie-panneau .galerie-carte { flex-basis: 100px; height: 74px; }
+}
+.pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1rem; padding: 0.5rem; }
+.pagination-btn { padding: 0.4rem 0.8rem; background: #0a0000; border: 1px solid var(--red-dim); color: var(--red); cursor: pointer; font: inherit; }
+.pagination-btn:disabled { opacity: 0.5; }
+.pagination-info { min-width: 80px; text-align: center; color: var(--red); }
+.panneau-actions { display: flex; gap: 0.8rem; margin-top: 1rem; border-top: 1px solid var(--red-dim); padding-top: 1rem; justify-content: center; }
+.panneau-bouton { padding: 0.6rem 1rem; background: #0a0000; border: 1px solid var(--red-dim); color: var(--red); cursor: pointer; font: inherit; transition: all 0.2s ease; }
+.panneau-bouton:hover { background: var(--red); color: #000; }
+/* « ✓ Copié ! » : bouton de copie du code de conduite, bouton de partage d'un article */
+.panneau-bouton.est-copie, .share-btn.est-copie { color: #00ff00; }
+.grille-vide { grid-column: 1 / -1; color: #888; padding: 2rem; text-align: center; }
+/* bouton « + » d'une catégorie, sur l'accueil */
+.tag-categorie { margin-left: auto; padding: 0.2rem 0.5rem; font-size: 0.8rem; background: #000; border: 1px solid var(--red); color: var(--red); cursor: pointer; font-weight: normal; }
+/* barre de recherche des pages d'article et de catégorie */
+.recherche-form { display: flex; gap: 0.5rem; }
+.recherche-bouton { padding: 0.6rem 1rem; background: var(--red-dim); border: 1px solid var(--red); color: var(--red); cursor: pointer; border-radius: 0.3rem; }
+
+/* --- Code de conduite (panneau de l'accueil) --- */
+.conduct-panneau h2 { font-size: clamp(1.1rem, 2.6vw, 1.3rem); color: #fff; margin: 0; padding: 0; }
+.conduct-panneau h3 { font-size: 1rem; color: #fff; margin: 1.2rem 0 0.4rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--red-dim); }
+.conduct-panneau p { margin: 0.5rem 0; line-height: 1.5; }
+.conduct-panneau ul { margin: 0.5rem 0 0.5rem 1.2rem; }
+.conduct-panneau li { margin-bottom: 0.3rem; }
+.conduct-panneau blockquote { margin: 0.5rem 0; padding: 0.6rem 0.9rem; border-left: 3px solid var(--red); background: rgba(255, 255, 255, .05); font-style: italic; }
+.conduct-panneau strong { color: #fff; }
+
+/* --- Page de catégorie --- */
+/* :where() limite ces règles à la page de catégorie sans leur ajouter de priorité */
+/* Cartes Pokemon : restaurer l'aspect */
+.carte-lien {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  aspect-ratio: 2.5 / 3.5;
+  border: 2px solid var(--red);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.carte-lien:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.7);
+}
+:where(.panel-category) .carte-image {
+  flex: 0 0 35%;
+  overflow: hidden;
+  background: #0a0000;
+}
+:where(.panel-category) .carte-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+:where(.panel-category) .carte-corps {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+}
+/* Titre de la catégorie */
+.panel-category h1 {
+  font-size: 1.1rem;
+  margin: 0 0 1rem 0;
+  font-weight: bold;
+}
+
+/* --- Page des flux RSS --- */
+.rss-page { max-width: 560px; margin: 2rem auto; padding: 2rem; }
+.rss-page h2 { font-size: 1.8rem; margin-bottom: 1.5rem; }
+.rss-page h3 { font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+.rss-lien { display: block; padding: 0.8rem 1rem; margin-bottom: 0.5rem; border: 1px solid var(--red-dim); color: var(--red-light); text-decoration: none; transition: all 0.2s; }
+.rss-lien:hover { background: var(--red); color: #000; }
+.rss-lien svg { display: inline-block; width: 1.2rem; height: 1.2rem; margin-right: 0.5rem; vertical-align: middle; }
+.rss-principal { border: 2px solid var(--red); font-weight: bold; }
+
+/* --- Carte d'article ouverte : page d'article, et carte affichée par-dessus l'accueil ou une page de
+   catégorie. Les règles internes sont limitées à .panel-article par :where(), qui n'ajoute aucune
+   priorité : le rendu est le même des deux côtés. --- */
+/* Bouton retour = style Précédent/Suivant */
+.btn-retour {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  padding: 0.6rem 1.2rem;
+  background: #0a0000;
+  border: 1px solid var(--red-dim);
+  color: var(--red);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 9999;
+}
+.btn-retour:hover, .btn-retour:focus-visible {
+  background: var(--red);
+  color: #000;
+  border-color: var(--red);
+  box-shadow: 0 0 12px var(--red);
+  outline: none;
+}
+/* Format Pokemon pour la carte d'article : responsive */
+.panel-article {
+  /* Sur desktop : hauteur raisonnable */
+  height: min(90vh, calc(100vw * 3.5 / 2.5 - 4rem));
+  width: auto;
+  max-width: none !important;
+  aspect-ratio: 2.5 / 3.5;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid var(--red) !important;
+  border-radius: 0.8rem !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6) !important;
+  padding: 0 !important;
+  margin: 1rem auto !important;
+  overflow: hidden;
+  position: relative;
+}
+/* Tablette : adapter à la largeur */
+@media (max-width: 1024px) {
+  .panel-article {
+    height: min(85dvh, calc((100vw - 2rem) * 3.5 / 2.5));
+    width: calc(100vw - 2rem);
+    margin: 1rem auto !important;
+    border-radius: 0.6rem !important;
+  }
+}
+/* Mobile : plein écran */
+@media (max-width: 640px) {
+  .panel-article {
+    height: 100dvh;
+    width: 100vw;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+  }
+}
+/* Image d'article : fixe en haut (35% de la hauteur) */
+:where(.panel-article) .article-image {
+  flex: 0 0 35%;
+  overflow: hidden;
+  background: #0a0000;
+  border-bottom: 1px solid var(--red-dim);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+:where(.panel-article) .article-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* Contenu de l'article : scrollable au milieu */
+:where(.panel-article) article {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  font-size: 1rem;
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  -webkit-overflow-scrolling: touch;
+}
+:where(.panel-article) article h1 {
+  font-size: 1.1rem;
+  margin: 0;
+  font-weight: bold;
+}
+:where(.panel-article) article h2 {
+  font-size: 1.1rem;
+  margin: 0;
+  font-weight: bold;
+}
+:where(.panel-article) article p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+:where(.panel-article) .meta {
+  font-size: 0.85rem;
+  color: var(--red-light);
+}
+/* Boutons de navigation : fixes en bas */
+:where(.panel-article) .article-nav {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-top: 1px solid var(--red-dim);
+  justify-content: space-around;
+  position: sticky;
+  bottom: 0;
+  background: #0a0000;
+  z-index: 5;
+}
+
+/* Carte d'article ouverte en JavaScript par-dessus la page */
+.carte-ouverte { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; overflow: auto; }
+.carte-ouverte-fond { position: fixed; inset: 0; background: rgba(0, 0, 0, .7); cursor: pointer; }
+.carte-ouverte .panel-article { flex: 0 0 auto; background: #0a0000; }
+
+/* --- Propre à la page d'article (body de classe page-article) : la carte occupe toute la page sur petit écran --- */
+@media (max-width: 1024px) {
+  :where(body.page-article) {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+@media (max-width: 640px) {
+  :where(.page-article) main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+/* ==========================================================================
+   Thèmes. Un thème (kioske.cfg, [theme.<nom>]) = un fond, la pluie ou non, l'opacité du grand panneau.
+   Le build pose le thème par défaut sur <html> : data-fond, data-pluie et --panneau-opacite.
+   static/theme.js les remplace par le thème choisi par le visiteur.
+   ========================================================================== */
+:root[data-fond="noir"] { --bg: #000; }
+/* nuit étoilée, bande de la Voie lactée */
+:root[data-fond="etoiles"] {
+  --bg: radial-gradient(1px 1px at 12% 18%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 47% 63%, #ddd 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 81% 27%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 64% 88%, #ccc 50%, transparent 51%),
+    radial-gradient(1px 1px at 29% 45%, #eee 50%, transparent 51%),
+    radial-gradient(1px 1px at 92% 71%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 6% 82%, #bbb 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 38% 9%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 73% 52%, #ddd 50%, transparent 51%),
+    linear-gradient(-35deg, transparent 22%, rgba(200, 190, 255, .14) 38%, rgba(255, 245, 225, .30) 50%, rgba(200, 190, 255, .14) 62%, transparent 78%),
+    #000;
+}
+/* Pluie matricielle (thèmes avec pluie = oui). Les colonnes sont créées par static/theme.js ; leurs signes
+   sont dans l'attribut data-g et affichés par ::before : la page ne contient aucun texte japonais. */
+:root {
+  --r-tete: #8f00ff; --r-haut: #ff1a1a; --r-moyen: #b5179e; --r-bas: #4b3fd8;
+}
+#pluie {
+  display: none;
+  position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+}
+#pluie i {
+  position: absolute; top: 0;
+  transform: translateY(-100%);
+  animation-name: chute; animation-timing-function: linear; animation-iteration-count: infinite;
+  will-change: transform;
+}
+#pluie i::before {
+  content: attr(data-g); display: block;
+  font: normal 16px/1.15 monospace; white-space: pre; text-align: center;
+  color: transparent;
+  background: linear-gradient(to top, var(--r-tete) 0, var(--r-haut) 6%, var(--r-moyen) 30%, color-mix(in srgb, var(--r-bas) 60%, transparent) 60%, transparent 100%);
+  -webkit-background-clip: text; background-clip: text;
+}
+:root[data-pluie="oui"] #pluie { display: block; }
+@keyframes chute { from { transform: translateY(-100%); } to { transform: translateY(100vh); } }
+@media (prefers-reduced-motion: reduce) { #pluie i { animation: none; transform: translateY(20vh); } }

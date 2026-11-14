@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr" ${attributs_html} style="${variables_html} zoom: ${zoom}; --largeur-carte-ouverte: ${largeur_carte_ouverte}; --hauteur-carte-ouverte: ${hauteur_carte_ouverte}; --bordure-panneau-epaisseur: ${bordure_panneau_epaisseur}px; --espacement-panneau-vertical: ${espacement_panneau_vertical}; --espacement-panneau-horizontal: ${espacement_panneau_horizontal};">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="content-language" content="fr">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${titre}</title>
+<meta name="description" content="${description}">
+<meta name="keywords" content="${mots_cles}">
+<link rel="canonical" href="${url_site}/">
+<meta name="theme-color" content="#000000">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="${nom_site}">
+<meta property="og:title" content="${titre}">
+<meta property="og:description" content="${description}">
+<meta property="og:url" content="${url_site}/">
+<meta property="og:image" content="${url_site}/preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="fr_FR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${titre}">
+<meta name="twitter:description" content="${description}">
+<meta name="twitter:image" content="${url_site}/preview.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="application/rss+xml" title="${domaine} (flux RSS)" href="rss.xml">
+${liens_rss}
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KiosKe.fr">
+<style>
+${css}</style>
+${script_theme}
+<script type="application/json" id="kioske-donnees">${donnees_json}</script>
+<script>
+${js_donnees_accueil}${js_service_worker}</script>
+</head>
+<body>
+<nav class="kioske-navbar">
+  <a href="/" class="navbar-brand">
+    <span class="flag">🏳️‍⚧️</span>
+    <span>${domaine}</span>
+    <span class="navbar-stats">${nb_articles} · ${nb_sources} sources</span>
+  </a>
+
+  <div class="navbar-search">
+    <input type="text" id="recherche" placeholder="Chercher..." aria-label="Barre de recherche">
+  </div>
+
+  <div class="navbar-controls">
+    <button type="button" class="btn-favs" title="Mes favoris">♡</button>
+    <button type="button" class="btn-menu" title="Menu" aria-label="Menu" aria-controls="navbar-menu" aria-expanded="false">≡</button>
+  </div>
+
+  <div class="navbar-menu" id="navbar-menu">
+    <div class="navbar-menu-group">
+      <div class="navbar-menu-title">🎨 Thèmes</div>
+      <div class="theme-options">
+        ${choix_theme}
+      </div>
+    </div>
+
+    <div class="navbar-menu-group">
+      ${boutons_reseaux}<button type="button" class="menu-button" id="btn-open-conduite">📖 Code de conduite</button>
+    </div>
+  </div>
+</nav>
+<main class="panel">
+  ${galerie}
+  ${nuage}
+</main>
+<div id="bloc-infos-container" class="infos-container" hidden>
+  <div class="infos-backdrop" data-close-infos="bloc-infos"></div>
+  <div id="bloc-infos" class="popover-infos">
+    <button type="button" class="infos-fermer" data-close-infos="bloc-infos" aria-label="Fermer">×</button>
+    <div class="popover-contenu">
+    <div class="popover-section">
+      ${choix_theme}
+    </div>
+    <div class="popover-section">
+      <button type="button" class="btn-mes-favoris">♡ Mes favoris</button>
+    </div>
+    <div class="popover-section">
+      <button type="button" class="btn-install-pwa" id="btn-install-pwa">⬇ Installer l'app</button>
+    </div>
+    <div class="popover-section">
+      ${bloc_immuable}
+      ${bas_immuable}
+    </div>
+  </div>
+  </div>
+</div>
+<div class="categorie-container" id="container-favoris" hidden>
+  <div class="categorie-backdrop" data-close-source="favoris"></div>
+  <div id="favoris" class="categorie-panneau">
+    <button type="button" class="categorie-fermer" data-article-id="favoris" aria-label="Fermer">×</button>
+    <h2>Mes favoris</h2>
+    <div class="grille" id="fav-grille"></div>
+    <div class="fav-controls">
+      <button type="button" class="fav-export" id="fav-export-btn">Télécharger mes favoris</button>
+      <button type="button" class="fav-import" id="fav-import-btn">Charger des favoris</button>
+      <button type="button" class="fav-export" id="fav-clear-btn">Effacer tous les favoris</button>
+    </div>
+  </div>
+</div>
+<input type="file" id="fav-file-input" accept=".json" aria-label="Charger un fichier de favoris">
+
+<section class="cartes" aria-label="Conteneur des panneaux">
+</section>
+<p class="mentions">Chaque article renvoie vers sa source d'origine. Textes, images et vidéos : leurs auteur.ice.s et sites respectifs.</p>
+<p class="mentions"><a href="https://github.com/Zarissa92/kioske.fr" target="_blank" rel="noopener noreferrer">GitHub du projet (GPL v3)</a></p>
+<script>
+${js_accueil}${js_carte_ouverte}${js_retour_app}${js_installation_pwa}</script>
+</body>
+</html>

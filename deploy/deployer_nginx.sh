@@ -67,6 +67,13 @@ map $uri $kioske_cache_control {
     # Pages, app.js, index des articles : 30 min (durée du timer de mise à jour)
     default                           "public, max-age=1800, must-revalidate";
 }
+
+# Langue du site : en-tête Content-Language sur les pages HTML seulement. Une valeur vide n'envoie pas
+# l'en-tête (images, scripts, flux…). Lu par un seul add_header au niveau « server », comme le cache.
+map $sent_http_content_type $kioske_langue {
+    ~^text/html                       "fr";
+    default                           "";
+}
 NGINX
 )"
 
@@ -173,7 +180,9 @@ PROTECTIONS="    # Ne pas annoncer la version de nginx
     add_header Permissions-Policy \"camera=(), microphone=(), geolocation=(), payment=()\" always;
     add_header Content-Security-Policy \"$CSP\" always;
     # Durée de cache : voir la table « map » en tête du fichier généré. Sans « always » : pas sur les erreurs.
-    add_header Cache-Control \$kioske_cache_control;"
+    add_header Cache-Control \$kioske_cache_control;
+    # Langue des pages (français) : voir la table « map » en tête du fichier généré.
+    add_header Content-Language \$kioske_langue;"
 
 # 3. Configuration HTTP seule : sert le site directement, sans redirection
 info "Configuration HTTP seule"
