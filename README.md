@@ -20,6 +20,20 @@ modifié par le build.
 > **À vérifier :** l'`origin` du dépôt git pointe encore vers `kit-gauchiasses.fr`.
 >
 > **Modifications récentes** :
+> - **Galerie principale améliorée** (2026-11-14) :
+>   - **Dates/heures visibles** : en bas de chaque image, la date de parution (jj/mm/aaaa HH:MM) avec fond noir semi-transparent.
+>   - **Titres en 3 lignes** : sous chaque carte, un extrait du titre sans mots tronqués, limité à 3 lignes.
+>   - **Cartes plus compactes** : 30 % plus petites (115 × 154 px, 91 × 121 px en mobile).
+>   - **Format 3/4 unifié** : toutes les cartes du site (galerie, panneaux, pages statiques) au ratio 3/4.
+> - **Flux personnalisé** (2026-11-14) :
+>   - **Bouton ⚙️ Personnaliser** dans le menu ≡ : panneau de configuration pour sélectionner les sources à afficher.
+>   - **Sources groupées par catégorie** : checkboxes en 2 colonnes (1 colonne en mobile), bouton « Tout cocher/Décocher ».
+>   - **Filtrage en temps réel** : l'accueil s'adapte immédiatement, masquant catégories et sources non sélectionnées.
+>   - **Bouton « Voir mon flux »** : affiche les articles filtrés dans un panneau séparé (même format que l'accueil).
+>   - **Sauvegarde localStorage** : les sources sélectionnées sont mémorisées, le flux filtré persiste au rechargement.
+>   - Cache service worker : v23.
+>
+> **Modifications récentes** :
 > - **nginx adapté au site, fail2ban durci** (2026-11-14, **à déployer** : voir « Déploiement sur le serveur ») :
 >   - **nginx, liste blanche** : seules les adresses que le build produit sont servies (accueil, `rss.html`, flux, `sitemap.xml`, `robots.txt`, `articles-index.json`, `/articles/…/`, `/categories/…/`, `/rss/….xml`, `/img/veille/…`, `/fonts/…`, `theme.js`, `sw.js`, manifest, icônes). Tout le reste reçoit 404 et une ligne dans `/var/log/nginx/kioske.fr.hors-site.log`. Les fichiers que navigateurs et robots demandent d'eux-mêmes (`favicon.ico`, `apple-touch-icon-…`, `/.well-known/…`) reçoivent un 404 ordinaire, sans compter.
 >   - **nginx, débit** : 10 pages et 100 fichiers par seconde et par adresse IP, avec une marge (40 et 300) ; au-delà, réponse 429. 40 connexions par adresse, aucun envoi de données (1 ko), délais courts. Le port 80 écrit dans le même journal que le HTTPS.

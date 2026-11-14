@@ -763,8 +763,8 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .pagination-btn { padding: 0.4rem 0.8rem; background: #0a0000; border: 1px solid var(--red-dim); color: var(--red); cursor: pointer; font: inherit; }
 .pagination-btn:disabled { opacity: 0.5; }
 .pagination-info { min-width: 80px; text-align: center; color: var(--red); }
-.panneau-actions { display: flex; gap: 0.8rem; margin-top: 1rem; border-top: 1px solid var(--red-dim); padding-top: 1rem; justify-content: center; }
-.panneau-bouton { padding: 0.6rem 1rem; background: #0a0000; border: 1px solid var(--red-dim); color: var(--red); cursor: pointer; font: inherit; transition: all 0.2s ease; }
+.panneau-actions { display: flex; gap: 0.6rem; margin-top: 1rem; border-top: 1px solid var(--red-dim); padding-top: 1rem; justify-content: center; flex-wrap: wrap; }
+.panneau-bouton { padding: 0.4rem 0.8rem; background: #0a0000; border: 1px solid var(--red-dim); color: var(--red); cursor: pointer; font: inherit; transition: all 0.2s ease; font-size: 0.85rem; }
 .panneau-bouton:hover { background: var(--red); color: #000; }
 /* « ✓ Copié ! » : bouton de copie du code de conduite, bouton de partage d'un article */
 .panneau-bouton.est-copie, .share-btn.est-copie { color: #00ff00; }
@@ -774,6 +774,90 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 /* barre de recherche des pages d'article et de catégorie */
 .recherche-form { display: flex; gap: 0.5rem; }
 .recherche-bouton { padding: 0.6rem 1rem; background: var(--red-dim); border: 1px solid var(--red); color: var(--red); cursor: pointer; border-radius: 0.3rem; }
+
+/* --- Flux personnalisé --- */
+.custom-flux-toggle-all {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--red-dim);
+  text-align: center;
+}
+
+.custom-flux-toggle-all .panneau-bouton {
+  min-width: 120px;
+}
+
+.custom-flux-category {
+  margin-bottom: 1.2rem;
+  padding: 0.8rem;
+  border: 1px solid var(--red-dim);
+  border-radius: 0.4rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.custom-flux-category:last-child {
+  margin-bottom: 0;
+}
+
+.custom-flux-category-title {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--red);
+  margin: 0 0 0.6rem 0;
+  font-weight: bold;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--red-dim);
+}
+
+.custom-flux-checkboxes-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+@media (max-width: 600px) {
+  .custom-flux-checkboxes-group {
+    grid-template-columns: 1fr;
+  }
+}
+
+.custom-flux-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 0.3rem;
+  user-select: none;
+}
+
+.custom-flux-checkbox-label:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.custom-flux-checkbox {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--red);
+  flex-shrink: 0;
+}
+
+.custom-flux-checkbox-label span {
+  font-size: 0.8rem;
+  color: var(--red-light);
+  overflow-wrap: break-word;
+}
+
+#custom-flux-indicator {
+  display: none;
+  font-size: 0.75rem;
+  color: var(--red);
+  margin-left: 0.5rem;
+  white-space: nowrap;
+}
 
 /* --- Code de conduite (panneau de l'accueil) --- */
 .conduct-panneau h2 { font-size: clamp(1.1rem, 2.6vw, 1.3rem); color: #fff; margin: 0; padding: 0; }

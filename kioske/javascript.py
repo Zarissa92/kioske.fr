@@ -34,6 +34,7 @@ JS_SERVICE_WORKER = lire("service_worker.js")      # enregistrement de /sw.js
 JS_DONNEES_ACCUEIL = lire("donnees_accueil.js")    # lit le JSON « kioske-donnees » de la page
 JS_GALERIE = lire("galerie.js")                    # flèches des galeries : brancherGalerie()
 JS_ACCUEIL = lire("accueil.js")                    # panneaux, recherche, panneau « Mes favoris », menu
+JS_FLUX_PERSONNALISE = lire("flux_personnalise.js") # flux personnalisé : sélection des sources
 # Accueil et pages de catégorie
 JS_CARTE_OUVERTE = lire("carte_ouverte.js")        # carte d'article affichée par-dessus la page
 # Accueil, pages d'article et de catégorie

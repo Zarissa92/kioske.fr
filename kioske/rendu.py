@@ -12,9 +12,9 @@ from zoneinfo import ZoneInfo
 from . import immuable
 from .config import DOMAINE, DOSSIER_RSS_CATEGORIES, NOM_SITE, URL_SITE, CFG
 from .gabarits import remplir
-from .javascript import (JS_ACCUEIL, JS_CARTE_OUVERTE, JS_DONNEES_ACCUEIL, JS_FAVORIS, JS_GALERIE,
-                         JS_INSTALLATION_PWA, JS_PAGE_RSS, JS_PARTAGE, JS_RETOUR_APP, JS_SERVICE_WORKER,
-                         json_pour_page)
+from .javascript import (JS_ACCUEIL, JS_CARTE_OUVERTE, JS_DONNEES_ACCUEIL, JS_FAVORIS, JS_FLUX_PERSONNALISE,
+                         JS_GALERIE, JS_INSTALLATION_PWA, JS_PAGE_RSS, JS_PARTAGE, JS_RETOUR_APP,
+                         JS_SERVICE_WORKER, json_pour_page)
 from .sources import AUTRES, ordre_des_categories
 from .texte import cle_alphabetique, esc, slugs_categories, truncate_label, article_id, slug_article
 from .themes import ATTRIBUTS_HTML, CHOIX_THEME, CSS, SCRIPT_THEME, VARIABLES_HTML
@@ -292,9 +292,19 @@ def render_page(items: list[dict], previews: dict[str, dict],
     if CODE_DE_CONDUITE_PATH.exists():
         conduite_html = CODE_DE_CONDUITE_PATH.read_text(encoding="utf-8")
 
+    # Métadonnées des sources (pour la configuration du flux personnalisé)
+    sources_metadata = {}
+    for cle in ordre:
+        category = categories.get(cle, AUTRES)
+        sources_metadata[cle] = {
+            "name": noms[cle],
+            "category": category
+        }
+
     # Données lues par kioske/js/donnees_accueil.js
     donnees_json = json_pour_page(
-        {"sources": groupes_json, "categories": categories_json, "conduite": conduite_html})
+        {"sources": groupes_json, "categories": categories_json, "conduite": conduite_html,
+         "sources_metadata": sources_metadata})
 
     # Générer les boutons de réseaux sociaux conditionnellement
     boutons_reseaux = ""
@@ -338,6 +348,7 @@ def render_page(items: list[dict], previews: dict[str, dict],
         js_favoris=JS_FAVORIS,
         js_partage=JS_PARTAGE,
         js_accueil=JS_ACCUEIL,
+        js_flux_personnalise=JS_FLUX_PERSONNALISE,
         js_carte_ouverte=JS_CARTE_OUVERTE,
         js_retour_app=JS_RETOUR_APP,
         js_installation_pwa=JS_INSTALLATION_PWA,
