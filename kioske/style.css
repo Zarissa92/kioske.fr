@@ -608,7 +608,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
     gap: 18px;
     overflow-x: auto;
     overflow-y: hidden;
-    padding: 25px 15px 35px;
+    padding: 1rem;
     scroll-behavior: smooth;
     scrollbar-width: none;
     overscroll-behavior-x: contain;
@@ -752,11 +752,11 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 /* Galerie d'un panneau de catégorie : au-dessus de la grille, défile avec elle. Plus petite que la
    galerie de l'accueil (cartes 165 × 220 px) pour laisser la place aux cartes du panneau. */
 .galerie-panneau { margin-bottom: 0.6rem; }
-.galerie-panneau .galerie { padding: 10px 8px 14px; gap: 10px; }
+.galerie-panneau .galerie { padding: 1rem; gap: 10px; }
 .galerie-panneau .galerie-carte { flex-basis: 100px; height: 133px; }
 .galerie-panneau .galerie-carte:hover { transform: translateY(-3px) scale(1.04); }
 @media (max-width: 600px) {
-    .galerie-panneau .galerie { padding: 8px 4px 10px; gap: 8px; }
+    .galerie-panneau .galerie { padding: 1rem; gap: 8px; }
     .galerie-panneau .galerie-carte { flex-basis: 80px; height: 107px; }
 }
 .pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1rem; padding: 0.5rem; }
