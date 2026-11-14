@@ -1,0 +1,8 @@
+{
+  "name": "kioske-tests",
+  "private": true,
+  "description": "Tests du JavaScript du KiosKe dans jsdom (sans navigateur). Voir tests/lancer.sh.",
+  "devDependencies": {
+    "jsdom": "^26.0.0"
+  }
+}

@@ -20,6 +20,18 @@ modifié par le build.
 > **À vérifier :** l'`origin` du dépôt git pointe encore vers `kit-gauchiasses.fr`.
 >
 > **Modifications récentes** :
+> - **nginx adapté au site, fail2ban durci** (2026-11-14, **à déployer** : voir « Déploiement sur le serveur ») :
+>   - **nginx, liste blanche** : seules les adresses que le build produit sont servies (accueil, `rss.html`, flux, `sitemap.xml`, `robots.txt`, `articles-index.json`, `/articles/…/`, `/categories/…/`, `/rss/….xml`, `/img/veille/…`, `/fonts/…`, `theme.js`, `sw.js`, manifest, icônes). Tout le reste reçoit 404 et une ligne dans `/var/log/nginx/kioske.fr.hors-site.log`. Les fichiers que navigateurs et robots demandent d'eux-mêmes (`favicon.ico`, `apple-touch-icon-…`, `/.well-known/…`) reçoivent un 404 ordinaire, sans compter.
+>   - **nginx, débit** : 10 pages et 100 fichiers par seconde et par adresse IP, avec une marge (40 et 300) ; au-delà, réponse 429. 40 connexions par adresse, aucun envoi de données (1 ko), délais courts. Le port 80 écrit dans le même journal que le HTTPS.
+>   - **fail2ban, quatre jails** (`deploy/fail2ban/kioske.jail.conf`) : `kioske-scan` (sonde connue : ban à la première demande, 30 jours), `kioske-hors-site` (3 adresses hors du site en 10 minutes : 1 jour), `kioske-interdit` (2 requêtes illisibles ou autres que GET/HEAD en un jour : 7 jours), `kioske-debit` (30 réponses 429 en une minute : 1 heure). La durée double à chaque récidive, jusqu'à un an. Le réseau local et le serveur ne sont jamais bannis (`ip_jamais_bannies` dans `kioske.cfg`).
+>   - **L'ancienne jail ne bannissait personne** : fail2ban retire la date de la ligne avant de comparer, et l'ancien filtre `kioske-scan` exigeait une date entre les crochets. Vérifié avec `fail2ban-regex` (fail2ban 1.1) : 0 ligne reconnue sur 30, contre 15 sondes sur 15 avec le nouveau, sans faux positif sur 15 visites légitimes piégeuses.
+>   - **Testé** dans un conteneur Debian 13 jetable (nginx 1.26, fail2ban 1.1) en jouant `deploy/deployer_nginx.sh`, `deploy/deployer_nginx_simple.sh` et `deploy/kioske.sh fail2ban` : 44 adresses sur 44 répondent comme attendu, les deux scripts nginx écrivent la même configuration, chaque jail bannit au seuil prévu et pas avant, et une visiteuse ordinaire (article disparu, `favicon.ico`, une faute de frappe) n'est pas bannie. Pas testé sur le serveur.
+>   - `deploy/deployer_nginx.sh` ne s'arrête plus en silence quand le DNS du domaine ne répond pas.
+> - **Sécurité, tests, doublons, code mort** (2026-11-14) :
+>   - **Textes des articles jamais interprétés comme du HTML** : les cartes des panneaux (source, catégorie), de la recherche et des favoris étaient fabriquées avec `innerHTML`, titre, résumé, date et site collés tels quels. Un flux RSS piégé pouvait donc injecter du HTML dans la page. Elles sont maintenant construites par `creerCarte()` (`kioske/js/accueil.js`) avec `textContent`. Dans « Mes favoris », l'adresse et l'image d'un favori (qui peuvent venir d'un fichier importé) ne sont gardées que si ce sont des chemins du site ou des adresses `http(s)` (`adresseSure()`).
+>   - **Tests dans le projet** : dossier `tests/`, lancés par `bash tests/lancer.sh` (voir « Tests »).
+>   - **Doublons supprimés** : `kioske/js/favoris.js` (favoris, ♡) et `kioske/js/partage.js` (bouton 📤) sont communs à l'accueil, aux pages d'article et aux pages de catégorie ; les panneaux de source et de catégorie sortent d'une seule fonction, `creerPanneauArticles()`. `static/app.js` est supprimé : ses favoris sont dans `favoris.js`, le reste était du code mort ou en double (menu « + » sans bouton, enregistrement du service worker). L'invite d'installation (`installation_pwa.js`) est incluse dans les pages d'article et de catégorie, comme `app.js` le faisait. Cache du service worker : v22. Le bouton 📤 partage maintenant partout l'adresse de l'article sans le paramètre `from`.
+>   - **Code mort retiré** : script du bouton « + » d'infos (plus aucun bouton), messages de débogage de la recherche, et dans `style.css` les règles de huit classes qui n'existent plus dans aucune page (`.btn-infos`, `.glow`, `.titre-ligne`, `.sub-petit`, `.categorie-titre`, `.categorie-retour`, `.rss-categorie`, `.galerie-arrow`), l'animation `flicker` et un ancien bloc en commentaire. Le style soigné des flèches de galerie (`.galerie-arrow`) n'était appliqué à aucun bouton ; il reste dans l'historique git. Non retirés : le panneau d'infos sans bouton (il porte le bloc immuable, exigé par la garde) et les anciennes règles `.galerie` du début de `style.css` (elles s'appliquent encore en partie). Le rendu visuel n'a pas pu être vérifié.
 > - **Squelettes des pages dans `kioske/gabarits/`** (2026-11-14) : le HTML complet des quatre types de page est sorti du code Python, dans `accueil.html` (barre du haut comprise), `article.html`, `categorie.html` et `rss.html`. Ce sont des fichiers HTML ordinaires où `${nom}` marque l'endroit d'une valeur (`string.Template`, bibliothèque standard, aucune dépendance) ; `kioske/gabarits.py` les lit et les remplit (`remplir()`). Les morceaux répétés ou conditionnels (cartes, étiquettes, galeries, boutons, balises d'image de partage) restent fabriqués en Python. Vérifié sur les 1311 pages du build local : l'accueil et `rss.html` sont identiques à l'octet près, les pages d'article et de catégorie aussi, à un saut de ligne final près (elles se terminent maintenant par un saut de ligne).
 > - **Tout le JavaScript dans `kioske/js/`** (2026-11-14) : plus aucun script écrit dans le code Python. Les scripts des pages sont des fichiers de `kioske/js/` (`accueil.js`, `galerie.js`, `carte_ouverte.js`, `retour_app.js`, `installation_pwa.js`, `donnees_accueil.js`, `service_worker.js`, `page_article.js`, `page_categorie.js`, `page_rss.js`) ; `kioske/javascript.py` les lit et `rendu.py` / `rendu_statique.py` insèrent leur contenu dans les pages, comme pour `style.css`. Les pages construites sont les mêmes qu'avant, à trois détails près : les données de l'accueil (articles par source et par catégorie, code de conduite) sont écrites en JSON dans `<script type="application/json" id="kioske-donnees">` et lues par `donnees_accueil.js` ; les `onclick` écrits par Python (♡ et 📤 de la carte, ♡ de la barre, « Mes favoris », « Charger des favoris ») sont remplacés par des écouteurs dans les fichiers JS ; le service worker est enregistré partout par `/sw.js`. Reste un `onclick` dans `accueil/bloc_immuable.html` (bloc protégé, non modifié). `static/app.js`, `static/theme.js` et `static/sw.js` ne bougent pas : ils sont servis comme fichiers à part. Testé dans jsdom (accueil, page d'article, page de catégorie, page RSS).
 > - **Tailles réglées dans `kioske.cfg` seulement** (2026-11-14) : les curseurs « Taille du site » et « Hauteur carte », leur script (accueil et `static/app.js`) et leur style sont supprimés. `taille_defaut` et `hauteur_carte_ouverte` restent dans `kioske.cfg` (bornés à 75-125 %) et sont écrits au build dans l'attribut `style` de `<html>` (`zoom` et `--hauteur-carte-ouverte`) : plus de script pour le zoom, et les valeurs autrefois enregistrées dans le navigateur des visiteurs (`kioske-taille`, `kioske-hauteur-carte`) ne sont plus lues. Cache du service worker : v21.
@@ -75,16 +87,17 @@ carte ouvre l'article par-dessus la page, au format « carte à jouer » (texte 
 
 1. [Structure](#structure)
 2. [Réglages : `kioske.cfg`](#réglages--kioskecfg)
-3. [Construire et publier](#construire-et-publier)
-4. [Sources de la veille](#sources-de-la-veille)
-5. [Bloc immuable](#bloc-immuable)
-6. [La page](#la-page)
-7. [Données, caches et images](#données-caches-et-images)
-8. [Déploiement sur le serveur](#déploiement-sur-le-serveur)
-9. [Référencement](#référencement)
-10. [PWA (Progressive Web App)](#pwa-progressive-web-app)
-11. [Limites](#limites)
-12. [Licences](#licences)
+3. [Tests](#tests)
+4. [Construire et publier](#construire-et-publier)
+5. [Sources de la veille](#sources-de-la-veille)
+6. [Bloc immuable](#bloc-immuable)
+7. [La page](#la-page)
+8. [Données, caches et images](#données-caches-et-images)
+9. [Déploiement sur le serveur](#déploiement-sur-le-serveur)
+10. [Référencement](#référencement)
+11. [PWA (Progressive Web App)](#pwa-progressive-web-app)
+12. [Limites](#limites)
+13. [Licences](#licences)
 
 ## Structure
 
@@ -93,8 +106,9 @@ carte ouvre l'article par-dessus la page, au format « carte à jouer » (texte 
 | `kioske.cfg` | **Tous les réglages** : domaine, thèmes, veille, serveur. Lu par Python et par les scripts bash. |
 | `sources/` | Ce que la veille suit : `RSS_feeds.txt`, `Twitch_feeds.txt`, `flux_corrige_main.txt`. Écrits à la main. |
 | `accueil/bloc_immuable.html` | Source du bloc immuable. |
-| `static/` | Fichiers publiés tels quels : `favicon.svg`, `apple-touch-icon.png`, `preview.png`, `fonts/`, `app.js` (favoris et réglages des pages d'article et de catégorie), `theme.js` (thème choisi par le visiteur et pluie matricielle, sur toutes les pages), `sw.js` et `manifest.json` (PWA), icônes `icon-*.png`. |
+| `static/` | Fichiers publiés tels quels : `favicon.svg`, `apple-touch-icon.png`, `preview.png`, `fonts/`, `theme.js` (thème choisi par le visiteur et pluie matricielle, sur toutes les pages), `sw.js` et `manifest.json` (PWA), icônes `icon-*.png`. |
 | `kioske/` | Le code (paquet Python), la feuille de style `style.css`, les squelettes HTML des pages (`gabarits/`) et leur JavaScript (`js/`). Voir ci-dessous. |
+| `tests/` | Tests du site, lancés sur le PC par `bash tests/lancer.sh` (voir « Tests »). |
 | `bin/` | Points d'entrée : `build_site.py`, `publier_public.py`, `garde_immuable.py`. Quelques lignes chacun. |
 | `deploy/` | Scripts du serveur : `kioske.sh` (point d'entrée), `installer_serveur.sh`, `deployer_nginx.sh`, `verifier_serveur.sh`, `lib_config.sh`, `systemd/`, `fail2ban/`. |
 | `data/` | `immuable.json` (empreinte du bloc, suivie par git) ; `historique.db`, `cache/`, `build.lock` (locaux, jamais publiés). |
@@ -117,7 +131,7 @@ Le paquet `kioske/` :
 | `rendu.py`, `rss.py`, `texte.py` | Contenu de la page d'accueil et de `rss.html` (étiquettes, galeries, données ; le squelette est dans `gabarits/`), flux RSS produits, outils de texte (slugs, IDs, échappement HTML). |
 | `rendu_statique.py` | Contenu des pages statiques d'articles et de catégories (image, navigation, cartes ; le squelette est dans `gabarits/`). Aucun CSS (il est dans `style.css`) ni JavaScript (il est dans `js/`). |
 | `gabarits.py`, `gabarits/` | Squelettes HTML des pages : `accueil.html`, `article.html`, `categorie.html`, `rss.html`. `${nom}` marque l'endroit d'une valeur ; ni boucle ni condition dans un gabarit. `gabarits.py` fournit `remplir("page.html", nom=valeur, …)` : une valeur manquante arrête le build, et le texte est échappé par Python (`esc()`) avant d'être passé. Un vrai signe dollar s'écrit `$$`. Pour modifier le HTML fixe d'une page, éditer son gabarit ; pour y ajouter une valeur, écrire `${nom}` dans le gabarit et passer `nom=…` dans l'appel `remplir()` de `rendu.py` ou `rendu_statique.py`. |
-| `javascript.py`, `js/` | Tout le JavaScript écrit dans les pages. `js/` : un fichier par rôle — `accueil.js` (panneaux, recherche, favoris, menu), `galerie.js` (flèches des galeries), `carte_ouverte.js` (carte d'article par-dessus la page), `retour_app.js` (bouton précédent dans l'app installée), `installation_pwa.js`, `donnees_accueil.js` (lit le JSON des articles), `service_worker.js`, `page_article.js`, `page_categorie.js`, `page_rss.js`. `javascript.py` les lit (constantes `JS_…`) et fournit `json_pour_page()` pour les données. Pour ajouter un script : créer le fichier dans `js/`, ajouter sa constante dans `javascript.py`, l'insérer dans la page voulue. |
+| `javascript.py`, `js/` | Tout le JavaScript écrit dans les pages. `js/` : un fichier par rôle — `accueil.js` (panneaux, cartes, recherche, panneau « Mes favoris », menu), `favoris.js` (♡ et favoris enregistrés dans le navigateur, sur toutes les pages qui montrent un article), `partage.js` (bouton 📤), `galerie.js` (flèches des galeries), `carte_ouverte.js` (carte d'article par-dessus la page), `retour_app.js` (bouton précédent dans l'app installée), `installation_pwa.js`, `donnees_accueil.js` (lit le JSON des articles), `service_worker.js`, `page_article.js`, `page_categorie.js`, `page_rss.js`. `javascript.py` les lit (constantes `JS_…`) et fournit `json_pour_page()` pour les données. Pour ajouter un script : créer le fichier dans `js/`, ajouter sa constante dans `javascript.py`, l'insérer dans la page voulue. |
 | `immuable.py` | Garde du bloc immuable. |
 | `verrou.py` | Un seul build ou une seule publication à la fois. |
 | `construction.py`, `publication.py` | Le build (`build/`) et la copie vers la racine web. |
@@ -130,7 +144,7 @@ Format INI, commenté dans le fichier. Une valeur manquante ou invalide arrête 
 | --- | --- |
 | `[site]` | `domaine`, `nom`, `theme` (thème par défaut), `taille_defaut` (zoom de l'accueil en %, min 75, max 125, défaut 90 ; réglage du site, pas des visiteurs), `largeur_carte_ouverte` (largeur max du panneau article, ex: `min(600px, 85vw)`), `hauteur_carte_ouverte` (zoom de la hauteur des cartes, min 75, max 125, défaut 115), `bordure_panneau_epaisseur` (défaut 8), `espacement_panneau_vertical` (défaut `2.4rem`), `espacement_panneau_horizontal` (marge intérieure gauche et droite des panneaux, défaut `0.5rem`). |
 | `[veille]` | `articles_flux_rss` (100), `videos_par_chaine` (15), `articles_par_source` (0 = tous), `delai_nouvel_essai_heures` (24). |
-| `[serveur]` | `racine_web` (`/var/www/kioske.fr`), `ip_publique`, `intervalle_timer` (`30min`). |
+| `[serveur]` | `racine_web` (`/var/www/kioske.fr`), `ip_jamais_bannies` (adresses que fail2ban ne bannit jamais : serveur et réseau local), `ip_publique`, `intervalle_timer` (`30min`). |
 | `[reseaux]` | `discord` (URL du serveur Discord), `mastodon` (profil Mastodon), `rss` (chemin vers la page RSS, défaut `rss.html`). Laissez vide pour désactiver un lien. |
 | `[theme.<nom>]` | `nom`, `fond` (`etoiles` ou `noir`), `pluie` (`oui` ou `non`), `opacite_panneau` (0 à 100, en %). |
 
@@ -139,6 +153,33 @@ matricielle). Ajouter une section `[theme.<nom>]` ajoute un bouton de choix sur 
 
 Les scripts bash lisent les mêmes valeurs avec `cfg <section> <clé>` (`deploy/lib_config.sh`).
 Après un changement de `intervalle_timer` ou de `racine_web`, relancer `deploy/installer_serveur.sh`.
+
+## Tests
+
+Les tests se lancent sur le PC, jamais sur le serveur :
+
+```bash
+cd tests && npm install      # une seule fois : installe jsdom dans tests/node_modules/ (hors git)
+bash tests/lancer.sh         # depuis la racine du projet : tout
+bash tests/lancer.sh --sans-build   # garde le build/ déjà là
+```
+
+`lancer.sh` vérifie la syntaxe des fichiers JavaScript, lance les tests Python (`tests/test_python.py`,
+`unittest`, sans dépendance), reconstruit le site sans réseau (`bin/build_site.py --simple`), puis joue les
+parcours des visiteurs dans jsdom, sans navigateur, sur les pages de `build/` :
+
+| Fichier | Ce qu'il vérifie |
+|---|---|
+| `test_python.py` | Gabarits (valeur manquante, valeur insérée telle quelle), JSON des données, galerie des blocs, chaque fichier de `js/` utilisé. |
+| `test_fermeture.js` | ×, double appui, Échap, fond sombre, bouton précédent : aucune fermeture ne remonte plus loin que l'accueil. |
+| `test_galeries.js` | Galerie des panneaux de catégorie et des blocs de l'accueil : contenu, flèches, liens de retour. |
+| `test_pages.js` | Favoris, partage, données, recherche et code de conduite, sur l'accueil, une page d'article, une page de catégorie et `rss.html`. |
+| `test_securite.js` | Un titre ou un résumé contenant du HTML reste du texte ; un fichier de favoris trafiqué ne passe pas d'adresse `javascript:`. |
+
+`tests/outils.js` charge une page de `build/` dans jsdom et simule `fetch`. Le build local n'a souvent
+aucune image : les tests de galerie en posent de factices. Ce que ces tests ne voient pas : le rendu
+visuel (CSS, tailles, thèmes), à vérifier à l'écran. Le dossier `tests/` n'a pas besoin d'être sur le
+serveur ; `tests/node_modules/` est à exclure de la synchronisation.
 
 ## Construire et publier
 
@@ -264,8 +305,7 @@ Tant que l'empreinte n'est pas réenregistrée après une modification, rien n'e
   page statique de l'article (`fetch`), en extrait `main.panel-article` et l'affiche par-dessus la page,
   dans `.carte-ouverte`. Le style (section « Carte d'article ouverte » de `kioske/style.css`) et le script
   (`kioske/js/carte_ouverte.js`) sont partagés avec la page statique. La page qui inclut le script
-  fournit `updateHearts()` et `toggleFavorite()` (`kioske/js/accueil.js`, ou `static/app.js`) et ferme la
-  carte sur Échap.
+  inclut aussi `kioske/js/favoris.js` et `kioske/js/partage.js`, et ferme la carte sur Échap.
 - **Adresse** : à l'ouverture, `history.pushState` met l'adresse de la page statique de l'article (lien
   partageable, rechargement possible). `popstate` referme ou rouvre la carte.
 - **Fermeture** : « ← Retour », Échap, clic sur le fond sombre ou bouton précédent du navigateur. On
@@ -376,7 +416,7 @@ deploy/kioske.sh --simulation             # affiche sans rien lancer
 | `serveur` | `installer_serveur.sh` : venv, racine web, unités systemd, premier passage. |
 | `veille` | `publier_public.py` : construit `build/` puis le copie dans la racine web. |
 | `nginx` | `deployer_nginx.sh` : HTTP, puis HTTPS si le certificat existe. Options `--email`, `--sans-certificat`. |
-| `fail2ban` | Page « Tu es banni » et jail `kioske-scan`. Ignorée si la jail `sans_pitie` manque. |
+| `fail2ban` | Page « Tu es banni », filtres et jails du site (`kioske-scan`, `kioske-hors-site`, `kioske-interdit`, `kioske-debit`). Ignorée si la jail `sans_pitie` manque ; demande que l'étape `nginx` soit à jour. |
 | `statut` | `verifier_serveur.sh` : DNS, nginx, HTTPS, certificat, timer, âge de la dernière publication. |
 
 **Service** : le timer `kioske-veille` lance `deploy/kioske.sh veille` à l'intervalle de `kioske.cfg`.
@@ -394,17 +434,47 @@ sudo systemctl start kioske-veille.service   # publier tout de suite
 **Droits** : la racine web est en `www-data:www-data`, dossiers `2775`, fichiers `664`. `data/` et
 `build/` appartiennent à l'utilisateur du service.
 
-**nginx** : HTTPS seul avec HSTS, **TLS 1.3 seul**, 0-RTT refusé, version masquée, méthodes `GET` et `HEAD`, fichiers cachés refusés, en-têtes de sécurité, politique de contenu `default-src 'none'` puis, pour le site seulement (`'self'`) : images, styles, polices, scripts (ceux des pages et `/app.js`), `fetch` (`connect-src` : recherche, carte ouverte, favoris), `manifest.json` et `sw.js`. Rien ne peut être chargé depuis un autre site.
+**nginx** : HTTPS seul avec HSTS, **TLS 1.3 seul**, 0-RTT refusé, version masquée, méthodes `GET` et `HEAD`, aucun envoi de données, en-têtes de sécurité, politique de contenu `default-src 'none'` puis, pour le site seulement (`'self'`) : images, styles, polices, scripts (ceux écrits dans les pages et `/theme.js`), `fetch` (`connect-src` : recherche, carte ouverte, favoris), `manifest.json` et `sw.js`. Rien ne peut être chargé depuis un autre site.
 
-**Règle à respecter dans la configuration** : aucun `add_header` dans un bloc `location`. Dans nginx, un `add_header` placé dans un `location` annule tous ceux du niveau `server` pour ce `location`. La durée de cache est donc choisie par une table `map $uri $kioske_cache_control` en tête de fichier et envoyée par un seul `add_header Cache-Control` au niveau `server`. Deux scripts de déploiement :
+**Liste blanche** : le site est statique, nginx ne sert donc que les adresses que le build produit. Chaque famille d'adresses a son bloc `location` ; tout le reste tombe dans `location /`, qui répond 404 et écrit une ligne dans `/var/log/nginx/<domaine>.hors-site.log` (en plus du journal d'accès). **En ajoutant un fichier ou un dossier à la racine du site (`static/`, ou une nouvelle sortie du build), l'ajouter aussi à cette liste**, dans `deploy/deployer_nginx.sh` (variable `EMPLACEMENTS`) et dans `deploy/kioske-nginx.conf`, sinon il sera refusé et ses visiteurs comptés comme des sondes.
+
+| Adresse | Réponse |
+|---|---|
+| `/`, `/index.html`, `/rss.html`, `/rss.xml`, `/sitemap.xml`, `/robots.txt`, `/articles-index.json` | servie (débit « pages ») |
+| `/articles/<id>-<titre>/`, `/categories/<nom>/`, `/rss/<nom>.xml` | servie, ou 404 ordinaire si la page a disparu |
+| `/manifest.json`, `/theme.js`, `/sw.js`, `/favicon.svg`, `/preview.png`, `/apple-touch-icon.png`, `/icon-<taille>.png`, `/img/veille/<fichier>`, `/fonts/<fichier>` | servie (débit « fichiers ») |
+| `/favicon.ico`, `/apple-touch-icon-….png`, `/browserconfig.xml`, `/ads.txt`, `/humans.txt`, `/security.txt`, `/.well-known/…` | 404 ordinaire : navigateurs et robots les demandent d'eux-mêmes |
+| fichier ou dossier caché (`/.env`, `/.git/…`) | 404 (et ban immédiat par `kioske-scan`) |
+| tout le reste | 404 et une ligne dans le journal hors-site |
+
+**Débit** : par adresse IP, 10 pages par seconde (marge de 40) et 100 fichiers par seconde (marge de 300) ; 40 connexions à la fois. Au-delà : réponse 429. Une page d'accueil demande une page et quelques dizaines de fichiers : un visiteur n'atteint pas ces limites.
+
+**Règle à respecter dans la configuration** : aucun `add_header` dans un bloc `location`. Dans nginx, un `add_header` placé dans un `location` annule tous ceux du niveau `server` pour ce `location`. La durée de cache est donc choisie par une table `map $uri $kioske_cache_control` en tête de fichier et envoyée par un seul `add_header Cache-Control` au niveau `server`. Deux scripts de déploiement, qui écrivent **la même configuration** (à modifier ensemble) :
 - **`deploy/deployer_nginx.sh`** : complet, gère les certificats Let's Encrypt (appelle certbot) et déploie nginx. À utiliser lors de l'installation initiale ou pour renégocier les certificats.
-- **`deploy/deployer_nginx_simple.sh`** : copie la configuration nginx depuis `deploy/kioske-nginx.conf`, teste, et recharge nginx sans toucher aux certificats. À utiliser pour mettre à jour la configuration (cache headers, CSP, etc.) si les certificats sont déjà en place.
+- **`deploy/deployer_nginx_simple.sh`** : copie la configuration nginx depuis `deploy/kioske-nginx.conf`, teste, et recharge nginx sans toucher aux certificats. À utiliser pour mettre à jour la configuration si les certificats sont déjà en place (`deploy/kioske.sh --certificat-ok nginx`).
 
-Les deux scripts testent la configuration et restaurent l'ancienne version si le test échoue. Le certificat couvre le domaine seul, sans `www`.
+Les deux scripts testent la configuration et restaurent l'ancienne version si le test échoue. Le certificat couvre le domaine seul, sans `www`. `deploy/kioske.nginx.conf` (avec un point) est un ancien fichier qu'aucun script n'utilise.
 
-**fail2ban** (`deploy/fail2ban/`) : `f2b.sh` (copie de `~/fail2ban_hardened/f2b.sh`), filtre
-`kioske-scan.conf` (fichiers cachés, PHP, WordPress, `/cgi-bin/`), jail `kioske-scan.jail.conf`
-(5 scans en 10 minutes, ban d'un jour). Débannir : `sudo fail2ban-client set kioske-scan unbanip <IP>`.
+**fail2ban** (`deploy/fail2ban/`) : `f2b.sh` (copie de `~/fail2ban_hardened/f2b.sh`) installe la page « Tu es banni » et l'action `nginx-geo-ban` ; le ban est appliqué par nginx, le SSH n'est pas concerné. Quatre filtres et leurs jails (`kioske.jail.conf`, installé dans `/etc/fail2ban/jail.d/kioske.local`) :
+
+| Jail | Ce qui compte | Seuil | Premier ban |
+|---|---|---|---|
+| `kioske-scan` | sonde connue : fichier caché, extension étrangère au site (`.php`, `.sql`, `.zip`, `.env`…), dossier de scanner (`/wp-…`, `/phpmyadmin`, `/admin`, `/api`, `/cgi-bin`…), en HTTP comme en HTTPS | 1 demande | 30 jours |
+| `kioske-hors-site` | chaque ligne du journal hors-site | 3 en 10 minutes | 1 jour |
+| `kioske-interdit` | requête illisible (400), autre méthode que GET/HEAD (405), envoi de données (413, 414) | 2 en un jour | 7 jours |
+| `kioske-debit` | réponse 429 (débit dépassé) | 30 en une minute | 1 heure |
+
+La durée double à chaque récidive (`bantime.increment`), jusqu'à un an. Ne comptent jamais : une réponse 200, une page d'article ou de catégorie disparue, le texte d'une recherche (ce qui suit le `?`), `sitemap.xml.gz`, et les adresses de `ip_jamais_bannies` (`kioske.cfg`, section `[serveur]` : le serveur et le réseau local par défaut).
+
+```bash
+sudo fail2ban-client status kioske-scan      # bans en cours d'une jail
+sudo fail2ban-client unban <IP>              # débannir une adresse, dans toutes les jails
+sudo tail /var/log/nginx/kioske.fr.hors-site.log   # ce que les robots cherchent
+```
+
+Pour assouplir une jail : augmenter `maxretry` ou réduire `bantime` dans `deploy/fail2ban/kioske.jail.conf`, puis relancer `deploy/kioske.sh fail2ban`. Risque connu : un moteur de recherche qui redemande trois anciennes adresses du site en dix minutes est banni un jour (pour l'adresse IP utilisée) ; si le référencement en souffre, monter le seuil de `kioske-hors-site`.
+
+**Mettre en ligne cette configuration** (certificats déjà en place) : envoyer le projet, puis sur le serveur `bash deploy/kioske.sh --certificat-ok nginx fail2ban`. L'étape nginx doit passer avant fail2ban : c'est elle qui crée le journal hors-site.
 
 **Domaines alternatifs** : `gauchiasse.org` et `gauchiasses.org` redirigent vers `kioske.fr` (301).
 Le script est dans `~/Lenovo_scripts/redirections_gauchiasses.sh`, à lancer en root sur le serveur.
@@ -452,7 +522,7 @@ application native, et fonctionne partiellement hors ligne.
 - Icônes PWA, polices, `favicon.svg` : `max-age=31536000, immutable` (1 an).
 - Images de la veille (`/img/`) : `max-age=2592000` (30 jours).
 - Flux RSS/XML : `no-cache, max-age=0` (pas de cache, rafraîchir régulièrement).
-- Tout le reste (pages, `app.js`, `articles-index.json`) : `max-age=1800` (30 min, durée du timer).
+- Tout le reste (pages, `articles-index.json`) : `max-age=1800` (30 min, durée du timer).
 - Les réponses d'erreur n'ont pas de `Cache-Control`.
 
 **Mise à jour du cache** :

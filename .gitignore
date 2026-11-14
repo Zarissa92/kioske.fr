@@ -11,6 +11,9 @@ data/build.lock
 __pycache__/
 *.pyc
 
+# ---------- Dépendances des tests (recréées avec « cd tests && npm install ») ----------
+tests/node_modules/
+
 # ---------- Environnements Python (recréés avec requirements.txt) ----------
 venv/
 venv_blog/

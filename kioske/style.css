@@ -33,21 +33,43 @@ html, body {
   overflow-y: auto;
 }
 
-/* Barre de recherche globale */
-.recherche-globale {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  padding: 0.6rem;
-  background: var(--bg);
-  border-bottom: 1px solid var(--red-dim);
-  text-align: center;
-}
 .recherche-globale .recherche {
-  display: inline-block;
+  display: flex;
   width: min(100%, 400px);
+  margin: 0 auto;                /* centre le bloc, car le parent est en text-align: center */
 }
 
+.recherche-globale .recherche input {
+  flex: 1;
+  min-width: 0;                  /* empêche le champ de déborder sur petit écran */
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--red-dim);
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+  outline: none;
+}
+
+.recherche-globale .recherche input:focus {
+  border-color: var(--red);      /* si la variable existe dans votre thème */
+}
+
+.recherche-globale .recherche button {
+  display: flex;
+  align-items: center;
+  padding: 0 0.75rem;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--red-dim);
+  border-radius: 0 6px 6px 0;
+  cursor: pointer;
+}
+
+.recherche-globale .recherche button:hover {
+  background: var(--red-dim);
+}
 /* Navbar top sticky */
 .kioske-navbar {
   position: sticky;
@@ -81,31 +103,69 @@ html, body {
   margin-left: 0.5rem;
   white-space: nowrap;
 }
-.navbar-search {
-  flex: 1;
-  min-width: 200px;
-  max-width: 400px;
-}
-.navbar-search input {
-  width: 100%;
-  padding: 0.6rem 0.8rem;
-  background: #1a0000;
-  border: 1px solid var(--red-dim);
-  color: var(--red-light);
+.navbar-search button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1rem;
   font: inherit;
   font-size: 0.9rem;
-  border-radius: 2px;
+  white-space: nowrap;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: #1a0000;
+  border: 1px solid var(--red-dim);
+  border-radius: 0 2px 2px 0;
+  color: var(--red-light);
+  cursor: pointer;
   transition: all 0.2s;
 }
-.navbar-search input:focus {
-  outline: none;
-  box-shadow: 0 0 12px color-mix(in srgb, var(--red) 50%, transparent);
+
+/* Loupe dessinée en CSS */
+.loupe {
+  position: relative;
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* Cercle de la loupe */
+.loupe::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 11px;
+  height: 11px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+/* Manche de la loupe */
+.loupe::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  width: 2px;
+  height: 6px;
+  background: currentColor;
+  border-radius: 1px;
+  transform: rotate(-45deg);
+}
+
+.navbar-search button:hover {
+  color: var(--red);
   border-color: var(--red);
 }
-.navbar-search input::placeholder {
-  color: var(--red-light);
-  opacity: 0.5;
+
+.navbar-search:focus-within button {
+  border-color: var(--red);
+  color: var(--red);
 }
+
 .navbar-controls {
   display: flex;
   align-items: center;
@@ -236,8 +296,6 @@ html, body {
   box-shadow: 0 0 30px color-mix(in srgb, var(--red) 35%, transparent), inset 0 0 20px color-mix(in srgb, var(--red) 10%, transparent);
   text-align: center;
 }
-.btn-infos { position: absolute; top: 1rem; left: 1rem; width: 2rem; height: 2rem; border: 1px solid var(--red-dim); background: #000; color: var(--red); font: inherit; font-size: 1.4rem; font-weight: bold; cursor: pointer; transition: all .2s; z-index: 101; }
-.btn-infos:hover, .btn-infos:focus-visible { background: var(--red); color: #000; box-shadow: 0 0 12px var(--red); outline: none; }
 .infos-container { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 100; }
 .infos-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .7); cursor: pointer; }
 .popover-infos { position: relative; z-index: 1; width: min(600px, calc(100vw - 2rem)); height: fit-content; max-height: calc(100vh - 2rem); overflow: auto; padding: 0; box-sizing: border-box; background: #0a0000; color: var(--red-light); border: 1px solid var(--red); box-shadow: 0 0 30px color-mix(in srgb, var(--red) 50%, transparent), inset 0 0 20px color-mix(in srgb, var(--red) 10%, transparent); }
@@ -260,22 +318,12 @@ html, body {
 .recherche:focus { outline: none; border-color: var(--red); box-shadow: 0 0 12px color-mix(in srgb, var(--red) 50%, transparent); }
 .recherche::placeholder { color: var(--red-light); opacity: .6; }
 h1 { font-size: clamp(1.8rem, 6vw, 2.8rem); line-height: 1.2; margin-bottom: 0.6rem; text-transform: uppercase; }
-.glow {
-  color: #fff;
-  text-shadow: 0 0 2px var(--red), 0 0 6px var(--red);
-  animation: flicker 4s infinite;
-}
 .cursor { font-size: 1.8rem; line-height: 1; animation: blink 1s steps(1) infinite; }
-/* drapeaux trans de chaque côté du titre (comme sur kioske.fr) */
-.titre-ligne { display: flex; justify-content: center; align-items: center; gap: .3em; white-space: nowrap; }
 .drapeau { font-size: .5em; line-height: 1; }
-@media (max-width: 360px) { .titre-ligne { flex-wrap: wrap; white-space: normal; } }
 .sub { color: var(--red-light); margin-bottom: 0.3rem; }
-.sub-petit { font-size: .8rem; opacity: .7; margin-bottom: 0.6rem; }
 
 
 @keyframes blink { 50% { opacity: 0; } }
-@keyframes flicker { 0%, 92%, 100% { opacity: 1; } 93% { opacity: 0.4; } 95% { opacity: 1; } 96% { opacity: 0.6; } }
 @media (max-width: 768px) {
   .kioske-navbar {
     padding: 0.6rem 1rem;
@@ -333,23 +381,14 @@ h1 { font-size: clamp(1.8rem, 6vw, 2.8rem); line-height: 1.2; margin-bottom: 0.6
 /* sources : une case par source ; le clic ouvre ses articles dans un panneau (popover, sans JavaScript) */
 .cartes { position: relative; z-index: 1; max-width: 1200px; width: calc(100% - 32px); margin: 0 auto 1rem; }
 /* Les cartes remplissent leur colonne : leur taille se règle par le nombre de colonnes. */
-.grille { --colonnes: 5; display: grid; grid-template-columns: repeat(var(--colonnes), minmax(0, 1fr)); gap: 1rem; }
+.grille { --colonnes: 8; display: grid; grid-template-columns: repeat(var(--colonnes), minmax(0, 1fr)); gap: 1rem; }
 @media (max-width: 960px) { .grille { --colonnes: 4; } }
 @media (max-width: 640px) { .grille { --colonnes: 2; gap: .6rem; } }
 
-.categorie-titre { display: flex; align-items: center; gap: .5rem; width: 100%; margin: 0 0 .8rem;
-  padding: .6rem .9rem; font: inherit; font-size: 1rem; font-weight: 700; text-align: left; text-transform: uppercase;
-  background: var(--panel); color: #fff; border: 1px solid var(--red-dim);
-  box-shadow: 0 0 12px color-mix(in srgb, var(--red) 25%, transparent), inset 0 0 14px color-mix(in srgb, var(--red) 8%, transparent);
-  cursor: pointer; }
-.categorie-titre::after { content: "▸"; margin-left: auto; transition: transform .2s; }
-.categorie-titre:hover, .categorie-titre:focus-visible { color: var(--red-light); outline: none; box-shadow: 0 0 22px var(--red); }
 
 .categorie-panneau h2 { font-size: clamp(1.1rem, 2.6vw, 1.5rem); text-transform: uppercase; color: #fff; margin: 0 2.4rem 1rem 0; }
 .categorie-fermer { position: absolute; z-index: 300; top: .5rem; right: .5rem; width: 2rem; height: 2rem; border: 1px solid var(--red-dim); background: #000; color: var(--red); font: inherit; font-size: 1.2rem; cursor: pointer; }
 .categorie-fermer:hover, .categorie-fermer:focus-visible { background: var(--red); color: #000; }
-.categorie-retour { position: absolute; top: 0.5rem; left: 0.5rem; padding: 0.4rem 0.8rem; background: #0a0000; border: 1px solid var(--red-dim); color: var(--red); font: inherit; font-size: 0.85rem; cursor: pointer; z-index: 10; }
-.categorie-retour:hover, .categorie-retour:focus-visible { background: var(--red); color: #000; outline: none; }
 .compte { font-weight: 400; opacity: .7; font-size: .8rem; }
 
 /* panneau d'un article : s'ouvre au clic sur la carte, dans la page, sans aller sur le site */
@@ -473,13 +512,9 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 }
 .groupe h2 { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--red-light); font-weight: 700; }
 .groupe .nuage { margin: 0; padding: 0; border: 0; background: none; box-shadow: none; justify-content: flex-start; }
-/* flux RSS de chaque catégorie : petite icône dans le coin haut-droit du bloc, couleurs du drapeau trans */
+/* marge à droite du titre : ancienne place de l'icône RSS, gardée pour ne pas changer la mise en page */
 .groupe { position: relative; }
 .groupe h2 { padding-right: 2rem; }
-.rss-categorie { position: absolute; top: .45rem; right: .45rem; width: 1.5rem; height: 1.5rem; display: block;
-  border: 1px solid #000; border-radius: .3rem; overflow: hidden; line-height: 0; }
-.rss-categorie svg { display: block; width: 100%; height: 100%; }
-.rss-categorie:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 /* Écrans larges (PC) : le panneau n'est plus une colonne de téléphone, et la veille tient sur deux colonnes. */
 @media (min-width: 900px) {
   .panel { max-width: 1000px; padding: 1.5rem 2rem; }
@@ -577,26 +612,6 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
     display: none;
 }
 
-/*Cartes
-.galerie-carte {
-    position: relative;
-    flex: 0 0 220px;
-    height: 160px;
-    border-radius: 14px;
-    overflow: hidden;
-    background: #222;
-    cursor: pointer;
-    z-index: 1;
-
-    transition:
-        transform .35s cubic-bezier(.2,.8,.2,1),
-        box-shadow .35s ease,
-        filter .35s ease;
-
-    box-shadow: 0 4px 12px rgba(0,0,0,.15);
-}
-*/
-
 /* Cartes (version active) */
 .galerie-carte {
     position: relative;
@@ -641,60 +656,11 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 }
 
 
-/*Flèches */
-.galerie-arrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 20;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    height: 56px;
-    padding: 0;
-    line-height: 1;
-    border: 1px solid rgba(255,255,255,.25);
-    border-radius: var(--rayon-carte);
-
-    background: rgba(20,25,40,.85);
-    backdrop-filter: blur(10px);
-    color: white;
-    font-size: 25px;
-    cursor: pointer;
-
-    transition:
-        background .25s,
-        box-shadow .25s,
-        transform .25s;
-}
-
-.galerie-arrow-left {
-    left: 3px;
-}
-
-.galerie-arrow-right {
-    right: 3px;
-}
-
-.galerie-arrow:hover {
-    background: #7950c8;
-    box-shadow: 0 8px 25px rgba(0,0,0,.3);
-    transform: translateY(-50%) scale(1.08);
-}
-
-
 /* Responsive * SOPHIA*/
 @media (max-width: 600px) {
     .galerie-carte {
         flex-basis: 175px;
         height: 130px;
-    }
-
-    .galerie-arrow {
-        width: 36px;
-        height: 45px;
     }
 }
 
@@ -704,8 +670,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
     }
 
     .galerie-carte,
-    .galerie-carte img,
-    .galerie-arrow {
+    .galerie-carte img {
         transition: none;
     }
 }
