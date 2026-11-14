@@ -18,7 +18,7 @@ from .themes import ATTRIBUTS_HTML, CSS, SCRIPT_THEME, VARIABLES_HTML
 # Les scripts (carte ouverte, bouton précédent de l'app installée, pages d'article et de catégorie)
 # sont dans kioske/js/ ; kioske/javascript.py les lit.
 
-def render_article_page(item: dict, preview: dict, prev_article: dict | None = None, next_article: dict | None = None, previews: dict[str, dict] | None = None) -> str:
+def render_article_page(item: dict, preview: dict, prev_article: dict | None = None, next_article: dict | None = None, previews: dict[str, dict] | None = None, preview_image: str = "") -> str:
     """Page HTML d'un article avec navigation Précédent/Suivant.
 
     previews: dict optionnel qui mappe link → preview, pour calculer les slugs corrects.
@@ -66,9 +66,14 @@ def render_article_page(item: dict, preview: dict, prev_article: dict | None = N
     largeur_carte_ouverte = CFG.get("site", "largeur_carte_ouverte", fallback="min(600px, 85vw)")
 
 
-    # Image de partage : seulement si l'article en a une
-    meta_og_image = f'<meta property="og:image" content="{esc(image)}">' if image else ""
-    meta_twitter_image = f'<meta name="twitter:image" content="{esc(image)}">' if image else ""
+    # Image de partage : utiliser le preview "carte Pokémon" si disponible, sinon l'image de l'article
+    share_image = preview_image if preview_image else image
+    meta_og_image = f'<meta property="og:image" content="{esc(URL_SITE)}/{esc(share_image)}">' if share_image else ""
+    # Dimensions de l'image : preview 1200x1600, fallback sur 1200x630
+    image_width = "1200" if preview_image else "1200"
+    image_height = "1600" if preview_image else "630"
+    meta_og_dimensions = f'<meta property="og:image:width" content="{image_width}">\n<meta property="og:image:height" content="{image_height}">' if share_image else ""
+    meta_twitter_image = f'<meta name="twitter:image" content="{esc(URL_SITE)}/{esc(share_image)}">' if share_image else ""
 
     return remplir(
         "article.html",
@@ -80,6 +85,7 @@ def render_article_page(item: dict, preview: dict, prev_article: dict | None = N
         adresse_canonique=canonical,
         nom_site=esc(NOM_SITE),
         meta_og_image=meta_og_image,
+        meta_og_dimensions=meta_og_dimensions,
         meta_twitter_image=meta_twitter_image,
         css=CSS,
         script_theme=SCRIPT_THEME,

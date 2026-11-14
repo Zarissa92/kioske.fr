@@ -46,6 +46,13 @@ const { attendre, charger, clic, touche, panneauOuvert, nbFavoris, premierArticl
   await attendre(300);
   t.verif('Entrée ouvre le panneau des résultats', panneauOuvert(d) && panneauOuvert(d).id === 'container-search-results', '« ' + mot + ' »');
   t.verif('des cartes de résultats', d.querySelectorAll('#search-results-grille a.carte').length > 0);
+  const panneauOuvertPrec = panneauOuvert(d);
+  clic(w, panneauOuvertPrec.querySelector('.categorie-fermer')); await attendre();
+  const mot2 = Object.values(w.categoriesData)[1][0].title.split(/\s+/).find(m => m.length > 4) || 'b';
+  champ.value = mot2;
+  const bouton = d.querySelector('#form-recherche button');
+  clic(w, bouton); await attendre(300);
+  t.verif('le bouton loupe ouvre aussi le panneau des résultats', panneauOuvert(d) && panneauOuvert(d).id === 'container-search-results', '« ' + mot2 + ' »');
   t.verif('aucune erreur JavaScript', erreurs.length === 0, erreurs.join(' | '));
   t.fin();
 

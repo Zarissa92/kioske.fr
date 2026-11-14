@@ -103,16 +103,32 @@ html, body {
   margin-left: 0.5rem;
   white-space: nowrap;
 }
+.navbar-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.navbar-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  font-size: 0.9rem;
+  color: inherit;
+  background: #1a0000;
+  border: 1px solid var(--red-dim);
+  border-radius: 2px 0 0 2px;
+  outline: none;
+}
+.navbar-search input:focus {
+  border-color: var(--red);
+}
 .navbar-search button {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0 1rem;
+  justify-content: center;
+  padding: 0.5rem 0.75rem;
   font: inherit;
-  font-size: 0.9rem;
-  white-space: nowrap;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
   background: #1a0000;
   border: 1px solid var(--red-dim);
   border-radius: 0 2px 2px 0;
@@ -429,12 +445,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   .categorie-panneau h2 { font-size: 1.2rem; margin-bottom: 0.6rem; }
   .categorie-fermer { width: 1.8rem !important; height: 1.8rem !important; font-size: 1.1rem !important; padding: 0.2rem 0.4rem !important; }
   .grille { --colonnes: 1; gap: 0.4rem; }
-}
-@media (max-width: 429px) {
-  .pagination-btn {
-    font-size: 0.75rem !important;
-    padding: 0.3rem 0.5rem !important;
-  }
+  .pagination-btn { font-size: 0.75rem !important; padding: 0.3rem 0.5rem !important; }
 }
 @media (max-width: 300px) {
   .categorie-panneau { width: 95vw; max-height: 75vh; padding: 0.8rem var(--espacement-panneau-horizontal, .5rem); }
@@ -447,8 +458,8 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .article-lien:hover, .article-lien:focus-visible { background: var(--red); color: #000; outline: none; box-shadow: 0 0 20px var(--red); }
 .article-nav { flex: 0 0 auto; display: flex; gap: 0.4rem; justify-content: center; padding: 0.8rem; border-top: 1px solid var(--red-dim); }
 
-/* textes, marges et bouton des cartes : 75 % de l'ancienne taille. La carte occupe toute sa colonne
-   (une colonne de plus qu'avant dans la grille, plutôt qu'une carte à 75 % avec du vide autour). */
+/* textes, marges et bouton des cartes : même format que les cartes ouvertes, miniaturisé.
+   Aspect ratio 3/4, image 35%, contenu scrollable. */
 .carte {
   position: relative; display: flex; flex-direction: column;
   width: 100%; margin: 0;
@@ -456,29 +467,32 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   color: inherit; text-decoration: none;
   background: rgba(8, 0, 0, .92);
   border: 1px solid var(--red-dim);
+  border-radius: var(--rayon-carte);
   box-shadow: 0 0 12px color-mix(in srgb, var(--red) 25%, transparent), inset 0 0 14px color-mix(in srgb, var(--red) 8%, transparent);
   transition: border-color .2s, box-shadow .2s, transform .2s;
 }
 .carte:hover, .carte:focus-visible { border-color: var(--red); box-shadow: 0 0 22px var(--red); transform: translateY(-2px); outline: none; }
+/* Image en haut : 35% de la hauteur, comme les cartes ouvertes */
 .carte-image {
-  flex: 0 0 55%; display: flex; align-items: center; justify-content: center; overflow: hidden;
+  flex: 0 0 35%; display: flex; align-items: center; justify-content: center; overflow: hidden;
   border-bottom: 1px solid var(--red-dim); background: #140000;
 }
 .carte-image img { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; display: block; }
 .carte-image .lettre {
-  font: 700 clamp(2.25rem, 6.75vw, 4.125rem) "Courier New", monospace; color: #fff;
+  font: 700 1.5rem "Courier New", monospace; color: #fff;
   text-shadow: 0 0 6px var(--red), 0 0 22px var(--red);
 }
-.carte-corps { flex: 1; min-height: 0; overflow: hidden; padding: .45rem .525rem 1.8rem; display: block; }
-.carte .meta { font-size: .4875rem; color: var(--red-light); opacity: .8; margin-bottom: .225rem; }
-.carte .carte-titre { font-size: 9px; font-weight: 700; line-height: 1.2; text-transform: uppercase; margin-bottom: .225rem; color: #fff; overflow-wrap: anywhere; }
-.carte .carte-extrait { font-size: 9px; line-height: 1.35; color: var(--red-light); overflow-wrap: anywhere; }
+/* Contenu scrollable au milieu : 65% restant, défilable comme sur cartes ouvertes */
+.carte-corps { flex: 1; min-height: 0; overflow-y: auto; padding: .5rem .45rem; display: flex; flex-direction: column; gap: 0.3rem; -webkit-overflow-scrolling: touch; }
+.carte .meta { font-size: .5rem; color: var(--red-light); opacity: .8; margin-bottom: .15rem; }
+.carte .carte-titre { font-size: .7rem; font-weight: 700; line-height: 1.2; text-transform: uppercase; margin-bottom: .15rem; color: #fff; overflow-wrap: anywhere; }
+.carte .carte-extrait { font-size: .55rem; line-height: 1.35; color: var(--red-light); overflow-wrap: anywhere; }
 /* la carte est un bouton : son contenu est fait de <span>, affichés en blocs */
 .carte .meta, .carte .carte-titre, .carte .carte-extrait { display: block; }
 .carte-plus {
-  position: absolute; right: .3375rem; bottom: .3375rem; width: 1.35rem; height: 1.35rem;
+  position: absolute; right: .3rem; bottom: .3rem; width: 1rem; height: 1rem;
   display: flex; align-items: center; justify-content: center;
-  border: 1px solid var(--red); background: #000; color: var(--red); font-size: .825rem; transition: all .2s;
+  border: 1px solid var(--red); background: #000; color: var(--red); font-size: .6rem; transition: all .2s;
 }
 .carte:hover .carte-plus, .carte:focus-visible .carte-plus { background: var(--red); color: #000; box-shadow: 0 0 14px var(--red); }
 
@@ -501,14 +515,13 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 /* téléphone : les étiquettes passent à la ligne au lieu de dépasser du panneau */
 @media (max-width: 640px) {
   .nuage { min-width: 0; }
-  /* cartes d'articles : deux par ligne, plus petites */
+  /* cartes d'articles : deux par ligne, aspect ratio maintenu */
   .grille { --colonnes: 2; }
-  .carte { width: 100%; aspect-ratio: auto; }
-  .carte-image { flex: 0 0 auto; height: 4.75rem; }
-  .carte-corps { padding: .3rem .4rem 1rem; }
+  .carte { width: 100%; }
+  .carte-corps { padding: .3rem .3rem; }
   .carte .meta, .carte .carte-extrait { display: none; }
-  .carte .carte-titre { font-size: .6rem; margin: 0; line-height: 1; }
-  .carte-plus { width: 0.75rem; height: 0.75rem; font-size: 0.5rem; right: 0.15rem; bottom: 0.15rem; }
+  .carte .carte-titre { font-size: .4rem; margin: 0; line-height: 1; }
+  .carte-plus { width: 0.6rem; height: 0.6rem; font-size: 0.4rem; right: 0.15rem; bottom: 0.15rem; }
 }
 .groupe h2 { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--red-light); font-weight: 700; }
 .groupe .nuage { margin: 0; padding: 0; border: 0; background: none; box-shadow: none; justify-content: flex-start; }
@@ -574,12 +587,6 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .fav-export:hover, .fav-import:hover { background: var(--red); color: #000; border-color: var(--red); box-shadow: 0 0 8px var(--red); }
 #fav-file-input { display: none; }
 
-
-/* code sophia */
-
-
-/* code sophia */
-
 :root {
     --rayon-carte: 12px; /* rayon des coins, proportions de carte à jouer */
 }
@@ -615,8 +622,8 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 /* Cartes (version active) */
 .galerie-carte {
     position: relative;
-    flex: 0 0 220px;
-    height: 160px;
+    flex: 0 0 115px;
+    height: 154px;
     border-radius: var(--rayon-carte);
     overflow: hidden;
     isolation: isolate;
@@ -655,12 +662,48 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
     transform: scale(1.12);
 }
 
+.galerie-carte-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+}
+
+.galerie-carte-date {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    padding: 4px 6px;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    font-size: 10px;
+    line-height: 1.3;
+    text-align: center;
+    font-family: "Courier New", monospace;
+}
+
+.galerie-carte-titre {
+    font-size: 9px;
+    line-height: 1.2;
+    text-align: center;
+    color: var(--red-light);
+    width: 115px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
 
 /* Responsive * SOPHIA*/
 @media (max-width: 600px) {
     .galerie-carte {
-        flex-basis: 175px;
-        height: 130px;
+        flex-basis: 91px;
+        height: 121px;
     }
 }
 
@@ -675,17 +718,6 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
     }
 }
 
-.carte {
-    flex: 1;
-    overflow-y: auto;
-    font-size: 9px;
-    line-height: 1.4;
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-    border-radius: var(--rayon-carte);
-    -webkit-overflow-scrolling: touch;
-}
 
 /* ==========================================================================
    Règles venues du code Python (kioske/rendu.py, kioske/rendu_statique.py).
@@ -718,14 +750,14 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   .galerie-bloc .galerie-carte { flex-basis: 4.6rem; height: 3.4rem; }
 }
 /* Galerie d'un panneau de catégorie : au-dessus de la grille, défile avec elle. Plus petite que la
-   galerie de l'accueil (cartes 220 × 160 px) pour laisser la place aux cartes du panneau. */
+   galerie de l'accueil (cartes 165 × 220 px) pour laisser la place aux cartes du panneau. */
 .galerie-panneau { margin-bottom: 0.6rem; }
 .galerie-panneau .galerie { padding: 10px 8px 14px; gap: 10px; }
-.galerie-panneau .galerie-carte { flex-basis: 130px; height: 95px; }
+.galerie-panneau .galerie-carte { flex-basis: 100px; height: 133px; }
 .galerie-panneau .galerie-carte:hover { transform: translateY(-3px) scale(1.04); }
 @media (max-width: 600px) {
     .galerie-panneau .galerie { padding: 8px 4px 10px; gap: 8px; }
-    .galerie-panneau .galerie-carte { flex-basis: 100px; height: 74px; }
+    .galerie-panneau .galerie-carte { flex-basis: 80px; height: 107px; }
 }
 .pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1rem; padding: 0.5rem; }
 .pagination-btn { padding: 0.4rem 0.8rem; background: #0a0000; border: 1px solid var(--red-dim); color: var(--red); cursor: pointer; font: inherit; }
@@ -760,7 +792,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   flex-direction: column;
   text-decoration: none;
   color: inherit;
-  aspect-ratio: 2.5 / 3.5;
+  aspect-ratio: 3 / 4;
   border: 2px solid var(--red);
   border-radius: 0.5rem;
   overflow: hidden;
@@ -834,10 +866,10 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 /* Format Pokemon pour la carte d'article : responsive */
 .panel-article {
   /* Sur desktop : hauteur raisonnable */
-  height: min(90vh, calc(100vw * 3.5 / 2.5 - 4rem));
+  height: min(90vh, calc(100vw * 4 / 3 - 4rem));
   width: auto;
   max-width: none !important;
-  aspect-ratio: 2.5 / 3.5;
+  aspect-ratio: 3 / 4;
   display: flex;
   flex-direction: column;
   border: 2px solid var(--red) !important;
@@ -851,7 +883,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 /* Tablette : adapter à la largeur */
 @media (max-width: 1024px) {
   .panel-article {
-    height: min(85dvh, calc((100vw - 2rem) * 3.5 / 2.5));
+    height: min(85dvh, calc((100vw - 2rem) * 4 / 3));
     width: calc(100vw - 2rem);
     margin: 1rem auto !important;
     border-radius: 0.6rem !important;

@@ -99,6 +99,9 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> str:
           item = items[real_idx]
           title = previews.get(item["link"], {}).get("title") or item["title"]
           image = previews.get(item["link"], {}).get("image") or item["image"] or ""
+          date = item["date"]
+          date_paris = date.astimezone(ZoneInfo("Europe/Paris")) if date else None
+          date_time_str = date_paris.strftime("%d/%m/%Y<br>%H:%M") if date_paris else ""
 
           media = (
               f'<img src="{esc(image)}" alt="{esc(title)}" '
@@ -110,9 +113,15 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> str:
           art_slug = slug_article(title, item["link"])
           article_url = f"/articles/{art_id}-{art_slug}/"
 
+          # Titre tronqué pour afficher en dessous de la carte
+          titre_court = truncate_label(title)
+
           cartes_galerie.append(
+              f'<div class="galerie-carte-wrapper">'
               f'<a href="{esc(article_url)}" class="galerie-carte" '
-              f'title="{esc(title)}">{media}</a>'
+              f'title="{esc(title)}">{media}<div class="galerie-carte-date">{date_time_str}</div></a>'
+              f'<div class="galerie-carte-titre">{esc(titre_court)}</div>'
+              f'</div>'
           )
 
       # Ajouter une seule fois le script de retour, pas une fois par carte

@@ -25,6 +25,7 @@ from .config import (ARTICLES_PAR_SOURCE, BUILD, CHAINES_TWITCH, DOMAINE, DOSSIE
 from .flux import load_feed
 from .historique import Historique
 from .images import appliquer_images, purger_images, telecharger_images
+from .previews import generer_previews
 from .rendu import render_page, render_rss_page
 from .rendu_statique import render_article_page, render_category_page
 from .rss import render_rss
@@ -151,6 +152,11 @@ def ecrire_pages_articles(items: list[dict], previews: dict[str, dict]) -> None:
     articles_dossier = BUILD / "articles"
     written = 0
 
+    # Générer les previews "carte Pokémon" pour les articles
+    print("[previews] génération des previews 'carte Pokémon'...")
+    images_map = {item["link"]: item.get("image", "") for item in items}
+    article_previews = generer_previews(items, images_map, telecharger=True)
+
     # Trier par date décroissante (plus récents en premier) pour Précédent/Suivant
     epoque = datetime.min.replace(tzinfo=timezone.utc)
     items_sorted = sorted(items, key=lambda i: i["date"] or epoque, reverse=True)
@@ -171,7 +177,9 @@ def ecrire_pages_articles(items: list[dict], previews: dict[str, dict]) -> None:
                     next_article = items_sorted[i + 1]
                 break
 
-        page = render_article_page(item, previews.get(item["link"], {}), prev_article, next_article, previews)
+        # Utiliser le preview généré s'il existe
+        preview_image = article_previews.get(item["link"], "")
+        page = render_article_page(item, previews.get(item["link"], {}), prev_article, next_article, previews, preview_image)
         sortie = articles_dossier / f"{art_id}-{art_slug}" / "index.html"
         ecrire_si_change(sortie, page)
         written += 1
@@ -181,7 +189,6 @@ def ecrire_pages_articles(items: list[dict], previews: dict[str, dict]) -> None:
         attendus = {f"{article_id(i['link'])}-{slug_article(previews.get(i['link'], {}).get('title') or i['title'], i['link'])}" for i in items}
         for ancien in articles_dossier.iterdir():
             if ancien.is_dir() and ancien.name not in attendus:
-                import shutil
                 shutil.rmtree(ancien)
                 print(f"supprimé (article disparu) : {ancien.relative_to(ROOT)}")
 
@@ -227,7 +234,6 @@ def ecrire_pages_categories(items: list[dict], previews: dict[str, dict],
         attendus = set(cat_slugs.values())
         for ancien in categories_dossier.iterdir():
             if ancien.is_dir() and ancien.name not in attendus:
-                import shutil
                 shutil.rmtree(ancien)
                 print(f"supprimé (catégorie disparue) : {ancien.relative_to(ROOT)}")
 
@@ -296,63 +302,111 @@ def migrer_ancienne_structure() -> None:
 def construire(args: argparse.Namespace) -> None:
     """Construit build/. Un seul build à la fois (verrou partagé avec la publication)."""
     with verrou():
+        print("\n" + "="*60)
+        print("CONSTRUCTION DU SITE")
+        print("="*60 + "\n")
+
         migrer_ancienne_structure()
+
+        # === Chargement des sources ===
+        print("1. CHARGEMENT DES SOURCES")
         ignored, names = read_local(args.local)
         urls = [u for u in read_feeds(args.rss) if u not in ignored]
         chaines = read_twitch(args.tw)
-        print(f"{len(urls)} flux RSS dans {args.rss.name} ({len(ignored)} ignoré(s) localement)")
+        print(f"   • {len(urls)} flux RSS dans {args.rss.name} ({len(ignored)} ignoré(s))")
+        print(f"   • {len(chaines)} chaîne(s) Twitch")
         sources_actives = set(urls) | {f"twitch:{n}" for n in chaines}
+        print(f"   → {len(sources_actives)} source(s) active(s)\n")
 
+        # === Chargement des articles ===
+        print("2. CHARGEMENT DES ARTICLES")
         historique = Historique(HISTORIQUE_DB)
         if not args.simple:
             items = []
+            print(f"   • Lecture des flux RSS...")
             with cf.ThreadPoolExecutor(max_workers=6) as pool:
                 for feed_items in pool.map(lambda u: load_feed(u, names), urls):
                     items.extend(feed_items)
+            print(f"      → {len(items)} article(s) trouvé(s)")
+
             if not args.no_twitch:
-                print(f"{len(chaines)} chaîne(s) Twitch")
-                items.extend(load_twitch(chaines, TWITCH_SCAN, use_cache=not args.no_cache))
+                print(f"   • Chargement Twitch...")
+                twitch_items = load_twitch(chaines, TWITCH_SCAN, use_cache=not args.no_cache)
+                items.extend(twitch_items)
+                print(f"      → {len(twitch_items)} vidéo(s) Twitch")
+
             historique.enregistrer(items)
+            print(f"   • Historique enregistré\n")
+        else:
+            print(f"   • Mode --simple (aucun appel réseau)\n")
+
         # On affiche les articles des sources encore listées (les autres restent en base).
         items = limiter_par_source(historique.charger(sources_actives), ARTICLES_PAR_SOURCE)
         historique.fermer()
-        print(f"historique : {len(items)} article(s) affiché(s) pour {len(sources_actives)} source(s) active(s)")
+        print(f"   → {len(items)} article(s) affiché(s) pour {len(sources_actives)} source(s)\n")
 
+        # === Génération des aperçus ===
+        print("3. GÉNÉRATION DES APERÇUS")
         links = [i["link"] for i in items if i.get("kind") != "twitch"]
         if args.simple:
-            print("--simple : aucun appel réseau, flux RSS non réécrits")
+            print(f"   • Mode --simple : utilisation du cache existant")
             previews = apercus.apercus_des_liens(apercus.lire_cache(), links)
+            print(f"      → {len(previews)} aperçu(s) du cache\n")
         elif args.no_previews:
+            print(f"   • Mode --no-previews (pas d'aperçus)")
             previews = {}
+            print(f"      → 0 aperçu(s)\n")
         else:
+            print(f"   • Visite des pages pour les aperçus...")
             previews = apercus.load_previews(links, use_cache=not args.no_cache)
+            print(f"      → {len(previews)} aperçu(s) généré(s)\n")
 
-        # Images : téléchargées ici, servies par le site (aucune image venant d'un autre site).
-        correspondance = telecharger_images(
-            [i.get("image") for i in items] + [p.get("image") for p in previews.values()],
-            telecharger=not args.simple)
+        # === Images ===
+        print("4. TRAITEMENT DES IMAGES")
+        image_urls = [i.get("image") for i in items] + [p.get("image") for p in previews.values()]
+        image_urls = [u for u in image_urls if u]
+        correspondance = telecharger_images(image_urls, telecharger=not args.simple)
+        print(f"   • {len(correspondance)} image(s) traitée(s)")
         appliquer_images(items, previews, correspondance)
+
         # Purge : seulement avec les fichiers de sources habituels et tous les aperçus, sinon on effacerait à tort.
         if args.rss == FLUX_RSS and args.tw == CHAINES_TWITCH and not args.no_previews:
             supprimees = purger_images(set(correspondance.values()))
             if supprimees:
-                print(f"[images] {supprimees} image(s) inutilisée(s) supprimée(s)")
+                print(f"   • {supprimees} image(s) inutilisée(s) supprimée(s)")
+        print()
 
+        # === Catégories ===
+        print("5. LECTURE DES CATÉGORIES")
         categories = read_categories(args.rss, args.tw)
-        print(f"{len(set(categories.values()))} catégorie(s) lue(s) dans les fichiers de sources")
+        nb_categories = len(set(categories.values()))
+        print(f"   → {nb_categories} catégorie(s) lue(s)\n")
 
-        # Générer les pages statiques pour articles et catégories
+        # === Génération des pages statiques ===
+        print("6. GÉNÉRATION DES PAGES STATIQUES")
         ecrire_pages_articles(items, previews)
         ecrire_pages_categories(items, previews, categories)
 
-        # Générer l'index JSON pour la recherche JavaScript
+        # === Index JSON ===
+        print("7. GÉNÉRATION DE L'INDEX")
         ecrire_index_articles(items, previews, categories)
+        print()
 
+        # === Pages principales ===
+        print("8. GÉNÉRATION DES PAGES PRINCIPALES")
         ecrire_page(items, previews, categories)
         ecrire_page_rss(categories, items)
         if not args.simple:
             ecrire_flux_rss(items, categories)
+
+        # === Fichiers statiques ===
+        print("9. COPIE DES FICHIERS STATIQUES")
         copier_statiques()
+        print(f"   → Fichiers statiques copiés\n")
+
+        print("="*60)
+        print("✓ CONSTRUCTION TERMINÉE")
+        print("="*60 + "\n")
 
 
 def main(argv: list[str] | None = None) -> None:
