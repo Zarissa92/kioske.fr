@@ -60,8 +60,9 @@ def render_galerie_bloc(categorie: str, items: list[dict], previews: dict[str, d
             continue
         title = apercu.get("title") or item["title"]
         article_url = f'/articles/{article_id(item["link"])}-{slug_article(title, item["link"])}/'
+        source_name = item.get("source", "")
         cartes.append(
-            f'<a href="{esc(article_url)}" class="galerie-carte" title="{esc(title)}">'
+            f'<a href="{esc(article_url)}" class="galerie-carte" title="{esc(title)}" data-source="{esc(source_name)}">'
             f'<img src="{esc(image)}" alt="{esc(title)}" loading="lazy" referrerpolicy="no-referrer"></a>'
         )
     if not cartes:
@@ -115,9 +116,10 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> str:
 
           # Titre tronqué pour afficher en dessous de la carte
           titre_court = truncate_label(title)
+          source_name = item.get("source", "")
 
           cartes_galerie.append(
-              f'<div class="galerie-carte-wrapper">'
+              f'<div class="galerie-carte-wrapper" data-source="{esc(source_name)}">'
               f'<a href="{esc(article_url)}" class="galerie-carte" '
               f'title="{esc(title)}">{media}<div class="galerie-carte-date">{date_time_str}</div></a>'
               f'<div class="galerie-carte-titre">{esc(titre_court)}</div>'

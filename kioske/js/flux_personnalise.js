@@ -51,12 +51,16 @@ function appliquerFiltreAccueil() {
     groupe.style.display = hasVisibleTag ? '' : 'none';
   });
 
-  // Filtrer la galerie (masquer les cartes des sources non sélectionnées)
-  // Les cartes de galerie n'ont pas de data-source-key, on doit vérifier par titre ou data-id
-  // Pour simplifier, on peut masquer la galerie entière si pas de sources sélectionnées
-  const galeries = document.querySelectorAll('.galerie-slider');
-  galeries.forEach(galerie => {
-    galerie.style.display = '';
+  // Filtrer les cartes de galerie par source
+  document.querySelectorAll('.galerie-carte-wrapper, .galerie-carte[data-source]').forEach(carte => {
+    const sourceName = carte.getAttribute('data-source');
+    if (sourceName) {
+      // Trouver la clé de la source correspondante
+      const sourceKey = Object.keys(customSources).find(key => {
+        return window.sourcesMetadata && window.sourcesMetadata[key] && window.sourcesMetadata[key].name === sourceName;
+      });
+      carte.style.display = (sourceKey && customSources[sourceKey]) ? '' : 'none';
+    }
   });
 }
 

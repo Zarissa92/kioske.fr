@@ -28,10 +28,11 @@ modifié par le build.
 > - **Flux personnalisé** (2026-11-14) :
 >   - **Bouton ⚙️ Personnaliser** dans le menu ≡ : panneau de configuration pour sélectionner les sources à afficher.
 >   - **Sources groupées par catégorie** : checkboxes en 2 colonnes (1 colonne en mobile), bouton « Tout cocher/Décocher ».
->   - **Filtrage en temps réel** : l'accueil s'adapte immédiatement, masquant catégories et sources non sélectionnées.
+>   - **Filtrage en temps réel** : l'accueil s'adapte immédiatement, masquant catégories, sources et galeries non sélectionnées.
+>   - **Galeries filtrées** : la galerie principale et les galeries des blocs de catégorie affichent uniquement les articles des sources sélectionnées.
 >   - **Bouton « Voir mon flux »** : affiche les articles filtrés dans un panneau séparé (même format que l'accueil).
 >   - **Sauvegarde localStorage** : les sources sélectionnées sont mémorisées, le flux filtré persiste au rechargement.
->   - Cache service worker : v23.
+>   - Cache service worker : v24.
 >
 > **Modifications récentes** :
 > - **nginx adapté au site, fail2ban durci** (2026-11-14, **à déployer** : voir « Déploiement sur le serveur ») :
