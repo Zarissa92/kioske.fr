@@ -81,16 +81,6 @@ if (menuNavbar && btnMenuNavbar) {
   });
 }
 
-// Gestion du bouton d'infos (+)
-const btnInfos = document.querySelector('.btn-infos');
-if (btnInfos) {
-  btnInfos.addEventListener('click', (e) => {
-    const container = document.getElementById('bloc-infos-container');
-    if (container) {
-      container.hidden = false;
-    }
-  });
-}
 // Fermeture du conteneur d'infos
 document.querySelectorAll('[data-close-infos]').forEach(elem => {
   elem.addEventListener('click', (e) => {
@@ -117,12 +107,58 @@ document.addEventListener('keydown', e => {
     }
   }
 });
-// Crée un panneau pour afficher les articles d'une source
-function createSourcePanel(sourceKey, sourceName) {
-  const normalized = sourceKey.replace(/[^a-z0-9-]/gi, '_');
-  const sourceId = 'source-' + normalized;
-  const containerId = 'container-' + sourceId;
+// Carte d'un article dans une grille (panneaux, recherche, favoris). Les textes viennent des flux RSS
+// et d'autres sites : ils sont posés avec textContent, jamais interprétés comme du HTML.
+function creerCarte({ adresse, image, source, meta, titre, extrait }) {
+  const span = (classe, texte) => {
+    const s = document.createElement('span');
+    s.className = classe;
+    if (texte !== undefined) s.textContent = texte || '';
+    return s;
+  };
+  const carte = document.createElement('a');
+  carte.href = adresse;
+  carte.className = 'carte';
+  const cadre = span('carte-image');
+  cadre.setAttribute('aria-hidden', 'true');
+  if (image) {
+    const img = document.createElement('img');
+    img.src = image;
+    img.alt = '';
+    img.loading = 'lazy';
+    img.referrerPolicy = 'no-referrer';
+    cadre.appendChild(img);
+  } else {
+    cadre.appendChild(span('lettre', (source || '').charAt(0).toUpperCase() || '•'));
+  }
+  const corps = span('carte-corps');
+  corps.append(span('meta', meta), span('carte-titre', titre), span('carte-extrait', extrait));
+  carte.append(cadre, corps);
+  return carte;
+}
 
+// Carte d'un article des données de la page ou de l'index (title, summary, date, host, source, image)
+function carteArticle(article, adresse) {
+  return creerCarte({
+    adresse: adresse, image: article.image, source: article.source,
+    meta: article.date + ' · ' + article.host, titre: article.title, extrait: article.summary
+  });
+}
+
+// Identifiant d'un panneau : préfixe (« source- », « cat- ») et nom réduit aux lettres, chiffres et tirets
+function idPanneau(prefixe, nom) {
+  return prefixe + nom.replace(/[^a-z0-9-]/gi, '_');
+}
+
+// Crée un panneau d'articles avec pagination (30 cartes par page). S'il existe déjà, ne fait rien.
+//   id       : identifiant du panneau (idPanneau)
+//   titre    : titre affiché
+//   cle      : clé de la source ou nom de la catégorie
+//   articles : les articles, du plus récent au plus ancien
+//   ancre    : page => ancre de l'adresse (« source=…&p=2 »)
+//   galerie  : true pour afficher, au-dessus des cartes, la galerie des derniers articles en images
+function creerPanneauArticles({ id, titre: texteTitre, cle, articles, ancre, galerie: avecGalerie }) {
+  const containerId = 'container-' + id;
   if (document.getElementById(containerId)) return;
   const container = document.createElement('div');
   container.id = containerId;
@@ -131,39 +167,36 @@ function createSourcePanel(sourceKey, sourceName) {
 
   const backdrop = document.createElement('div');
   backdrop.className = 'categorie-backdrop';
-  backdrop.setAttribute('data-close-source', sourceKey);
+  backdrop.setAttribute('data-close-source', cle);
   backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closePopover(); });
 
   const panneau = document.createElement('div');
-  panneau.id = sourceId + '-panneau';
+  panneau.id = id + '-panneau';
   panneau.className = 'categorie-panneau';
 
   const header = document.createElement('div');
   header.className = 'panneau-entete';
 
   const titre = document.createElement('h2');
-  titre.textContent = sourceName;
+  titre.textContent = texteTitre;
   titre.className = 'panneau-titre';
 
   const fermer = document.createElement('button');
   fermer.type = 'button';
-  fermer.className = 'categorie-fermer';
-  fermer.setAttribute('data-article-id', sourceId);
+  fermer.className = 'categorie-fermer fermer-entete';
+  fermer.setAttribute('data-article-id', id);
   fermer.setAttribute('aria-label', 'Fermer');
   fermer.textContent = '×';
-  fermer.classList.add('fermer-entete');
   fermer.addEventListener('click', () => closePopover());
 
   const grille = document.createElement('div');
   grille.className = 'grille';
-  grille.id = sourceId + '-grille';
+  grille.id = id + '-grille';
 
-  // Conteneur scrollable pour la grille seulement
+  // Seule la zone des cartes défile ; l'en-tête et la pagination restent en place
   const grilleContainer = document.createElement('div');
   grilleContainer.className = 'panneau-defilant';
   grilleContainer.appendChild(grille);
-
-  // Restructurer le panneau avec flexbox
 
   header.appendChild(titre);
   header.appendChild(fermer);
@@ -173,142 +206,21 @@ function createSourcePanel(sourceKey, sourceName) {
   container.appendChild(panneau);
   document.body.appendChild(container);
 
-  // Remplir la grille avec les articles avec pagination
-  const articles = window.sourcesData[sourceKey] || [];
   const articlesPerPage = 30;
   let currentPage = 1;
   const totalPages = Math.ceil(articles.length / articlesPerPage);
-  container.ancre = () => 'source=' + encodeURIComponent(sourceKey) + '&p=' + currentPage;
+  container.ancre = () => ancre(currentPage);
+  // Adresse d'un article, avec le retour vers la page affichée du panneau
+  const adresseArticle = (article) => article.url + '?from=' + encodeURIComponent('/#' + container.ancre());
 
-  // Créer le conteneur de pagination
-  const paginationContainer = document.createElement('div');
-  paginationContainer.className = 'pagination';
-
-  const btnPrecedentes = document.createElement('button');
-  btnPrecedentes.type = 'button';
-  btnPrecedentes.className = 'pagination-btn';
-  btnPrecedentes.textContent = '← Pages précédentes';
-
-  const pageInfo = document.createElement('span');
-  pageInfo.className = 'pagination-info';
-
-  const btnSuivantes = document.createElement('button');
-  btnSuivantes.type = 'button';
-  btnSuivantes.className = 'pagination-btn';
-  btnSuivantes.textContent = 'Pages suivantes →';
-
-  function afficherPage(page) {
-    currentPage = Math.max(1, Math.min(page, totalPages));
-    grille.innerHTML = '';
-
-    const start = (currentPage - 1) * articlesPerPage;
-    const end = start + articlesPerPage;
-    const articlesPage = articles.slice(start, end);
-
-    articlesPage.forEach(article => {
-      const carte = document.createElement('a');
-      carte.href = article.url + '?from=' + encodeURIComponent('/#' + container.ancre());
-      carte.className = 'carte';
-
-      const media = article.image
-        ? `<img src="${article.image}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-        : `<span class="lettre">${article.source.charAt(0).toUpperCase() || '•'}</span>`;
-
-      carte.innerHTML =
-        `<span class="carte-image" aria-hidden="true">${media}</span>` +
-        `<span class="carte-corps">` +
-        `<span class="meta">${article.date} · ${article.host}</span>` +
-        `<span class="carte-titre">${article.title}</span>` +
-        `<span class="carte-extrait">${article.summary}</span>` +
-        `</span>`;
-
-      grille.appendChild(carte);
-    });
-
-    pageInfo.textContent = `Page ${currentPage} / ${totalPages}`;
-    btnPrecedentes.disabled = currentPage === 1;
-    btnSuivantes.disabled = currentPage === totalPages;
-    if (openPopover === container) majAdresse(container.ancre());
-  }
-  container.afficherPage = afficherPage;
-
-  btnPrecedentes.addEventListener('click', () => afficherPage(currentPage - 1));
-  btnSuivantes.addEventListener('click', () => afficherPage(currentPage + 1));
-
-  paginationContainer.appendChild(btnPrecedentes);
-  paginationContainer.appendChild(pageInfo);
-  paginationContainer.appendChild(btnSuivantes);
-  panneau.appendChild(paginationContainer);
-
-  afficherPage(1);
-}
-
-// Crée un panneau pour afficher les articles d'une catégorie
-function createCategoryPanel(categoryName) {
-  const normalized = categoryName.replace(/[^a-z0-9-]/gi, '_');
-  const categoryId = 'cat-' + normalized;
-  const containerId = 'container-' + categoryId;
-
-  if (document.getElementById(containerId)) return;
-  const container = document.createElement('div');
-  container.id = containerId;
-  container.className = 'categorie-container';
-  container.hidden = true;
-
-  const backdrop = document.createElement('div');
-  backdrop.className = 'categorie-backdrop';
-  backdrop.setAttribute('data-close-source', categoryName);
-  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closePopover(); });
-
-  const panneau = document.createElement('div');
-  panneau.id = categoryId + '-panneau';
-  panneau.className = 'categorie-panneau';
-
-  const header = document.createElement('div');
-  header.className = 'panneau-entete';
-
-  const titre = document.createElement('h2');
-  titre.textContent = categoryName;
-  titre.className = 'panneau-titre';
-
-  const fermer = document.createElement('button');
-  fermer.type = 'button';
-  fermer.className = 'categorie-fermer';
-  fermer.setAttribute('data-article-id', categoryId);
-  fermer.setAttribute('aria-label', 'Fermer');
-  fermer.textContent = '×';
-  fermer.classList.add('fermer-entete');
-  fermer.addEventListener('click', () => closePopover());
-
-  const grille = document.createElement('div');
-  grille.className = 'grille';
-  grille.id = categoryId + '-grille';
-
-  // Conteneur scrollable pour la grille seulement
-  const grilleContainer = document.createElement('div');
-  grilleContainer.className = 'panneau-defilant';
-  grilleContainer.appendChild(grille);
-
-  // Restructurer le panneau avec flexbox
-
-  header.appendChild(titre);
-  header.appendChild(fermer);
-  panneau.appendChild(header);
-  panneau.appendChild(grilleContainer);
-  container.appendChild(backdrop);
-  container.appendChild(panneau);
-  document.body.appendChild(container);
-
-  // Remplir la grille avec les articles avec pagination
-  const articles = window.categoriesData[categoryName] || [];
-
-  // Galerie de la catégorie : ses derniers articles ayant une image, au-dessus de la grille
-  // (elle défile avec elle). Même balisage que la galerie de l'accueil.
-  const avecImage = articles.filter(a => a.image).slice(0, NB_GALERIE_CATEGORIE);
+  // Galerie : les derniers articles ayant une image, au-dessus de la grille (elle défile avec elle).
+  // Même balisage que la galerie de l'accueil.
+  let majGalerie = () => {};
+  const avecImage = avecGalerie ? articles.filter(a => a.image).slice(0, NB_GALERIE_CATEGORIE) : [];
   if (avecImage.length) {
     const slider = document.createElement('section');
     slider.className = 'galerie-slider galerie-panneau';
-    slider.setAttribute('aria-label', 'Derniers articles en images : ' + categoryName);
+    slider.setAttribute('aria-label', 'Derniers articles en images : ' + texteTitre);
     const fleche = (classe, texte, label) => {
       const b = document.createElement('button');
       b.type = 'button';
@@ -332,10 +244,8 @@ function createCategoryPanel(categoryName) {
       galerie.appendChild(lien);
     });
     // L'adresse de retour suit la page affichée dans le panneau
-    container.majGalerie = () => {
-      galerie.querySelectorAll('a.galerie-carte').forEach((lien, i) => {
-        lien.href = avecImage[i].url + '?from=' + encodeURIComponent('/#' + container.ancre());
-      });
+    majGalerie = () => {
+      galerie.querySelectorAll('a.galerie-carte').forEach((lien, i) => { lien.href = adresseArticle(avecImage[i]); });
     };
     slider.appendChild(fleche('galerie-arrow-left', '<', 'Défiler vers la gauche'));
     slider.appendChild(galerie);
@@ -343,12 +253,8 @@ function createCategoryPanel(categoryName) {
     grilleContainer.insertBefore(slider, grille);
     if (typeof brancherGalerie === 'function') brancherGalerie(slider);
   }
-  const articlesPerPage = 30;
-  let currentPage = 1;
-  const totalPages = Math.ceil(articles.length / articlesPerPage);
-  container.ancre = () => 'cat=' + encodeURIComponent(categoryName) + '&p=' + currentPage;
 
-  // Créer le conteneur de pagination
+  // Pagination
   const paginationContainer = document.createElement('div');
   paginationContainer.className = 'pagination';
 
@@ -367,36 +273,16 @@ function createCategoryPanel(categoryName) {
 
   function afficherPage(page) {
     currentPage = Math.max(1, Math.min(page, totalPages));
-    grille.innerHTML = '';
-
+    grille.replaceChildren();
     const start = (currentPage - 1) * articlesPerPage;
-    const end = start + articlesPerPage;
-    const articlesPage = articles.slice(start, end);
-
-    articlesPage.forEach(article => {
-      const carte = document.createElement('a');
-      carte.href = article.url + '?from=' + encodeURIComponent('/#' + container.ancre());
-      carte.className = 'carte';
-
-      const media = article.image
-        ? `<img src="${article.image}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-        : `<span class="lettre">${article.source.charAt(0).toUpperCase() || '•'}</span>`;
-
-      carte.innerHTML =
-        `<span class="carte-image" aria-hidden="true">${media}</span>` +
-        `<span class="carte-corps">` +
-        `<span class="meta">${article.date} · ${article.host}</span>` +
-        `<span class="carte-titre">${article.title}</span>` +
-        `<span class="carte-extrait">${article.summary}</span>` +
-        `</span>`;
-
-      grille.appendChild(carte);
+    articles.slice(start, start + articlesPerPage).forEach(article => {
+      grille.appendChild(carteArticle(article, adresseArticle(article)));
     });
 
     pageInfo.textContent = `Page ${currentPage} / ${totalPages}`;
     btnPrecedentes.disabled = currentPage === 1;
     btnSuivantes.disabled = currentPage === totalPages;
-    if (container.majGalerie) container.majGalerie();
+    majGalerie();
     if (openPopover === container) majAdresse(container.ancre());
   }
   container.afficherPage = afficherPage;
@@ -410,6 +296,26 @@ function createCategoryPanel(categoryName) {
   panneau.appendChild(paginationContainer);
 
   afficherPage(1);
+}
+
+// Panneau des articles d'une source
+function createSourcePanel(sourceKey, sourceName) {
+  creerPanneauArticles({
+    id: idPanneau('source-', sourceKey), titre: sourceName, cle: sourceKey,
+    articles: window.sourcesData[sourceKey] || [],
+    ancre: page => 'source=' + encodeURIComponent(sourceKey) + '&p=' + page,
+    galerie: false
+  });
+}
+
+// Panneau des articles d'une catégorie, toutes sources mélangées, avec sa galerie
+function createCategoryPanel(categoryName) {
+  creerPanneauArticles({
+    id: idPanneau('cat-', categoryName), titre: categoryName, cle: categoryName,
+    articles: window.categoriesData[categoryName] || [],
+    ancre: page => 'cat=' + encodeURIComponent(categoryName) + '&p=' + page,
+    galerie: true
+  });
 }
 
 // Crée un panneau de résultats de recherche
@@ -538,7 +444,7 @@ document.querySelectorAll('.nuage .tag').forEach(tag => {
     const sourceName = tag.getAttribute('data-source-name');
     if (sourceKey && sourceName) {
       createSourcePanel(sourceKey, sourceName);
-      const sourceId = 'source-' + sourceKey.replace(/[^a-z0-9-]/gi, '_');
+      const sourceId = idPanneau('source-', sourceKey);
       showPopover(sourceId);
       // Fermer le menu +
       const infosContainer = document.getElementById('bloc-infos-container');
@@ -554,7 +460,7 @@ document.querySelectorAll('.tag-categorie').forEach(btn => {
     const categoryName = btn.getAttribute('data-category-name');
     if (categoryName) {
       createCategoryPanel(categoryName);
-      const categoryId = 'cat-' + categoryName.replace(/[^a-z0-9-]/gi, '_');
+      const categoryId = idPanneau('cat-', categoryName);
       showPopover(categoryId);
       // Fermer le menu +
       const infosContainer = document.getElementById('bloc-infos-container');
@@ -568,8 +474,6 @@ const rechercheInput = document.getElementById('recherche');
 function lancerRecherche(texte) {
     const query = (texte || '').toLowerCase().trim();
     if (!query) return;
-
-    console.log('Recherche lancée pour: ' + query);
 
     // Créer le panneau s'il n'existe pas
     createSearchResultsPanel();
@@ -586,7 +490,7 @@ function lancerRecherche(texte) {
           console.error('Grille de résultats non trouvée');
           return;
         }
-        resultGrid.innerHTML = '';
+        resultGrid.replaceChildren();
 
         // Filtrer les articles par query
         const results = articles.filter(article => {
@@ -594,27 +498,9 @@ function lancerRecherche(texte) {
           return searchText.includes(query);
         });
 
-        console.log(`Trouvé ${results.length} résultats pour "${query}"`);
-
         // Créer les cartes au format Pokémon
         results.forEach(article => {
-          const carte = document.createElement('a');
-          carte.href = article.url;
-          carte.className = 'carte';
-
-          const media = article.image
-            ? `<img src="${article.image}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-            : `<span class="lettre">${article.source.charAt(0).toUpperCase() || '•'}</span>`;
-
-          carte.innerHTML =
-            `<span class="carte-image" aria-hidden="true">${media}</span>` +
-            `<span class="carte-corps">` +
-            `<span class="meta">${article.date} · ${article.host}</span>` +
-            `<span class="carte-titre">${article.title}</span>` +
-            `<span class="carte-extrait">${article.summary}</span>` +
-            `</span>`;
-
-          resultGrid.appendChild(carte);
+          resultGrid.appendChild(carteArticle(article, article.url));
         });
 
         if (results.length > 0) {
@@ -622,7 +508,6 @@ function lancerRecherche(texte) {
           if (compte) {
             compte.textContent = `(${results.length})`;
           }
-          console.log('Panneau de résultats affichés');
           showPopover('search-results');
           // Fermer le menu +
           const infosContainer = document.getElementById('bloc-infos-container');
@@ -655,10 +540,10 @@ function ouvrirDepuisAdresse(historique = 'remplacer') {
     const tag = Array.from(document.querySelectorAll('.nuage .tag'))
       .find(t => t.getAttribute('data-source-key') === sourceKey);
     createSourcePanel(sourceKey, tag ? tag.getAttribute('data-source-name') : sourceKey);
-    id = 'source-' + sourceKey.replace(/[^a-z0-9-]/gi, '_');
+    id = idPanneau('source-', sourceKey);
   } else if (categoryName && Object.hasOwn(window.categoriesData, categoryName)) {
     createCategoryPanel(categoryName);
-    id = 'cat-' + categoryName.replace(/[^a-z0-9-]/gi, '_');
+    id = idPanneau('cat-', categoryName);
   }
   if (id) {
     showPopover(id, historique);
@@ -675,51 +560,14 @@ function ouvrirDepuisAdresse(historique = 'remplacer') {
 }
 ouvrirDepuisAdresse();
 
-// Gestion des favoris
-function getFavorites() {
-  const fav = localStorage.getItem('kioske_favoris');
-  return fav ? JSON.parse(fav) : {};
-}
+// Favoris : getFavorites(), saveFavorites(), toggleFavorite() et updateHearts() sont dans favoris.js.
 
-function saveFavorites(fav) {
-  localStorage.setItem('kioske_favoris', JSON.stringify(fav));
-  updateHearts();
-}
-
-function toggleFavorite(event) {
-  event.stopPropagation();
-  const heart = event.target;
-  const articleLink = heart.getAttribute('data-article-link');
-  if (!articleLink) return;
-
-  const favorites = getFavorites();
-  if (favorites[articleLink]) {
-    delete favorites[articleLink];
-  } else {
-    const carte = heart.closest('.panel-article');
-    const titre = carte?.querySelector('h1')?.textContent || 'Sans titre';
-    const meta = (carte?.querySelector('.meta')?.textContent || '').split(' · ');
-    favorites[articleLink] = {
-      titre: titre,
-      title: titre,
-      lien: articleLink,
-      url: location.pathname.startsWith('/articles/') ? location.pathname : articleLink,
-      image: carte?.querySelector('.article-image img')?.getAttribute('src') || '',
-      date: meta.length > 2 ? meta[0] : '',
-      host: meta.length > 2 ? meta[1] : (meta[0] || ''),
-      source: meta[meta.length - 1] || '',
-      timestamp: new Date().toISOString()
-    };
-  }
-  saveFavorites(favorites);
-}
-
-function updateHearts() {
-  const favorites = getFavorites();
-  document.querySelectorAll('.fav-heart').forEach(heart => {
-    const articleLink = heart.getAttribute('data-article-link');
-    heart.classList.toggle('active', Boolean(articleLink && favorites[articleLink]));
-  });
+// Adresse venue des favoris enregistrés ou d'un fichier importé : gardée seulement si c'est un chemin
+// du site ou une adresse http(s), pour qu'un fichier trafiqué ne puisse pas glisser « javascript: ».
+function adresseSure(adresse, defaut = '#') {
+  const a = String(adresse || '');
+  if (/^\/(?![\/\\])/.test(a) || /^https?:\/\//i.test(a)) return a;
+  return defaut;
 }
 
 function openFavoritesPanel() {
@@ -736,36 +584,23 @@ function openFavoritesPanel() {
 
 function afficherFavoris(favorites) {
   const favGrille = document.getElementById('fav-grille');
-  favGrille.innerHTML = '';
+  favGrille.replaceChildren();
 
   if (Object.keys(favorites).length === 0) {
     favGrille.innerHTML = '<p class="grille-vide">Aucun favori pour le moment</p>';
     return;
   }
   Object.entries(favorites).forEach(([favKey, data]) => {
-    // Créer la carte depuis les données stockées (avec fallback pour données incomplètes)
-    const carte = document.createElement('a');
-    carte.href = data.url || data.lien || '#';
-    carte.className = 'carte';
-
-    const source = data.source || 'Article';
-    const media = data.image
-      ? `<img src="${data.image}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-      : `<span class="lettre">${source.charAt(0).toUpperCase() || '•'}</span>`;
-
-    const metaText = [data.date, data.host].filter(x => x).join(' · ') || 'Sans date';
-    const title = data.title || data.titre || 'Sans titre';
-    const summary = data.summary || '';
-
-    carte.innerHTML =
-      `<span class="carte-image" aria-hidden="true">${media}</span>` +
-      `<span class="carte-corps">` +
-      `<span class="meta">${metaText}</span>` +
-      `<span class="carte-titre">${title}</span>` +
-      `<span class="carte-extrait">${summary}</span>` +
-      `</span>`;
-
-    favGrille.appendChild(carte);
+    // Carte faite des données enregistrées, qui peuvent être incomplètes (anciens favoris) ou venir
+    // d'un fichier importé : l'adresse n'est suivie que si c'est une page du site ou une adresse web.
+    favGrille.appendChild(creerCarte({
+      adresse: adresseSure(data.url || data.lien),
+      image: adresseSure(data.image, ''),
+      source: data.source || 'Article',
+      meta: [data.date, data.host].filter(x => x).join(' · ') || 'Sans date',
+      titre: data.title || data.titre || 'Sans titre',
+      extrait: data.summary || ''
+    }));
   });
 }
 
@@ -855,8 +690,6 @@ document.querySelectorAll('.btn-favs, .btn-mes-favoris').forEach(b => b.addEvent
 document.getElementById('fav-import-btn')?.addEventListener('click', () => document.getElementById('fav-file-input').click());
 document.getElementById('fav-clear-btn')?.addEventListener('click', clearFavorites);
 
-// Initialiser les cœurs
-updateHearts();
 
 // Gestionnaire pour le bouton "Code de conduite"
 const btnOpenConduct = document.getElementById('btn-open-conduite');

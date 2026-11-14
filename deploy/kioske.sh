@@ -6,7 +6,7 @@
 #   serveur    venv et timer de publication (installer_serveur.sh)
 #   veille     construit le site dans build/ (page, flux, images), puis le publie dans la racine web
 #   nginx      configure le site : HTTP, puis HTTPS si le certificat existe (deployer_nginx.sh)
-#   fail2ban   page « Tu es banni » et jail kioske-scan ; étape ignorée si la jail sans_pitie manque
+#   fail2ban   page « Tu es banni », filtres et jails du site ; étape ignorée si la jail sans_pitie manque
 #   statut     contrôle final (verifier_serveur.sh), sans bloquer le déploiement
 #
 # Usage :
@@ -31,8 +31,12 @@ RACINE_WEB="$(cfg serveur racine_web)"
 SITE_NGINX="/etc/nginx/sites-available/$DOMAINE"
 CERT_DIR="/etc/letsencrypt/live/$DOMAINE"
 LOG_NGINX="/var/log/nginx/$DOMAINE.access.log"
-FILTRE_F2B="/etc/fail2ban/filter.d/kioske-scan.conf"
-JAIL_F2B="/etc/fail2ban/jail.d/kioske-scan.local"
+LOG_HORS_SITE="/var/log/nginx/$DOMAINE.hors-site.log"   # écrit par nginx : adresses que le site n'a pas
+DOSSIER_FILTRES_F2B="/etc/fail2ban/filter.d"
+JAIL_F2B="/etc/fail2ban/jail.d/kioske.local"
+ANCIENNE_JAIL_F2B="/etc/fail2ban/jail.d/kioske-scan.local"
+JAILS_F2B=(kioske-scan kioske-hors-site kioske-interdit kioske-debit)   # un filtre deploy/fail2ban/<nom>.conf chacune
+IP_JAMAIS_BANNIES="$(cfg serveur ip_jamais_bannies)"
 JAIL_PREREQUIS="sans_pitie"
 
 EMAIL=" "
@@ -105,9 +109,9 @@ etape_nginx() {
 }
 
 etape_fail2ban() {
-    info "fail2ban : page « Tu es banni » et jail kioske-scan"
+    info "fail2ban : page « Tu es banni », filtres et jails du site (${JAILS_F2B[*]})"
     if (( SIMULATION == 1 )); then
-        printf '  [simulation] f2b.sh (si la jail %s existe), puis installation du filtre et de la jail kioske-scan\n' "$JAIL_PREREQUIS"
+        printf '  [simulation] f2b.sh (si la jail %s existe), puis installation des filtres et des jails %s\n' "$JAIL_PREREQUIS" "${JAILS_F2B[*]}"
         return 0
     fi
     if ! command -v fail2ban-client >/dev/null 2>&1; then
@@ -119,29 +123,49 @@ etape_fail2ban() {
         return 0
     fi
     [[ -f "$SITE_NGINX" ]] || erreur "$SITE_NGINX absent : l'étape nginx doit réussir avant fail2ban."
+    sudo grep -q "$(basename "$LOG_HORS_SITE")" "$SITE_NGINX" \
+        || erreur "$SITE_NGINX n'écrit pas le journal hors-site : relance d'abord l'étape nginx (configuration à jour)."
 
     # 1. Page de ban et action nginx-geo-ban (f2b.sh est idempotent)
     sudo bash "$DOSSIER/deploy/fail2ban/f2b.sh" "$SITE_NGINX"
 
-    # 2. Filtre : test sur le journal réel, puis installation
-    if sudo test -f "$LOG_NGINX"; then
-        sudo fail2ban-regex "$LOG_NGINX" "$DOSSIER/deploy/fail2ban/kioske-scan.conf" | tail -n 4 || true
-    else
-        avert "$LOG_NGINX absent : le test du filtre est sauté (il sera créé à la première visite)."
-    fi
-    sudo install -m 644 "$DOSSIER/deploy/fail2ban/kioske-scan.conf" "$FILTRE_F2B"
+    # 2. Journaux : fail2ban refuse de démarrer une jail dont le journal n'existe pas
+    local journal
+    for journal in "$LOG_NGINX" "$LOG_HORS_SITE"; do
+        sudo test -f "$journal" || sudo install -m 640 -o www-data -g adm /dev/null "$journal"
+    done
 
-    # 3. Jail : sauvegarde de l'ancienne, puis rechargement. Si fail2ban refuse, on revient en arrière.
-    if [[ -f "$JAIL_F2B" ]]; then sudo cp -p "$JAIL_F2B" "$JAIL_F2B.avant"; fi
-    # Le journal surveillé porte le nom du domaine (kioske.cfg).
-    sed "s|__DOMAINE__|$DOMAINE|g" "$DOSSIER/deploy/fail2ban/kioske-scan.jail.conf" | sudo install -m 644 /dev/stdin "$JAIL_F2B"
+    # 3. Filtres : test sur le journal réel (nombre de lignes reconnues), puis installation
+    local nom
+    for nom in "${JAILS_F2B[@]}"; do
+        journal="$LOG_NGINX"; [[ "$nom" == "kioske-hors-site" ]] && journal="$LOG_HORS_SITE"
+        printf '  %s : ' "$nom"
+        sudo fail2ban-regex "$journal" "$DOSSIER/deploy/fail2ban/$nom.conf" | grep -E '^Lines:' || true
+        sudo install -m 644 "$DOSSIER/deploy/fail2ban/$nom.conf" "$DOSSIER_FILTRES_F2B/$nom.conf"
+    done
+
+    # 4. Jails : sauvegarde des anciennes, puis rechargement. Si fail2ban refuse, on revient en arrière.
+    #    L'ancien fichier kioske-scan.local (une seule jail) est remplacé par kioske.local.
+    local ancien
+    for ancien in "$JAIL_F2B" "$ANCIENNE_JAIL_F2B"; do
+        if [[ -f "$ancien" ]]; then sudo cp -p "$ancien" "$ancien.avant"; fi
+    done
+    sudo rm -f "$ANCIENNE_JAIL_F2B"
+    sed -e "s|__DOMAINE__|$DOMAINE|g" -e "s|__IP_JAMAIS_BANNIES__|$IP_JAMAIS_BANNIES|g" \
+        "$DOSSIER/deploy/fail2ban/kioske.jail.conf" | sudo install -m 644 /dev/stdin "$JAIL_F2B"
     if ! sudo fail2ban-client reload; then
-        avert "fail2ban a refusé la nouvelle jail : retour à l'état précédent."
-        if [[ -f "$JAIL_F2B.avant" ]]; then sudo mv -f "$JAIL_F2B.avant" "$JAIL_F2B"; else sudo rm -f "$JAIL_F2B"; fi
+        avert "fail2ban a refusé les nouvelles jails : retour à l'état précédent."
+        for ancien in "$JAIL_F2B" "$ANCIENNE_JAIL_F2B"; do
+            if [[ -f "$ancien.avant" ]]; then sudo mv -f "$ancien.avant" "$ancien"; else sudo rm -f "$ancien"; fi
+        done
         sudo fail2ban-client reload || true
-        erreur "Jail kioske-scan non installée."
+        erreur "Jails du site non installées."
     fi
-    sudo fail2ban-client status kioske-scan | sed 's/^/  /'
+    sleep 2
+    for nom in "${JAILS_F2B[@]}"; do
+        sudo fail2ban-client status "$nom" | sed 's/^/  /'
+    done
+    info "Adresses jamais bannies : $IP_JAMAIS_BANNIES"
     ok "fail2ban configuré"
 }
 

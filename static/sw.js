@@ -1,10 +1,9 @@
-const CACHE_VERSION = 'kioske-v21';
+const CACHE_VERSION = 'kioske-v22';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/rss.html',
   '/theme.js',
-  '/app.js',
   '/favicon.svg',
   '/apple-touch-icon.png',
   '/preview.png',

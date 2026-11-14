@@ -38,38 +38,3 @@ document.getElementById('form-recherche').addEventListener('submit', (e) => {
     window.location.href = '/?q=' + encodeURIComponent(query);
   }
 });
-
-// Bouton de partage
-function shareArticle(e) {
-  e.stopPropagation();
-  const articleUrl = window.location.href;
-  const articleTitle = document.querySelector('h1')?.textContent || 'Article';
-
-  if (navigator.share) {
-    navigator.share({
-      title: articleTitle,
-      url: articleUrl
-    }).catch(err => console.log('Partage annulé'));
-  } else {
-    navigator.clipboard.writeText(articleUrl).then(() => {
-      const btn = e.target;
-      const originalText = btn.textContent;
-      btn.textContent = '✓ Copié !';
-      btn.classList.add('est-copie');
-      setTimeout(() => {
-        btn.textContent = originalText;
-        btn.classList.remove('est-copie');
-      }, 2000);
-    }).catch(() => {
-      alert('Partage indisponible sur ce navigateur');
-    });
-  }
-}
-
-// Boutons ♡ (favori) et 📤 (partage) de la carte : un seul écouteur sur le document
-document.addEventListener('click', (e) => {
-  const bouton = e.target.closest('.fav-heart, .share-btn');
-  if (!bouton) return;
-  if (bouton.classList.contains('fav-heart')) toggleFavorite(e);
-  else shareArticle(e);
-});

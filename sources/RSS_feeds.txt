@@ -35,4 +35,5 @@
 "https://orientxxi.info/?page=backend&lang=fr"
 "https://thepinktimes.com/rss.xml"
 [Technologie]
+"https://www.laquadrature.net/feed/"
 "https://next.ink/feed/"

@@ -9,7 +9,8 @@ from zoneinfo import ZoneInfo
 from .config import NOM_SITE, URL_SITE, CFG
 from .gabarits import remplir
 from .texte import esc, article_id, slug_article, slug_categorie
-from .javascript import JS_CARTE_OUVERTE, JS_PAGE_ARTICLE, JS_PAGE_CATEGORIE, JS_RETOUR_APP, JS_SERVICE_WORKER
+from .javascript import (JS_CARTE_OUVERTE, JS_FAVORIS, JS_INSTALLATION_PWA, JS_PAGE_ARTICLE, JS_PAGE_CATEGORIE,
+                         JS_PARTAGE, JS_RETOUR_APP, JS_SERVICE_WORKER)
 from .themes import ATTRIBUTS_HTML, CSS, SCRIPT_THEME, VARIABLES_HTML
 
 # Le style de la carte ouverte est dans kioske/style.css (« Carte d'article ouverte »).
@@ -91,6 +92,9 @@ def render_article_page(item: dict, preview: dict, prev_article: dict | None = N
         lien_origine=esc(item["link"]),
         boutons_navigation=nav_buttons,
         js_retour_app=JS_RETOUR_APP,
+        js_favoris=JS_FAVORIS,
+        js_partage=JS_PARTAGE,
+        js_installation_pwa=JS_INSTALLATION_PWA,
         js_page_article=JS_PAGE_ARTICLE,
     )
 
@@ -151,5 +155,8 @@ def render_category_page(category_name: str, articles: list[dict],
         grille="".join(sources_html),
         js_carte_ouverte=JS_CARTE_OUVERTE,
         js_retour_app=JS_RETOUR_APP,
+        js_favoris=JS_FAVORIS,
+        js_partage=JS_PARTAGE,
+        js_installation_pwa=JS_INSTALLATION_PWA,
         js_page_categorie=JS_PAGE_CATEGORIE,
     )

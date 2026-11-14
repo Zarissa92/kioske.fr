@@ -19,9 +19,11 @@
 #
 # Protections écrites dans la configuration (voir README, « Sécurité nginx ») :
 #   - HTTPS seul (HSTS), TLS 1.3 seul, courbes X25519/secp384r1, 0-RTT refusé ;
-#   - version de nginx masquée, méthodes limitées à GET et HEAD ;
+#   - version de nginx masquée, méthodes limitées à GET et HEAD, aucun envoi de données ;
 #   - en-têtes de sécurité, politique de contenu : aucune image, script ou police venant d'un autre site ;
-#   - fichiers cachés refusés ;
+#   - liste blanche : seules les adresses que le build produit sont servies, le reste est noté dans
+#     /var/log/nginx/<domaine>.hors-site.log pour fail2ban ; fichiers cachés refusés ;
+#   - débit limité par adresse IP (réponse 429 au-delà) ;
 #   - si la page de ban fail2ban est installée (deploy/fail2ban/), elle est incluse dans chaque site.
 set -euo pipefail
 
@@ -43,10 +45,11 @@ SANS_CERT=0
 
 # Politique de contenu : le site ne charge rien d'un autre site (images du KiosKe comprises,
 # qui sont téléchargées par le build et servies depuis img/veille/ dans la racine web).
-# Scripts : ceux des pages et /app.js ; connect-src pour fetch (recherche, carte ouverte, favoris) ;
-# manifest-src et worker-src pour la PWA (manifest.json, sw.js).
+# Scripts : ceux écrits dans les pages et /theme.js ; connect-src pour fetch (recherche, carte ouverte,
+# favoris) ; manifest-src et worker-src pour la PWA (manifest.json, sw.js).
 CSP="default-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
 
+# Tables et zones du niveau « http », écrites en tête du fichier généré.
 CARTE_CACHE="$(cat <<'NGINX'
 # Durée de cache selon le fichier demandé. Une seule variable, lue par un seul add_header au niveau
 # « server » : dans nginx, un add_header placé dans un bloc « location » annule tous ceux du niveau
@@ -64,7 +67,7 @@ map $uri $kioske_cache_control {
     ~\.(css|woff2|woff|ttf|svg)$      "public, max-age=31536000, immutable";
     # Flux RSS/XML : toujours revérifiés
     ~\.xml$                           "no-cache, must-revalidate, max-age=0";
-    # Pages, app.js, index des articles : 30 min (durée du timer de mise à jour)
+    # Pages, theme.js, index des articles : 30 min (durée du timer de mise à jour)
     default                           "public, max-age=1800, must-revalidate";
 }
 
@@ -74,23 +77,91 @@ map $sent_http_content_type $kioske_langue {
     ~^text/html                       "fr";
     default                           "";
 }
+
+# Débit par adresse IP. Deux compteurs : les pages (HTML, JSON, flux), qu'un visiteur demande une à une,
+# et les fichiers (images, polices, scripts, icônes), qu'une seule page demande par dizaines.
+# Au-delà : réponse 429, que la jail fail2ban kioske-debit compte.
+limit_req_zone  $binary_remote_addr zone=kioske_pages:10m      rate=10r/s;
+limit_req_zone  $binary_remote_addr zone=kioske_fichiers:10m   rate=100r/s;
+limit_conn_zone $binary_remote_addr zone=kioske_connexions:10m;
 NGINX
 )"
 
-# Blocs « location » communs aux configurations HTTP et HTTPS. Aucun add_header ici (voir CARTE_CACHE).
+# Blocs « location » communs aux configurations HTTP et HTTPS : la liste des adresses du site.
+# Aucun add_header ici (voir CARTE_CACHE). __DOMAINE__ est remplacé plus bas.
 EMPLACEMENTS="$(cat <<'NGINX'
+    # ---------------------------------------------------------------------------------------------
+    # Le site est statique : seules les adresses que le build produit sont servies. Tout le reste
+    # tombe dans « location / » tout en bas (404, et une ligne dans le journal hors-site que lit
+    # fail2ban). En ajoutant un fichier ou un dossier à la racine du site, l'ajouter ici aussi.
+    # ---------------------------------------------------------------------------------------------
+
+    # Accueil
+    location = / {
+        limit_req zone=kioske_pages burst=40 nodelay;
+        try_files /index.html =404;
+    }
+
+    # Pages et données à la racine : accueil, page des flux, flux RSS, plan du site, index de recherche
+    location ~ ^/(index\.html|rss\.html|rss\.xml|sitemap\.xml|robots\.txt|articles-index\.json)$ {
+        limit_req zone=kioske_pages burst=40 nodelay;
+        try_files $uri =404;
+    }
+
+    # Pages d'article et de catégorie : /articles/<id>-<titre>/ et /categories/<nom>/
+    location ~ ^/(articles|categories)/[a-z0-9-]+(/|/index\.html)?$ {
+        limit_req zone=kioske_pages burst=40 nodelay;
+        try_files $uri $uri/ =404;
+    }
+
+    # Flux RSS par catégorie : /rss/<nom>.xml
+    location ~ ^/rss/[a-z0-9-]+\.xml$ {
+        limit_req zone=kioske_pages burst=40 nodelay;
+        try_files $uri =404;
+    }
+
     # Manifest PWA : type MIME des manifestes
     location = /manifest.json {
+        limit_req zone=kioske_fichiers burst=300 nodelay;
         types { }
         default_type application/manifest+json;
     }
 
-    # Route par défaut
+    # Scripts, icônes et image de partage à la racine
+    location ~ ^/(theme\.js|sw\.js|favicon\.svg|preview\.png|apple-touch-icon\.png|icon-[0-9]+\.png)$ {
+        limit_req zone=kioske_fichiers burst=300 nodelay;
+        try_files $uri =404;
+    }
+
+    # Images de la veille et polices
+    location ~ ^/(img/veille|fonts)/[A-Za-z0-9._-]+$ {
+        limit_req zone=kioske_fichiers burst=300 nodelay;
+        try_files $uri =404;
+    }
+
+    # Fichiers que navigateurs et robots demandent d'eux-mêmes et que le site n'a pas : 404 ordinaire,
+    # sans passer par le journal hors-site (un visiteur ne doit pas être banni pour un favicon.ico).
+    location ~ ^/(favicon\.ico|apple-touch-icon[a-z0-9-]*\.png|browserconfig\.xml|ads\.txt|app-ads\.txt|humans\.txt|security\.txt|fonts/?)$ {
+        return 404;
+    }
+    location ^~ /.well-known/ {
+        return 404;
+    }
+
+    # Fichiers cachés (.git, .env…) : refusés (la jail kioske-scan bannit à la première demande)
+    location ~ /\. {
+        return 404;
+    }
+
+    # Tout le reste n'existe pas sur ce site
     location / {
-        try_files $uri $uri/ =404;
+        access_log /var/log/nginx/__DOMAINE__.access.log;
+        access_log /var/log/nginx/__DOMAINE__.hors-site.log;
+        return 404;
     }
 NGINX
 )"
+EMPLACEMENTS="${EMPLACEMENTS//__DOMAINE__/$DOMAINE}"
 
 info()    { printf '\033[1;34m[info]\033[0m %s\n' "$*"; }
 avert()   { printf '\033[1;33m[attention]\033[0m %s\n' "$*"; }
@@ -165,24 +236,38 @@ if [[ -f "$SNIPPET_BAN" ]]; then
 else
     INCLUDE_BAN="    # page de ban fail2ban absente : lancer deploy/kioske.sh fail2ban, puis relancer ce script"
 fi
-PROTECTIONS="    # Ne pas annoncer la version de nginx
+PROTECTIONS="$(cat <<'NGINX'
+    # Ne pas annoncer la version de nginx
     server_tokens off;
 
     # Site statique : seules les lectures sont acceptées
-    if (\$request_method !~ ^(GET|HEAD)\$) {
+    if ($request_method !~ ^(GET|HEAD)$) {
         return 405;
     }
 
+    # Site statique : aucun envoi de données, connexions courtes, peu de connexions par adresse IP
+    client_max_body_size 1k;
+    client_body_timeout 5s;
+    client_header_timeout 10s;
+    send_timeout 15s;
+    keepalive_timeout 30s;
+    limit_conn kioske_connexions 40;
+    limit_conn_status 429;
+    limit_req_status 429;
+
     # En-têtes de sécurité (always : aussi sur les réponses d'erreur)
-    add_header X-Content-Type-Options \"nosniff\" always;
-    add_header X-Frame-Options \"SAMEORIGIN\" always;
-    add_header Referrer-Policy \"strict-origin-when-cross-origin\" always;
-    add_header Permissions-Policy \"camera=(), microphone=(), geolocation=(), payment=()\" always;
-    add_header Content-Security-Policy \"$CSP\" always;
-    # Durée de cache : voir la table « map » en tête du fichier généré. Sans « always » : pas sur les erreurs.
-    add_header Cache-Control \$kioske_cache_control;
-    # Langue des pages (français) : voir la table « map » en tête du fichier généré.
-    add_header Content-Language \$kioske_langue;"
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
+    add_header Content-Security-Policy "__CSP__" always;
+    # Durée de cache : voir la table « map » en tête de fichier. Sans « always » : pas sur les erreurs.
+    add_header Cache-Control $kioske_cache_control;
+    # Langue des pages (français) : voir la table « map » en tête de fichier.
+    add_header Content-Language $kioske_langue;
+NGINX
+)"
+PROTECTIONS="${PROTECTIONS//__CSP__/$CSP}"
 
 # 3. Configuration HTTP seule : sert le site directement, sans redirection
 info "Configuration HTTP seule"
@@ -206,12 +291,6 @@ $PROTECTIONS
         root $WEBROOT_ACME;
     }
 
-    # Fichiers cachés (.git, .env…) : refusés
-    location ~ /\. {
-        deny all;
-        return 404;
-    }
-
 $EMPLACEMENTS
 
     access_log /var/log/nginx/$DOMAINE.access.log;
@@ -222,7 +301,7 @@ info "Site HTTP en ligne"
 
 # 4. Certificat
 IP_SERVEUR="$(hostname -I 2>/dev/null | awk '{print $1}')"  # IP locale, indicative seulement
-IP_DNS="$(getent ahostsv4 "$DOMAINE" 2>/dev/null | awk 'NR==1{print $1}')"
+IP_DNS="$(getent ahostsv4 "$DOMAINE" 2>/dev/null | awk 'NR==1{print $1}' || true)"  # vide si le DNS ne répond pas
 if [[ -d "$CERT_DIR" ]]; then
     info "Certificat déjà présent dans $CERT_DIR"
 elif (( SANS_CERT == 1 )); then
@@ -258,6 +337,10 @@ server {
     listen [::]:80;
     server_name $DOMAINE;
 
+$INCLUDE_BAN
+
+    server_tokens off;
+
     location ^~ /.well-known/acme-challenge/ {
         root $WEBROOT_ACME;
     }
@@ -265,6 +348,10 @@ server {
     location / {
         return 301 https://$DOMAINE\$request_uri;
     }
+
+    # Même journal que le HTTPS : les sondes faites en HTTP comptent aussi pour fail2ban
+    access_log /var/log/nginx/$DOMAINE.access.log;
+    error_log  /var/log/nginx/$DOMAINE.error.log;
 }
 
 server {
@@ -294,12 +381,6 @@ $PROTECTIONS
 
     root $RACINE;
     index index.html;
-
-    # Fichiers cachés (.git, .env…) : refusés
-    location ~ /\. {
-        deny all;
-        return 404;
-    }
 
 $EMPLACEMENTS
 

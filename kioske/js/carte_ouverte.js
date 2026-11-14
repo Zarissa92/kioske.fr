@@ -1,7 +1,7 @@
 // Carte d'article ouverte en JavaScript : la page statique de l'article est chargée et sa carte
 // affichée par-dessus l'accueil. L'adresse devient celle de la page statique (partage, rechargement).
-// La page qui inclut ce script doit fournir updateHearts() et toggleFavorite() (accueil.js, ou
-// static/app.js), et fermer la carte sur la touche Échap.
+// La page qui inclut ce script inclut aussi favoris.js (updateHearts) et partage.js, et ferme la carte
+// sur la touche Échap.
 let carteOuverte = null;
 const titreAccueil = document.title;
 
@@ -112,31 +112,4 @@ document.addEventListener('click', (e) => {
   e.preventDefault();
   const dejaOuverte = carteOuverte && !carteOuverte.hidden;
   ouvrirCarte(u, dejaOuverte ? 'remplacer' : 'ajouter');
-});
-
-// Bouton de partage de la carte ouverte
-function shareArticle(e) {
-  e.stopPropagation();
-  const btn = e.target;
-  const titre = btn.closest('.panel-article')?.querySelector('h1')?.textContent || document.title;
-  const adresse = location.origin + location.pathname;
-  if (navigator.share) {
-    navigator.share({ title: titre, url: adresse }).catch(() => {});
-  } else if (navigator.clipboard) {
-    navigator.clipboard.writeText(adresse).then(() => {
-      const texte = btn.textContent;
-      btn.textContent = '✓';
-      setTimeout(() => { btn.textContent = texte; }, 2000);
-    }).catch(() => alert('Partage indisponible sur ce navigateur'));
-  } else {
-    alert('Partage indisponible sur ce navigateur');
-  }
-}
-
-// Boutons ♡ (favori) et 📤 (partage) de la carte : un seul écouteur sur le document
-document.addEventListener('click', (e) => {
-  const bouton = e.target.closest('.fav-heart, .share-btn');
-  if (!bouton) return;
-  if (bouton.classList.contains('fav-heart')) toggleFavorite(e);
-  else shareArticle(e);
 });
