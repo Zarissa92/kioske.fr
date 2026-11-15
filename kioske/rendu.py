@@ -17,7 +17,7 @@ from .javascript import (JS_ACCUEIL, JS_CARTE_OUVERTE, JS_DONNEES_ACCUEIL, JS_FA
                          JS_SERVICE_WORKER, json_pour_page)
 from .sources import AUTRES, ordre_des_categories
 from .texte import cle_alphabetique, esc, slugs_categories, truncate_label, article_id, slug_article
-from .themes import ATTRIBUTS_HTML, CHOIX_THEME, CSS, SCRIPT_THEME, VARIABLES_HTML
+from .themes import ATTRIBUTS_HTML, CHOIX_THEME, CSS, CSS_FAVORIS, SCRIPT_THEME, VARIABLES_HTML
 
 # Chemin vers le code de conduite
 CODE_DE_CONDUITE_PATH = Path(__file__).parent.parent / "accueil" / "code-de-conduite.html"
@@ -129,7 +129,7 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> str:
     script_galerie = f"<script>\n{JS_GALERIE}</script>"
 
     html = f"""
-    <section class="galerie-slider" aria-label="12 derniers articles">
+    <section class="galerie-slider galerie-principale" aria-label="12 derniers articles">
       <button class="galerie-arrow-left" type="button" aria-label="Défiler vers la gauche">
         &lt;
       </button>
@@ -390,7 +390,7 @@ def render_page(items: list[dict], previews: dict[str, dict],
         nom_site=esc(NOM_SITE),
         domaine=DOMAINE,
         liens_rss=liens_rss,
-        css=CSS,
+        css=CSS + "\n" + CSS_FAVORIS,
         script_theme=SCRIPT_THEME,
         donnees_json=donnees_json,
         js_donnees_accueil=JS_DONNEES_ACCUEIL,

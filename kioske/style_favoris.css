@@ -1,0 +1,60 @@
+/* Effet « shiny » : halo et reflet qui balaie la carte en continu.
+   Appliqué aux cartes des favoris (.carte-favori) et aux vignettes de la grande galerie (.galerie-principale).
+   Fichier partagé : il est inséré dans la page d'accueil au build (kioske/rendu.py), quel que soit le thème.
+   Les couleurs viennent des variables du thème (--neon-coeur, --neon-halo), donc chaque thème garde les siennes.
+   Accessibilité : le reflet est léger et ne reste pas sur le texte ; « réduire les animations » coupe
+   le mouvement et retire le reflet ; contraste renforcé et couleurs forcées retirent halo et reflet. */
+
+/* Les grilles et la galerie défilent (overflow): sans marge, le halo qui déborde est coupé. */
+#fav-grille {
+  padding: 1.2rem;
+}
+.galerie-principale > .galerie {
+  padding: .6rem .5rem;
+}
+
+/* Halo permanent, aux couleurs du thème. Vignettes de la galerie : halo plus petit. */
+.carte.carte-favori {
+  box-shadow: 0 0 .6rem -.1rem var(--neon-coeur), 0 0 1.4rem -.4rem var(--neon-halo);
+}
+.galerie-principale .galerie-carte {
+  box-shadow: 0 0 .35rem -.05rem var(--neon-coeur), 0 0 .8rem -.25rem var(--neon-halo);
+}
+
+/* Reflet diagonal. Il est hors de la carte (la carte coupe les débordements), balaie la carte pendant
+   la première partie du cycle, puis reste hors de la carte le reste du temps. Seul transform est animé. */
+.carte.carte-favori::before,
+.galerie-principale .galerie-carte::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, .35) 50%, transparent 60%);
+  transform: translateX(-100%);
+  animation: reflet-favori 4s ease-in-out infinite;
+}
+
+@keyframes reflet-favori {
+  0% { transform: translateX(-100%); }
+  40%, 100% { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carte.carte-favori::before,
+  .galerie-principale .galerie-carte::before {
+    animation: none;
+    display: none;
+  }
+}
+
+@media (prefers-contrast: more), (forced-colors: active) {
+  .carte.carte-favori,
+  .galerie-principale .galerie-carte {
+    box-shadow: none;
+  }
+  .carte.carte-favori::before,
+  .galerie-principale .galerie-carte::before {
+    display: none;
+  }
+}

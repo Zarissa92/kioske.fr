@@ -175,7 +175,7 @@ document.addEventListener('keydown', e => {
 });
 // Carte d'un article dans une grille (panneaux, recherche, favoris). Les textes viennent des flux RSS
 // et d'autres sites : ils sont posés avec textContent, jamais interprétés comme du HTML.
-function creerCarte({ adresse, image, source, meta, titre, extrait }) {
+function creerCarte({ adresse, image, source, meta, titre, extrait, favori = false }) {
   const span = (classe, texte) => {
     const s = document.createElement('span');
     s.className = classe;
@@ -188,7 +188,7 @@ function creerCarte({ adresse, image, source, meta, titre, extrait }) {
   };
   const carte = document.createElement('a');
   carte.href = adresse;
-  carte.className = 'carte';
+  carte.className = favori ? 'carte carte-favori' : 'carte';
   const cadre = span('carte-image');
   cadre.setAttribute('aria-hidden', 'true');
   if (image) {
@@ -674,7 +674,8 @@ function afficherFavoris(favorites) {
       source: data.source || 'Article',
       meta: [data.date, data.host].filter(x => x).join(' · ') || 'Sans date',
       titre: data.title || data.titre || 'Sans titre',
-      extrait: data.summary || ''
+      extrait: data.summary || '',
+      favori: true
     }));
   });
 }

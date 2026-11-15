@@ -108,6 +108,8 @@ def _morceaux_de_page() -> tuple[str, str, str, str]:
 
 # CSS : feuille de style du thème par défaut (chargée au build).
 CSS = charger_css_theme()
+# CSS_FAVORIS : halo et reflet des cartes de favoris (kioske/style_favoris.css), ajouté à la page d'accueil seule.
+CSS_FAVORIS = (PAQUET / "style_favoris.css").read_text(encoding="utf-8")
 # ATTRIBUTS_HTML : attributs du thème par défaut, à poser sur <html>.
 # VARIABLES_HTML : sa variable CSS, à mettre dans l'attribut style de <html>.
 # SCRIPT_THEME   : à mettre dans <head> — liste des thèmes, puis static/theme.js.
