@@ -1,4 +1,4 @@
-# kioske.fr — 1.0
+# kioske.fr — 1.1.1
 
 Le **KiosKe** : une veille automatique des médias indépendants, des luttes et des voix LGBTQIA+.
 Pages HTML statiques (HTML5, CSS, JavaScript sans dépendance) générées toutes les 30 minutes sur le serveur
@@ -18,6 +18,12 @@ modifié par le build.
 > Projet autonome depuis le 2026-11-11 (copie de `gauchiasses.fr`), réorganisé le même jour : code
 > dans le paquet `kioske/`, site généré dans `build/`, réglages dans `kioske.cfg`.
 > **À vérifier :** l'`origin` du dépôt git pointe encore vers `kit-gauchiasses.fr`.
+>
+> **Modifications récentes — 1.1.1 (2026-11-15)** :
+> - **Bugfix : titre en doublon pour panneaux sans sous-catégories** — quand un panneau contenait une catégorie du même nom (ex. `[Panneau: Médias d'enquête]` avec sources directes, pas de `[Categorie:]`), le titre s'affichait deux fois (h3 du panneau et h2 de la catégorie). Maintenant, le h2 est masqué visuellement mais reste dans le DOM pour la compatibilité des tests et JavaScript.
+>
+> **Modifications récentes — 1.1 (2026-11-15)** :
+> - **Bugfix : catégories sans catégorie explicite** — quand une source se trouvait après un panneau sans catégorie explicite (`[Panneau:Nom]` suivi directement d'une URL), elle était mise en AUTRES et filtrée du rendu. Désormais, les sources sans catégorie explicite mais avec un panneau utilisent le nom du panneau comme catégorie, ce qui retrouve les 7 catégories attendues (médias d'enquête, vidéo et radio, militance et luttes, international, technologie, LGBT FR/EN).
 >
 > **Modifications récentes — 1.0 (2026-11-15)** :
 > - **Panneaux organisés hiérarchiquement** : format `[Panneau:Nom]` + `[Categorie:Nom]` dans les sources. Les sources apparaissent groupées par panneau, puis par catégorie au sein de chaque panneau. Ancien format `[Categorie]` toujours supporté (sources sans panneau). Détection automatique du format et adaptation du rendu.
@@ -218,10 +224,19 @@ venv_blog/bin/python bin/build_site.py --no-previews   # sans visiter les pages 
 venv_blog/bin/python bin/build_site.py --no-cache      # ignore les caches
 ```
 
-Le résultat est dans `build/`. Ouvrir `build/index.html` directement montre l'accueil, mais les cartes, la
-recherche et les pages d'article utilisent des adresses absolues (`/articles/…`, `/articles-index.json`) :
-pour les essayer, servir le dossier, par exemple `venv_blog/bin/python -m http.server -d build 8000`, puis
-ouvrir `http://localhost:8000/`. Un build local sans réseau (`--simple`) n'a pas les images.
+Le résultat est dans `build/`. 
+
+**Tester en local** : ouvrir `build/index.html` directement montre l'accueil, mais les cartes, la
+recherche et les pages d'article utilisent des adresses absolues (`/articles/…`, `/articles-index.json`).
+Pour les essayer, servir le dossier :
+
+```bash
+cd build && python3 -m http.server 8000    # ou: venv_blog/bin/python -m http.server 8000
+```
+
+Puis ouvrir `http://localhost:8000/` dans le navigateur. Appuyer sur Ctrl+C pour arrêter le serveur.
+
+Un build local sans réseau (`--simple`) n'a pas les images.
 
 La publication copie `build/` dans la racine web (`racine_web`). Elle se lance **sur le serveur** :
 

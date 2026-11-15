@@ -220,12 +220,20 @@ def render_page(items: list[dict], previews: dict[str, dict],
                     )
                     articles_cat.extend(articles)
 
-                blocs += (
-                    f'<div class="sous-categorie">'
-                    f'<h2>{esc(categorie)} <span class="compte">({len(sources_keys)})</span> <button type="button" class="tag-categorie" data-category-name="{esc(categorie)}">+</button></h2>'
-                    f'{render_galerie_bloc(categorie, articles_cat, previews)}'
-                    f'<div class="nuage" aria-label="{esc(categorie)}">{"".join(tags)}</div></div>'
-                )
+                # Si la catégorie porte le même nom que le panneau : masquer le h2 visuellement
+                if categorie == panneau_nom:
+                    blocs += (
+                        f'<h2 style="display: none;"><span class="compte">({len(sources_keys)})</span> <button type="button" class="tag-categorie" data-category-name="{esc(categorie)}">+</button></h2>'
+                        f'{render_galerie_bloc(categorie, articles_cat, previews)}'
+                        f'<div class="nuage" aria-label="{esc(categorie)}">{"".join(tags)}</div>'
+                    )
+                else:
+                    blocs += (
+                        f'<div class="sous-categorie">'
+                        f'<h2>{esc(categorie)} <span class="compte">({len(sources_keys)})</span> <button type="button" class="tag-categorie" data-category-name="{esc(categorie)}">+</button></h2>'
+                        f'{render_galerie_bloc(categorie, articles_cat, previews)}'
+                        f'<div class="nuage" aria-label="{esc(categorie)}">{"".join(tags)}</div></div>'
+                    )
             blocs += '</section>'
         else:
             # Catégories sans panneau (filtrer AUTRES)

@@ -71,8 +71,12 @@ def read_panneaux_and_categories(feeds: Path, twitch: Path) -> tuple[dict[str, s
 
             if panneau_actuel:
                 panneaux[cle] = panneau_actuel
+
+            # Catégorie : explicite si définie, sinon utiliser le panneau, sinon AUTRES
             if categorie_actuelle:
                 categories[cle] = categorie_actuelle
+            elif panneau_actuel:
+                categories[cle] = panneau_actuel
             else:
                 categories.setdefault(cle, AUTRES)
 
