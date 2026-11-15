@@ -1,0 +1,30 @@
+# Fichiers et dossiers exclus de rsync (kioske_update)
+# Les fichiers avec chemins locaux serveur ne sont pas synchronisés.
+#
+# UTILISATION : ajoute à la fonction fish kioske_update :
+#   rsync ... --filter='. .rsync-filter' ...
+# Ou passe manuellement : rsync -a --delete --filter='. .rsync-filter' ...
+
+# Fichiers avec chemin serveur /home/<utilisateur>/kioske.fr/public/ en dur
+- kioske.cfg
+- deploy/deployer-nginx-simple.sh
+- deploy/kioske-nginx-simple.conf
+
+# Build et données locales
+- data/historique.db
+- data/cache/
+- .venv
+- venv_blog/
+
+# Répertoires de développement
+- .git/
+- old/
+- docs/
+- apercu/
+- tests/node_modules/
+
+# Fichiers de développement
+- .claude/settings.local.json
+- *.pyc
+- __pycache__/
+- .DS_Store

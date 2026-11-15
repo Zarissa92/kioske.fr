@@ -34,7 +34,12 @@ DOMAINE="$(cfg site domaine)"
 if [[ "$DOMAINE" != "kioske.fr" ]]; then
     erreur "ERREUR : Ce script est configuré pour kioske.fr, pas pour $DOMAINE. Arrêt pour éviter les mélanges de domaines."
 fi
-RACINE="$(cfg serveur racine_web)"  # racine servie : la même que la publication
+# Répertoire public : par variable d'environnement ou demander
+RACINE="${RACINE_WEB:-}"
+if [[ -z "$RACINE" ]]; then
+    read -rp "Répertoire public pour servir le site (ex: /home/<utilisateur>/kioske.fr/public) : " RACINE
+fi
+[[ -n "$RACINE" ]] || erreur "Répertoire public requis (passe RACINE_WEB=... ou réponds à la question)"
 DISPO="/etc/nginx/sites-available/$DOMAINE"
 ACTIF="/etc/nginx/sites-enabled/$DOMAINE"
 CERT_DIR="/etc/letsencrypt/live/$DOMAINE"

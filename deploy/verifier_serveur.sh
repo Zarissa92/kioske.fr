@@ -14,7 +14,7 @@ DOSSIER="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$DOSSIER/deploy/lib_config.sh"  # cfg <section> <clé> : valeurs de kioske.cfg
 DOMAINE="$(cfg site domaine)" || exit 1
 IP_PUBLIQUE="$(cfg serveur ip_publique)" || exit 1
-RACINE="$(cfg serveur racine_web)" || exit 1
+RACINE="${RACINE_WEB:-/home/<utilisateur>/kioske.fr/public}"
 CERT="/etc/letsencrypt/live/$DOMAINE/cert.pem"
 ALERTE_CERT_JOURS=21
 ALERTE_PUBLICATION_MIN=90

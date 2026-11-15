@@ -6,4 +6,5 @@
   window.categoriesData = donnees.categories;     // articles groupés par catégorie
   window.sourcesMetadata = donnees.sources_metadata; // métadonnées des sources (nom, catégorie)
   window.conductCode = donnees.conduite;          // contenu du code de conduite
+  window.galeriePanneau = donnees.galerie_panneau ?? 1; // afficher galeries dans panneaux (1 = oui, 0 = non)
 })();

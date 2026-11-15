@@ -1,4 +1,4 @@
-# kioske.fr — 1.1.3
+# kioske.fr — 1.2.0
 
 Le **KiosKe** : une veille automatique des médias indépendants, des luttes et des voix LGBTQIA+.
 Pages HTML statiques (HTML5, CSS, JavaScript sans dépendance) générées toutes les 30 minutes sur le serveur
@@ -19,6 +19,44 @@ modifié par le build.
 > dans le paquet `kioske/`, site généré dans `build/`, réglages dans `kioske.cfg`.
 > **À vérifier :** l'`origin` du dépôt git pointe encore vers `kit-gauchiasses.fr`.
 >
+> **Modifications récentes — 1.2.0 (2026-11-15)** :
+> - **Panneaux du thème Trans ultra-lumineux** — `.panel` : glow rose #FF4AF4 **80% opacité** externe (au lieu de 80% bleu transparent) + inset rose 25%. Panneau remplit 100% de largeur, border-radius var(--rayon-panneau).
+> - **Cartes du thème Trans renforcées** — `.carte` : border **1px → 3px** pour meilleure visibilité. Transition : **0.2s → 2s** pour un effet plus doux au survol.
+> - **Fix : `.carte-extrait` affiche les résumés** — fonction `span()` décode maintenant les entités HTML (`&nbsp;`, `&rsquo;`, etc.) en créant un élément temporaire et en extrayant le `textContent`. Sécurisé contre la CSP, les résumés d'articles s'affichent correctement.
+> - **Fix : URLs d'articles sans double tiret** — `slug_article()` applique `.rstrip("-")` après limitation à 30 caractères. Élimine les URLs cassées comme `...de--hash` → `...de-hash`.
+> - **Fix : Favoris affichent maintenant les résumés** — ajout du `summary` enregistré dans `localStorage` lors de l'ajout aux favoris. L'extrait de l'article s'affiche dans le panneau "Mes favoris".
+> - **Service worker v58** — cache forcé.
+>
+> **Modifications récentes — 1.1.9 (2026-11-15)** :
+> - **Voie lactée du thème Étoiles → noir** — dégradés violets remplacés par du noir semi-transparent pour meilleure visibilité des étoiles sur fond sombre.
+> - **Service worker v50** — cache forcé.
+>
+> **Modifications récentes — 1.1.8 (2026-11-15)** :
+> - **Finalisations exportées à tous les thèmes** — `.tag` : glow permanent avec couleurs du thème. `.galerie-carte-wrapper` : glow interne + externe, corners 0.8rem. Border `.galerie-carte` : 1px → **3px** pour meilleure visibilité.
+> - **Service worker v49** — cache forcé pour les CSS de tous les thèmes.
+>
+> **Modifications récentes — 1.1.7 (2026-11-15)** :
+> - **Néons roses sur les tags et galeries du thème Trans** — `.tag` : glow rose permanent (#FFD0DD) 12px externe + inset. `.galerie-carte-wrapper` : glow rose interne et externe avec corners arrondis 0.8rem.
+> - **Service worker v48** — cache forcé pour les styles mis à jour.
+>
+> **Modifications récentes — 1.1.6 (2026-11-15)** :
+> - **Thème Trans ultra-brillant** — titres des panneaux (`.titre-panneau`) en **bleu néon du drapeau trans** (#7FE5FF) avec glow intense externe et interne, couleur de texte et bordure bleues.
+> - **Rayon des coins augmenté partout** — toutes les surfaces (`--rayon-carte`, `--rayon-panneau`, `--rayon-bouton`, `.titre-panneau`, `.fav-heart`, `.share-btn`, `.galerie-bloc .galerie-carte`, `.recherche-bouton`, `.panel`, `.categorie-panneau`, `.groupe`, `.popover-infos`) → coins plus prononcés et arrondis.
+> - **Néons ultra-intenses sur Trans** — lueurs, box-shadows et effets de couleur sur le thème trans triplés en intensité. `.nuage` (tag clouds) avec glow rose (#FFD0DD) en externe et interne.
+> - **CSS auto-copié au build** — fonction `copier_css_themes()` en `kioske/construction.py` : chaque fichier CSS de thème en `kioske/` est copié automatiquement à `static/` au build.
+> - **Service worker v47** — cache forcé pour les styles des thèmes mis à jour.
+>
+> **Modifications récentes — 1.1.5 (2026-11-15)** :
+> - **Deux nouveaux thèmes néon** — `red_neon` (néon rouge intense, fond noir) et `white_neon` (néon blanc réduit de moitié, fond étoilé). Tous deux activent la pluie matricielle. Les anciens thèmes `voie_lactee` et `pluie` sont retirés de la sélection.
+> - **CSS optionnel par thème** — chaque thème peut maintenant utiliser son propre fichier CSS (clé `css` dans `kioske.cfg`). Le système charge le CSS du thème par défaut au build.
+>
+> **Modifications récentes — 1.1.4 (2026-11-15)** :
+> - **Sécurité : validation des URLs dans les pages statiques** — les liens d'articles `lien_origine` des pages statiques (`article.html`) sont maintenant validés avec `adresse_sure()` dans `rendu_statique.py`. Un flux RSS piégé ne peut plus fournir une URL commençant par `javascript:` qui serait exécutée. Seules les URLs HTTP/HTTPS et les chemins du site (/) sont autorisés.
+> - **Titre du navigateur** — suppression du doublon `KiosKe.fr (kioske.fr)` : le titre est maintenant simplement `KiosKe.fr`.
+> - **Galeries des panneaux contrôlées par `kioske.cfg`** — l'option `galerie_panneau` du fichier de configuration (défaut 1) active/désactive maintenant les galeries des blocs et des panneaux de catégorie. Avant, elle était définie en Python mais jamais utilisée.
+> - **Texte des cartes au hover sur mobile** — sur mobile (< 640px), le résumé (meta et extrait) des cartes d'articles apparaît maintenant au survol/clic, permettant la consultation du texte sans défilement.
+> - **Couleurs flat des titres** — les titres de panneau (`<h3>`) sont maintenant en violet flat (#A855F7), les titres de sous-catégories (`<h2>`) en rouge flat (#FF4444).
+>
 > **Modifications récentes — 1.1.3 (2026-11-15)** :
 > - **Menu hamburger ≡ épuré** — suppression des thèmes et du bouton « Installer l'app » du menu ≡. Le menu contient maintenant seulement : Flux RSS, Discord, Mastodon, Code de conduite. Les thèmes et installation restent accessibles via le menu ⚙️ (Paramètres).
 >
@@ -33,7 +71,7 @@ modifié par le build.
 >
 > **Modifications récentes — 1.0 (2026-11-15)** :
 > - **Panneaux organisés hiérarchiquement** : format `[Panneau:Nom]` + `[Categorie:Nom]` dans les sources. Les sources apparaissent groupées par panneau, puis par catégorie au sein de chaque panneau. Ancien format `[Categorie]` toujours supporté (sources sans panneau). Détection automatique du format et adaptation du rendu.
-> - **Galeries optionnelles** : deux options `kioske.cfg` pour activer/désactiver la galerie principale (`galerie_principale`) et les galeries des panneaux (`galerie_panneau`), défaut 1 (activé).
+> - **Galeries optionnelles** : deux options `kioske.cfg` pour activer/désactiver la galerie principale (`galerie_principale`, défaut 1) et les galeries des blocs/panneaux (`galerie_panneau`, défaut 1) — galeries des blocs de catégorie de l'accueil et galeries dans les panneaux de catégorie.
 > - **Flux personnalisé** : sélection des sources à afficher par catégorie, filtrage en temps réel, sauvegarde dans `localStorage`. Bouton ⚙️ Personnaliser dans le menu paramètres. Suppression du doublon « Personnaliser » créé en JavaScript (garde du HTML).
 > - **Service worker v26** (passé à v28 après panneaux).
 > - **CSS et spacing optimisés** : espaces du bas réduits (suppression de `min-height: 100%` sur body, réduction du margin-bottom de `.mentions`).
@@ -151,7 +189,6 @@ carte ouvre l'article par-dessus la page, au format « carte à jouer » (texte 
 | `requirements.txt` | Dépendances Python (`feedparser`, `yt-dlp`, `legacy-cgi`). |
 | `apercu/preview.svg` | Source de `static/preview.png` (image de partage social) : générer avec `rsvg-convert -w 1200 -h 630 apercu/preview.svg -o static/preview.png`. |
 | `docs/img/` | Captures de ce README. |
-| `old/` | Sauvegardes et reliquats (hors git, non synchronisés). `old/reliquats-2026-11-11/` : anciens scripts FTP et systemd ; `old/avant-reorganisation-2026-11-11.tar.gz` : le projet avant la réorganisation. |
 
 Le paquet `kioske/` :
 
@@ -162,7 +199,7 @@ Le paquet `kioske/` :
 | `flux.py`, `twitch.py`, `apercus.py`, `reseau.py` | Récupération : flux RSS, vidéos Twitch (yt-dlp), aperçus Open Graph. |
 | `images.py` | Téléchargement des images dans `build/img/veille/`, et purge de celles qui ne servent plus. |
 | `historique.py` | Base SQLite de tout ce qui a été récupéré. |
-| `themes.py`, `style.css` | Thèmes et CSS. `themes.py` lit les thèmes de `kioske.cfg` et prépare ce que chaque page reprend (attributs de `<html>`, liste des thèmes pour `static/theme.js`, boutons de choix). `style.css` contient **tout** le CSS du site, pluie et thèmes compris : le code Python n'en écrit pas. |
+| `themes.py`, `style.css`, `style_red_neon.css`, `oldstyle.css` | Thèmes et CSS. `themes.py` lit les thèmes de `kioske.cfg` et prépare ce que chaque page reprend (attributs de `<html>`, liste des thèmes pour `static/theme.js`, boutons de choix). Chaque thème peut avoir un CSS distinct (clé `css`). Le CSS du thème par défaut est injecté dans la page ; les CSS des autres thèmes sont servis depuis `static/` et chargés dynamiquement. |
 | `rendu.py`, `rss.py`, `texte.py` | Contenu de la page d'accueil et de `rss.html` (étiquettes, galeries, données ; le squelette est dans `gabarits/`), flux RSS produits, outils de texte (slugs, IDs, échappement HTML). |
 | `rendu_statique.py` | Contenu des pages statiques d'articles et de catégories (image, navigation, cartes ; le squelette est dans `gabarits/`). Aucun CSS (il est dans `style.css`) ni JavaScript (il est dans `js/`). |
 | `gabarits.py`, `gabarits/` | Squelettes HTML des pages : `accueil.html`, `article.html`, `categorie.html`, `rss.html`. `${nom}` marque l'endroit d'une valeur ; ni boucle ni condition dans un gabarit. `gabarits.py` fournit `remplir("page.html", nom=valeur, …)` : une valeur manquante arrête le build, et le texte est échappé par Python (`esc()`) avant d'être passé. Un vrai signe dollar s'écrit `$$`. Pour modifier le HTML fixe d'une page, éditer son gabarit ; pour y ajouter une valeur, écrire `${nom}` dans le gabarit et passer `nom=…` dans l'appel `remplir()` de `rendu.py` ou `rendu_statique.py`. |
@@ -177,14 +214,13 @@ Format INI, commenté dans le fichier. Une valeur manquante ou invalide arrête 
 
 | Section | Clés |
 | --- | --- |
-| `[site]` | `domaine`, `nom`, `theme` (thème par défaut), `taille_defaut` (zoom de l'accueil en %, min 75, max 125, défaut 90 ; réglage du site, pas des visiteurs), `largeur_carte_ouverte` (largeur max du panneau article, ex: `min(600px, 85vw)`), `hauteur_carte_ouverte` (zoom de la hauteur des cartes, min 75, max 125, défaut 115), `bordure_panneau_epaisseur` (défaut 8), `espacement_panneau_vertical` (défaut `2.4rem`), `espacement_panneau_horizontal` (marge intérieure gauche et droite des panneaux, défaut `0.5rem`). |
+| `[site]` | `domaine`, `nom`, `theme` (thème par défaut), `taille_defaut` (zoom de l'accueil en %, min 75, max 125, défaut 90 ; réglage du site, pas des visiteurs), `largeur_carte_ouverte` (largeur max du panneau article, ex: `min(600px, 85vw)`), `hauteur_carte_ouverte` (zoom de la hauteur des cartes, min 75, max 125, défaut 115), `bordure_panneau_epaisseur` (défaut 8), `espacement_panneau_vertical` (défaut `2.4rem`), `espacement_panneau_horizontal` (marge intérieure gauche et droite des panneaux, défaut `0.5rem`), `galerie_principale` (1 = afficher la grande galerie, 0 = masquer, défaut 1), `galerie_panneau` (1 = afficher galeries des blocs et panneaux, 0 = masquer, défaut 1). |
 | `[veille]` | `articles_flux_rss` (100), `videos_par_chaine` (15), `articles_par_source` (0 = tous), `delai_nouvel_essai_heures` (24). |
 | `[serveur]` | `racine_web` (`/var/www/kioske.fr`), `ip_jamais_bannies` (adresses que fail2ban ne bannit jamais : serveur et réseau local), `ip_publique`, `intervalle_timer` (`30min`). |
 | `[reseaux]` | `discord` (URL du serveur Discord), `mastodon` (profil Mastodon), `rss` (chemin vers la page RSS, défaut `rss.html`). Laissez vide pour désactiver un lien. |
-| `[theme.<nom>]` | `nom`, `fond` (`etoiles` ou `noir`), `pluie` (`oui` ou `non`), `opacite_panneau` (0 à 100, en %). |
+| `[theme.<nom>]` | `nom`, `fond` (`etoiles` ou `noir`), `pluie` (`oui` ou `non`), `opacite_panneau` (0 à 100, en %), `css` (fichier CSS optionnel, défaut `style.css`). |
 
-Deux thèmes existent : `voie_lactee` (fond noir étoilé, bande de la Voie lactée) et `pluie` (pluie
-matricielle). Ajouter une section `[theme.<nom>]` ajoute un bouton de choix sur la page.
+Deux thèmes disponibles : `red_neon` (néon rouge intense avec pluie matricielle et fond noir) et `white_neon` (néon blanc aux étoiles avec pluie matricielle et néons réduits de moitié). Ajouter une section `[theme.<nom>]` ajoute un bouton de choix sur la page.
 
 Les scripts bash lisent les mêmes valeurs avec `cfg <section> <clé>` (`deploy/lib_config.sh`).
 Après un changement de `intervalle_timer` ou de `racine_web`, relancer `deploy/installer_serveur.sh`.
@@ -432,7 +468,7 @@ immuable est dans `accueil/bloc_immuable.html`.
 ## Déploiement sur le serveur
 
 Le site est construit et servi par le serveur (Debian 13, nginx). Le projet vit dans
-`/home/<utilisateur>/kioske.fr`, la racine servie est `racine_web`.
+`/home/<utilisateur>/kioske.fr`, la racine servie est `racine_web` (défaut : `/home/<utilisateur>/kioske.fr/public/`).
 
 **Depuis le PC** : la fonction fish `kioske_update` (rsync avec `--delete`).
 
@@ -444,12 +480,23 @@ kioske_update              # envoi vers <utilisateur>@<serveur>:/home/<utilisate
 Elle n'envoie ni `build/`, ni `data/historique.db`, ni `data/cache/`, ni les venvs, ni `old/`,
 `docs/`, `apercu/`, `.git/`, `CLAUDE.md`.
 
-**Sur le serveur**, en utilisateur normal (`meli`) ; les étapes qui en ont besoin demandent `sudo` :
+**Sur le serveur**, en utilisateur normal (`meli`) :
+
+### Déploiement simple (nginx + fail2ban, certificats existants)
 
 ```bash
+cd /home/<utilisateur>/kioske.fr
+bash deploy/deployer-nginx-simple.sh
+```
+
+Ça installe et configure nginx + fail2ban en un seul appel (idéal pour les updates).
+
+### Déploiement complet (veille + nginx + fail2ban + statut)
+
+```bash
+cd /home/<utilisateur>/kioske.fr
 deploy/kioske.sh                          # tout, dans l'ordre
 deploy/kioske.sh --email toi@exemple.fr   # tout, et demande le certificat Let's Encrypt
-deploy/kioske.sh --certificat-ok          # tout, mais mise à jour nginx uniquement (config et headers), sans certificats
 deploy/kioske.sh veille                   # seulement la mise à jour (ce que lance le timer)
 deploy/kioske.sh --simulation             # affiche sans rien lancer
 ```

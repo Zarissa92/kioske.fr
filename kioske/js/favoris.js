@@ -39,6 +39,9 @@ function toggleFavorite(event) {
       const a = new URL(img.src, location.href);
       image = a.origin === location.origin ? a.pathname + a.search : a.href;
     }
+    // Récupère l'extrait (summary) de la carte
+    const summary = carte?.querySelector('.carte-extrait')?.textContent || '';
+
     favorites[articleLink] = {
       titre: titre,
       title: titre,
@@ -48,6 +51,7 @@ function toggleFavorite(event) {
       date: meta.length > 2 ? meta[0] : '',
       host: meta.length > 2 ? meta[1] : (meta[0] || ''),
       source: meta[meta.length - 1] || '',
+      summary: summary,
       timestamp: new Date().toISOString()
     };
   }

@@ -1,0 +1,1167 @@
+/* Feuille de style du KiosKe : tout le CSS du site, inséré tel quel dans chaque page au build.
+ L es thèmes (fond, pluie, opacité du grand panneau) sont à la fin, section « Thèmes ». */           *
+ /* Police uniforme du site : fichier local, servi depuis fonts/ (une copie à la racine publiée) */
+ @font-face {
+   font-family: "Russo One";
+   font-style: normal;
+   font-weight: 400;
+   font-display: swap;
+   src: url("../fonts/russo-one.woff2") format("woff2");
+ }
+ html, body, body * { font-family: "Russo One", "Courier New", monospace !important; }
+ :root {
+   --red: #ffffff;
+   --red-dim: #ffffff;
+   --red-light: #ffffff;
+   /* Violet plat : bordures, ombres, h2 et pluie matricielle */
+   --violet: #8a2be2;
+   --violet-dim: #6a1fb0;
+   --violet-light: #b57bff;
+   /* Thème : --bg dépend de data-fond, --panneau-opacite est posée sur <html> (voir « Thèmes », en fin de fichier) */
+   --bg: #000;
+   --panneau-opacite: .7;
+   --panneau-fond: rgba(10, 0, 0, var(--panneau-opacite));
+   --panel: #0a0000;
+   --rayon-carte: 12px; /* rayon des coins, proportions de carte à jouer */
+
+   /* ----- Néon à moitié intensifié pour white_neon -----
+    D égradé du néon : blanc au cœur, blanc au halo.                                                  *
+    Intensité réduite : rayons divisés par 2 par rapport à style.css. */
+   --rayon-panneau: 14px;  /* coins arrondis des panneaux, blocs et menus */
+   --rayon-bouton: 8px;    /* coins arrondis des boutons et champs */
+
+   /* Néons blanc : même intensité que red_neon (divisés par 2) */
+   --lueur-carte: 0 0 5px var(--neon-halo), 0 0 13px var(--neon-halo);
+   --lueur-carte-survol: 0 0 2px var(--neon-halo), 0 0 6px var(--neon-halo), 0 0 13px var(--neon-halo);
+   --lueur-inset-carte-blanc: inset 0 0 5px var(--neon-halo);
+   --neon-coeur: #8a2be2;   /* violet plat */
+   --neon-halo: #8a2be2;    /* violet plat */
+   --lueur-douce: 0 0 5px var(--neon-coeur), 0 0 13px var(--neon-halo);                 /* panneaux, navbar, nuages */
+   --lueur-moyenne: 0 0 2px var(--neon-coeur), 0 0 4px var(--neon-coeur), 0 0 9px var(--neon-halo); /* petits boutons, focus */
+   --lueur-forte: 0 0 2px var(--neon-coeur), 0 0 5px var(--neon-coeur), 0 0 10px var(--neon-halo);   /* boutons au survol */
+   --lueur-max: 0 0 2px var(--neon-coeur), 0 0 6px var(--neon-coeur), 0 0 13px var(--neon-halo);     /* cartes au survol */
+   --lueur-panneau: 0 0 8px var(--neon-coeur), 0 0 20px var(--neon-halo);               /* grands panneaux */
+   --lueur-texte: 0 0 2px var(--neon-coeur), 0 0 5px var(--neon-coeur), 0 0 10px var(--neon-halo);   /* lettres des cartes */
+   --lueur-inset: inset 0 0 6px var(--neon-coeur);                                      /* halo intérieur des panneaux */
+   --lueur-inset-carte: inset 0 0 5px var(--neon-coeur);                                 /* halo intérieur des cartes */
+ }
+
+ * { margin: 0; padding: 0; box-sizing: border-box; }
+ [hidden] { display: none !important; }
+
+ html, body {
+   background: var(--bg);
+   background-attachment: fixed;  /* le dégradé reste en place pendant le défilement */
+   color: var(--red);
+   font-family: "Courier New", Courier, monospace;
+   overflow-x: hidden;
+   overflow-y: auto;
+ }
+
+ .recherche-globale .recherche {
+   display: flex;
+   width: min(100%, 400px);
+   margin: 0 auto;                /* centre le bloc, car le parent est en text-align: center */
+ }
+
+ .recherche-globale .recherche input {
+   flex: 1;
+   min-width: 0;                  /* empêche le champ de déborder sur petit écran */
+   padding: 0.5rem 0.75rem;
+   font: inherit;
+   color: inherit;
+   background: var(--bg);
+   border: 1px solid var(--violet-dim);
+   border-right: none;
+   border-radius: 6px 0 0 6px;
+   outline: none;
+ }
+
+ .recherche-globale .recherche input:focus {
+   border-color: var(--violet);      /* si la variable existe dans votre thème */
+ }
+
+ .recherche-globale .recherche button {
+   display: flex;
+   align-items: center;
+   padding: 0 0.75rem;
+   color: inherit;
+   background: var(--bg);
+   border: 1px solid var(--violet-dim);
+   border-radius: 0 6px 6px 0;
+   cursor: pointer;
+ }
+
+ .recherche-globale .recherche button:hover {
+   background: var(--red-dim);
+ }
+ /* Navbar top sticky */
+ .kioske-navbar {
+   position: sticky;
+   opacity: 1;
+   top: 0;
+   z-index: 100;
+   background: #0a0000;
+   border-bottom: 2px solid var(--violet);
+   box-shadow: 0 0 20px color-mix(in srgb, var(--violet) 40%, transparent);
+   padding: 0.8rem 1.5rem;
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   gap: 1.5rem;
+   flex-wrap: wrap;
+ }
+ .navbar-brand {
+   display: flex;
+   align-items: center;
+   gap: 0.8rem;
+   font-size: 1.1rem;
+   font-weight: bold;
+   text-decoration: none;
+   color: var(--red);
+   min-width: fit-content;
+ }
+ .navbar-brand .flag { font-size: 1.3rem; }
+ .navbar-stats {
+   font-size: 0.75rem;
+   opacity: 0.7;
+   margin-left: 0.5rem;
+   white-space: nowrap;
+ }
+ .navbar-search {
+   display: flex;
+   align-items: center;
+   gap: 10px;
+ }
+ .navbar-search input {
+   flex: 1;
+   min-width: 0;
+   padding: 0.5rem 0.75rem;
+   font: inherit;
+   font-size: 0.9rem;
+   color: inherit;
+   background: #1a0000;
+   border: 1px solid var(--violet-dim);
+   border-radius: 2px 0 0 2px;
+   outline: none;
+ }
+ .navbar-search input:focus {
+   border-color: var(--violet);
+ }
+ .navbar-search button {
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   padding: 0.5rem 0.75rem;
+   font: inherit;
+   background: #1a0000;
+   border: 1px solid var(--violet-dim);
+   border-radius: 0 2px 2px 0;
+   color: var(--red-light);
+   cursor: pointer;
+   transition: all 0.2s;
+ }
+
+ /* Loupe dessinée en CSS */
+ .loupe {
+   position: relative;
+   display: inline-block;
+   width: 14px;
+   height: 14px;
+   flex-shrink: 0;
+ }
+
+ /* Cercle de la loupe */
+ .loupe::before {
+   content: "";
+   position: absolute;
+   top: 0;
+   left: 0;
+   width: 11px;
+   height: 11px;
+   border: 2px solid currentColor;
+   border-radius: 50%;
+   box-sizing: border-box;
+ }
+
+ /* Manche de la loupe */
+ .loupe::after {
+   content: "";
+   position: absolute;
+   top: 8px;
+   left: 10px;
+   width: 2px;
+   height: 6px;
+   background: currentColor;
+   border-radius: 1px;
+   transform: rotate(-45deg);
+ }
+
+ .navbar-search button:hover {
+   color: var(--red);
+   border-color: var(--violet);
+ }
+
+ .navbar-search:focus-within button {
+   border-color: var(--violet);
+   color: var(--red);
+ }
+
+ .navbar-controls {
+   display: flex;
+   align-items: center;
+   gap: 0.5rem;
+   position: relative;
+ }
+ .btn-favs, .btn-menu, .btn-settings {
+   padding: 0.5rem 0.8rem;
+   background: #1a0000;
+   border: 1px solid var(--violet-dim);
+   color: var(--red-light);
+   cursor: pointer;
+   font: inherit;
+   font-size: 0.9rem;
+   transition: all 0.2s;
+   border-radius: 2px;
+   white-space: nowrap;
+ }
+ .btn-favs:hover, .btn-favs:focus-visible, .btn-menu:hover, .btn-menu:focus-visible, .btn-settings:hover, .btn-settings:focus-visible {
+   background: var(--red);
+   color: #000;
+   box-shadow: 0 0 12px var(--violet);
+   outline: none;
+ }
+ .btn-menu, .btn-settings {
+   font-size: 1.2rem;
+   padding: 0.5rem 1rem;
+ }
+ .navbar-menu {
+   position: absolute;
+   top: 100%;
+   right: 1rem;
+   background: #0a0000;
+   border: 1px solid var(--violet-dim);
+   box-shadow: 0 0 20px color-mix(in srgb, var(--violet) 40%, transparent);
+   /* min-width: 250px;  - modif du 13/10/26 */
+   z-index: 201;
+   display: none;
+   margin-top: 0.5rem;
+   margin-right: 0.5rem;
+   margin-left: 0.5rem;
+ }
+ .navbar-menu.open { display: block; }
+ .navbar-menu-group {
+   border-bottom: 1px solid rgba(138, 43, 226, 0.1);
+   /*padding: 0.8rem 1rem;  -  modif du 13/10/2026 */
+ }
+ .navbar-menu-group:last-child { border-bottom: none; }
+ .navbar-menu-title {
+   font-size: 0.75rem;
+   font-weight: bold;
+   opacity: 0.7;
+   text-transform: uppercase;
+   color: var(--red-light);
+   margin-bottom: 0.6rem;
+   letter-spacing: 0.05em;
+ }
+ .theme-options {
+   display: flex;
+   flex-direction: column;
+   gap: 0.4rem;
+ }
+ /* Boutons de thème dans le menu ≡ : en colonne sous le titre. Sans cela, la règle générale
+  « .choix-theme » (marge haute négative, boutons en ligne centrés) les fait remonter par-dessus le  *
+  titre « Thèmes » et déborder du menu. */
+ .theme-options .choix-theme {
+   flex-direction: column;
+   flex-wrap: nowrap;
+   align-items: stretch;
+   gap: 0.4rem;
+   margin: 0;
+ }
+ .theme-options .theme-bouton {
+   padding: 0.4rem 0.6rem;
+   background: transparent;
+   border: 1px solid rgba(138, 43, 226, 0.3);
+   color: var(--red-light);
+   cursor: pointer;
+   font: inherit;
+   font-size: 0.85rem;
+   border-radius: 2px;
+   transition: all 0.2s;
+   text-align: left;
+ }
+ .theme-options .theme-bouton:hover {
+   background: var(--red);
+   color: #000;
+   border-color: var(--violet);
+ }
+ .theme-bouton[aria-pressed="true"] {
+   background: var(--red);
+   color: #000;
+   border-color: var(--violet);
+   box-shadow: 0 0 12px var(--violet);
+ }
+ /* Sous-menu déroulant pour les thèmes */
+ .navbar-menu-title.submenu-toggle {
+   display: block;
+   width: 100%;
+   padding: 0.6rem 0.8rem;
+   background: transparent;
+   border: 1px solid rgba(138, 43, 226, 0.3);
+   color: var(--red-light);
+   cursor: pointer;
+   font: inherit;
+   font-size: 0.9rem;
+   text-align: left;
+   border-radius: 2px;
+   transition: all 0.2s;
+ }
+ .navbar-menu-title.submenu-toggle:hover {
+   background: rgba(255, 255, 255, 0.1);
+   border-color: var(--violet-dim);
+ }
+ .navbar-menu-title.submenu-toggle[aria-expanded="true"] {
+   background: var(--red);
+   color: #000;
+   border-color: var(--violet);
+   box-shadow: 0 0 8px var(--violet);
+ }
+ .submenu {
+   padding: 0.4rem 0;
+   margin-top: 0.4rem;
+ }
+ .menu-button {
+   display: block;
+   box-sizing: border-box;
+   text-decoration: none;
+   width: 100%;
+   padding: 0.5rem 0.6rem;
+   background: transparent;
+   border: 1px solid rgba(138, 43, 226, 0.2);
+   color: var(--red-light);
+   cursor: pointer;
+   font: inherit;
+   font-size: 0.85rem;
+   text-align: left;
+   border-radius: 2px;
+   transition: all 0.2s;
+ }
+ .menu-button:hover {
+   background: var(--red);
+   color: #000;
+   border-color: var(--violet);
+   box-shadow: 0 0 12px var(--violet);
+ }
+
+ .panel {
+   position: relative;
+   z-index: 1;
+   max-width: 560px;
+   width: calc(100% - 32px);
+   margin: 1rem auto 1rem;
+   padding: 1.2rem 1.5rem;
+   background: var(--panneau-fond);  /* grand panneau : défini par le thème coché */
+   border: 1px solid var(--violet-dim);
+   box-shadow: 0 0 30px color-mix(in srgb, var(--violet) 35%, transparent), inset 0 0 20px color-mix(in srgb, var(--violet) 10%, transparent);
+   text-align: center;
+ }
+ .infos-container { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 100; }
+ .infos-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .7); cursor: pointer; }
+ .popover-infos { position: relative; z-index: 1; width: min(600px, calc(100vw - 2rem)); height: fit-content; max-height: calc(100vh - 2rem); overflow: auto; padding: 0; box-sizing: border-box; background: #0a0000; color: var(--red-light); border: 1px solid var(--violet); box-shadow: 0 0 30px color-mix(in srgb, var(--violet) 50%, transparent), inset 0 0 20px color-mix(in srgb, var(--violet) 10%, transparent); }
+ .infos-fermer { position: absolute; top: .5rem; right: .5rem; width: 2rem; height: 2rem; border: 1px solid var(--violet-dim); background: #000; color: var(--red); font: inherit; font-size: 1.2rem; cursor: pointer; z-index: 300; }
+ .infos-fermer:hover, .infos-fermer:focus-visible { background: var(--red); color: #000; outline: none; }
+ .popover-contenu { padding: 2rem 1.5rem 1.5rem; }
+ .popover-section { padding-bottom: 1.2rem; border-bottom: 1px solid var(--violet-dim); }
+ .popover-section:last-child { border-bottom: none; padding-bottom: 0; }
+ /* Barre de recherche dans le popover */
+ .popover-section .recherche { margin: 0 auto; }
+ /* Thèmes dans le popover */
+ .popover-section .choix-theme { margin-bottom: 0; }
+ .kicker { font-size: 0.85rem; color: var(--red-light); opacity: 0.8; margin-bottom: 0.5rem; letter-spacing: 0.1em; }
+ .choix-theme { display: flex; justify-content: center; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; margin-top: -3rem; }
+ .choix-theme .theme-bouton { padding: .3rem .7rem; border: 1px solid var(--violet-dim); color: var(--red-light); background: transparent; font: inherit; font-size: .8rem; cursor: pointer; }
+ .choix-theme .theme-bouton:hover { background: var(--red); color: #000; }
+ .choix-theme .theme-bouton[aria-pressed="true"] { background: var(--red); color: #000; box-shadow: 0 0 12px var(--violet); }
+ .theme-bouton:focus-visible { outline: 2px solid var(--violet)1 outline-offset: 2px; }
+ .recherche { display: block; width: 100%; max-width: 400px; margin: 0 auto 0.8rem; padding: .6rem .8rem; font-family: inherit; font-size: .9rem; color: #fff; background: #0a0000; border: 1px solid var(--violet-dim); box-sizing: border-box; transition: all .2s; }
+ .recherche:focus { outline: none; border-color: var(--violet); box-shadow: 0 0 12px color-mix(in srgb, var(--violet) 50%, transparent); }
+ .recherche::placeholder { color: var(--red-light); opacity: .6; }
+ h1 { font-size: clamp(1.8rem, 6vw, 2.8rem); line-height: 1.2; margin-bottom: 0.6rem; text-transform: uppercase; }
+ .cursor { font-size: 1.8rem; line-height: 1; animation: blink 1s steps(1) infinite; }
+ .drapeau { font-size: .5em; line-height: 1; }
+ .sub { color: var(--red-light); margin-bottom: 0.3rem; }
+
+
+ @keyframes blink { 50% { opacity: 0; } }
+ @media (max-width: 768px) {
+   .kioske-navbar {
+     padding: 0.6rem 1rem;
+     flex-wrap: wrap;
+   }
+   .navbar-brand {
+     font-size: 1rem;
+     gap: 0.4rem;
+     order: 1;
+   }
+   .navbar-brand .flag { font-size: 1.2rem; }
+   .navbar-search {
+     order: 3;
+     flex-basis: 100%;
+     margin-top: 0.6rem;
+     min-width: auto;
+   }
+   .navbar-controls {
+     order: 2;
+   }
+ }
+ @media (max-width: 480px) {
+   .kioske-navbar {
+     padding: 0.5rem;
+     gap: 0.5rem;
+   }
+   .navbar-brand {
+     font-size: 0.95rem;
+     gap: 0.3rem;
+   }
+   .navbar-brand .flag { font-size: 1rem; }
+   .navbar-stats { display: none; }
+   .navbar-search {
+     min-width: 120px;
+   }
+   .navbar-search input {
+     font-size: 0.85rem;
+     padding: 0.4rem 0.6rem;
+   }
+   .btn-favs, .btn-menu {
+     padding: 0.4rem 0.6rem;
+     font-size: 0.85rem;
+   }
+   .btn-menu { font-size: 1rem; }
+   .navbar-menu {
+     right: 0rem;
+     min-width: calc(50vw - 1rem);
+   }
+   .panel { padding: 2rem 1.2rem; }
+ }
+
+ /* sources : une case par source ; le clic ouvre ses articles dans un panneau (popover, sans JavaScript) */
+ .cartes { position: relative; z-index: 1; max-width: 1200px; width: calc(100% - 32px); margin: 0 auto 1rem; }
+ /* Les cartes remplissent leur colonne : leur taille se règle par le nombre de colonnes. */
+ .grille { --colonnes: 8; display: grid; grid-template-columns: repeat(var(--colonnes), minmax(0, 1fr)); gap: 1rem; }
+ @media (max-width: 960px) { .grille { --colonnes: 4; } }
+ @media (max-width: 640px) { .grille { --colonnes: 2; gap: .6rem; } }
+
+
+ .categorie-panneau h2 { font-size: clamp(1.1rem, 2.6vw, 1.5rem); text-transform: uppercase; color: var(--violet); margin: 0 2.4rem 1rem 0; }
+ .categorie-fermer { position: absolute; z-index: 300; top: .5rem; right: .5rem; width: 2rem; height: 2rem; border: 1px solid var(--violet-dim); background: #000; color: var(--red); font: inherit; font-size: 1.2rem; cursor: pointer; }
+ .categorie-fermer:hover, .categorie-fermer:focus-visible { background: var(--red); color: #000; }
+ .compte { font-weight: 400; opacity: .7; font-size: .8rem; }
+
+ /* panneau d'un article : s'ouvre au clic sur la carte, dans la page, sans aller sur le site */
+ button.carte { font: inherit; padding: 0; cursor: pointer; }
+ /* conteneur pour le backdrop et le panneau */
+ .categorie-container { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 100; }
+ .categorie-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .7); cursor: pointer; }
+ .categorie-panneau {
+   position: relative;
+   z-index: 1;
+   width: min(1000px, 90vw);
+   height: auto;
+   max-height: 85vh;
+   display: flex;
+   flex-direction: column;
+   padding: var(--espacement-panneau-vertical, 2.4rem) var(--espacement-panneau-horizontal, .5rem);
+   box-sizing: border-box;
+   background: #0a0000;
+   color: var(--red-light);
+   border: 2px solid var(--violet);
+   border-left: var(--bordure-panneau-epaisseur, 8px) solid var(--violet);
+   border-right: var(--bordure-panneau-epaisseur, 8px) solid var(--violet);
+   border-top: var(--bordure-panneau-epaisseur, 8px) solid var(--violet);
+   border-bottom: var(--bordure-panneau-epaisseur, 8px) solid var(--violet);
+   box-shadow: 0 0 50px color-mix(in srgb, var(--violet) 60%, transparent), inset 0 0 20px color-mix(in srgb, var(--violet) 10%, transparent);
+   font-size: .95rem;
+   line-height: 1.5;
+   text-align: left;
+   pointer-events: auto;
+ }
+ @media (max-width: 640px) {
+   .categorie-panneau { width: 98vw; max-height: 85vh; padding: 1.2rem var(--espacement-panneau-horizontal, .5rem); }
+   .categorie-panneau h2 { font-size: 1.3rem; margin-bottom: 0.8rem; }
+   .categorie-fermer { width: 2.2rem !important; height: 2.2rem !important; font-size: 1.4rem !important; }
+ }
+ @media (max-width: 429px) {
+   .categorie-panneau { width: 96vw; max-height: 80vh; padding: 1rem var(--espacement-panneau-horizontal, .5rem); }
+   .categorie-panneau h2 { font-size: 1.2rem; margin-bottom: 0.6rem; }
+   .categorie-fermer { width: 1.8rem !important; height: 1.8rem !important; font-size: 1.1rem !important; padding: 0.2rem 0.4rem !important; }
+   .grille { --colonnes: 1; gap: 0.4rem; }
+   .pagination-btn { font-size: 0.75rem !important; padding: 0.3rem 0.5rem !important; }
+ }
+ @media (max-width: 300px) {
+   .categorie-panneau { width: 95vw; max-height: 75vh; padding: 0.8rem var(--espacement-panneau-horizontal, .5rem); }
+   .categorie-panneau h2 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+   .categorie-fermer { width: 1.6rem !important; height: 1.6rem !important; font-size: 1rem !important; padding: 0.1rem 0.3rem !important; }
+   .pagination-btn { font-size: 0.65rem !important; padding: 0.2rem 0.4rem !important; }
+ }
+ .article-texte { flex: 1; margin: 0 0.99rem; overflow-wrap: anywhere; color: var(--red-light); overflow-y: auto; }
+ .article-lien { display: block; padding: 0.4rem 0.8rem; color: var(--red-light); border: 1px solid var(--violet-dim); text-decoration: none; overflow-wrap: anywhere; text-align: center; font-size: 0.8rem; }
+ .article-lien:hover, .article-lien:focus-visible { background: var(--red); color: #000; outline: none; box-shadow: 0 0 20px var(--violet); }
+ .article-nav { flex: 0 0 auto; display: flex; gap: 0.4rem; justify-content: center; padding: 0.8rem; border-top: 1px solid var(--violet-dim); }
+
+ /* textes, marges et bouton des cartes : même format que les cartes ouvertes, miniaturisé.
+  A spect ratio 3/4, image 35%, contenu scrollable. */                                                *
+  .carte {
+    position: relative; display: flex; flex-direction: column;
+    width: 100%; margin: 0;
+    aspect-ratio: 3 / 4; overflow: hidden; text-align: left;
+    color: inherit; text-decoration: none;
+    background: rgba(8, 0, 0, .92);
+    border: 1px solid var(--violet-dim);
+    border-radius: var(--rayon-carte);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--violet) 25%, transparent), inset 0 0 14px color-mix(in srgb, var(--violet) 8%, transparent);
+    transition: border-color .2s, box-shadow .2s, transform .2s;
+  }
+  .carte:hover, .carte:focus-visible { border-color: var(--violet); box-shadow: 0 0 22px var(--violet); transform: translateY(-2px); outline: none; }
+  /* Image en haut : 35% de la hauteur, comme les cartes ouvertes */
+  .carte-image {
+    flex: 0 0 35%; display: flex; align-items: center; justify-content: center; overflow: hidden;
+    border-bottom: 1px solid var(--violet-dim); background: #140000;
+  }
+  .carte-image img { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; display: block; }
+  .carte-image .lettre {
+    font: 700 1.5rem "Courier New", monospace; color: #fff;
+    text-shadow: 0 0 6px var(--violet), 0 0 22px var(--violet);
+  }
+  /* Contenu scrollable au milieu : 65% restant, défilable comme sur cartes ouvertes */
+  .carte-corps { flex: 1; min-height: 0; overflow-y: auto; padding: .5rem .45rem; display: flex; flex-direction: column; gap: 0.3rem; -webkit-overflow-scrolling: touch; }
+  .carte .meta { font-size: .5rem; color: var(--red-light); opacity: .8; margin-bottom: .15rem; }
+  .carte .carte-titre { font-size: .7rem; font-weight: 700; line-height: 1.2; text-transform: uppercase; margin-bottom: .15rem; color: #fff; overflow-wrap: anywhere; }
+  .carte .carte-extrait { font-size: .55rem; line-height: 1.35; color: var(--red-light); overflow-wrap: anywhere; }
+  /* la carte est un bouton : son contenu est fait de <span>, affichés en blocs */
+  .carte .meta, .carte .carte-titre, .carte .carte-extrait { display: block; }
+  .carte-plus {
+    position: absolute; right: .3rem; bottom: .3rem; width: 1rem; height: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--violet); background: #000; color: var(--red); font-size: .6rem; transition: all .2s;
+  }
+  .carte:hover .carte-plus, .carte:focus-visible .carte-plus { background: var(--red); color: #000; box-shadow: 0 0 14px var(--violet); }
+
+  .mentions { position: relative; z-index: 0; max-width: 1200px; width: calc(100% - 32px); margin: 0 auto; font-size: .75rem; opacity: .7; text-align: center; pointer-events: auto; }
+  .mentions a { color: var(--red-light); text-decoration: none; transition: all .2s; }
+  .mentions a:hover, .mentions a:focus-visible { color: var(--red); text-decoration: underline; opacity: 1; outline: none; }
+  /* ----- nuage des sources (même principe que la page principale) ----- */
+  .nuage { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem; margin: 0.5rem 0 0; padding: .7rem;
+    background: #0a0000; border: 1px solid var(--violet); box-shadow: 0 0 18px color-mix(in srgb, var(--violet) 25%, transparent); }
+    .nuage .tag { display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .55rem; border: 1px solid rgba(138, 43, 226, 0.6);
+      border-radius: .3rem; background: #faf7f7; color: #000; font: inherit; font-size: .8rem; line-height: 1.4;
+      text-shadow: none; white-space: normal; max-width: 100%; overflow-wrap: anywhere; cursor: pointer;
+      box-shadow: 0 0 12px color-mix(in srgb, var(--neon-halo-violet) 50%, transparent), inset 0 0 8px rgba(255, 255, 255, 0.1); transition: all 0.2s; }
+      .nuage button.tag { margin: 0; }
+      .nuage .tag .nb { font-size: .72rem; opacity: .75; text-shadow: none; white-space: nowrap; }
+      .nuage .tag:hover, .nuage .tag:focus-visible { color: #fff; background: var(--red); text-shadow: none; outline: none; box-shadow: 0 0 15px rgba(138, 43, 226, 0.6), inset 0 0 8px rgba(138, 43, 226, 0.2); }
+      /* catégories : un bloc par catégorie des fichiers de sources/, son nuage à l'intérieur */
+      .groupes { margin: 0.6rem 0 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: .8rem; }
+      .groupe { min-width: 0; padding: .6rem .7rem .7rem; background: #0a0000; border: 1px solid var(--violet);
+        box-shadow: 0 0 18px color-mix(in srgb, var(--violet) 25%, transparent); }
+        /* téléphone : les étiquettes passent à la ligne au lieu de dépasser du panneau */
+        @media (max-width: 640px) {
+          .nuage { min-width: 0; }
+          /* cartes d'articles : deux par ligne, aspect ratio maintenu */
+          .grille { --colonnes: 2; }
+          .carte { width: 100%; }
+          .carte-corps { padding: .3rem .3rem; }
+          /*.carte .meta, .carte .carte-extrait { display: none; }*/
+          .carte:hover .meta, .carte:hover .carte-extrait { display: block; }
+          .carte .carte-titre { font-size: .4rem; margin: 0; line-height: 1; }
+          .carte-plus { width: 0.6rem; height: 0.6rem; font-size: 0.4rem; right: 0.15rem; bottom: 0.15rem; }
+        }
+        .titre-panneau { padding: 0.8rem; margin-top: 0.5rem; border-radius: 0.4rem; margin-bottom: 0.5rem; transition: all 0.2s; border: 2px solid transparent; }
+        .groupe h3.titre-panneau { color: #ffffff; font-weight: 700; display: block; box-shadow: 0 0 10px rgba(138, 43, 226, 0.3), inset 0 0 10px rgba(138, 43, 226, 0.1); border-color: rgba(138, 43, 226, 0.5); }
+        .groupe h2.titre-panneau { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--violet); font-weight: 700; display: block; box-shadow: 0 0 10px rgba(138, 43, 226, 0.3), inset 0 0 10px rgba(138, 43, 226, 0.1); border-color: rgba(138, 43, 226, 0.5); }
+        .titre-panneau:hover { background: rgba(255, 255, 255, 0.05); transform: translateY(-2px); box-shadow: 0 0 20px rgba(138, 43, 226, 0.5), inset 0 0 10px rgba(138, 43, 226, 0.15); }
+        .groupe h3.titre-panneau:hover { box-shadow: 0 0 20px rgba(138, 43, 226, 0.6), inset 0 0 10px rgba(138, 43, 226, 0.2); }
+        .groupe .nuage { margin: 0; padding: 0; border: 0; background: none; box-shadow: none; justify-content: flex-start; }
+        /* marge à droite du titre : ancienne place de l'icône RSS, gardée pour ne pas changer la mise en page */
+        .groupe { position: relative; }
+        .groupe h2 { padding-right: 2rem; }
+        /* Écrans larges (PC) : le panneau n'est plus une colonne de téléphone, et la veille tient sur deux colonnes. */
+        @media (min-width: 900px) {
+          .panel { max-width: 1000px; padding: 1.5rem 2rem; }
+          .groupes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+        }
+        /* Boutons de navigation au sein d'une source */
+        .article-nav { display: flex; gap: .8rem; justify-content: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--violet-dim); }
+        .nav-btn { padding: .5rem .8rem; border: 1px solid var(--violet-dim); background: #000; color: var(--red-light); font: inherit; font-size: .9rem; cursor: pointer; transition: all .2s; }
+        .nav-btn:hover, .nav-btn:focus-visible { background: var(--red); color: #000; border-color: var(--violet); box-shadow: 0 0 12px var(--violet); outline: none; }
+        .nav-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+        /* Galerie horizontale des 10 derniers articles */
+        .galerie { display: flex;  overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; scrollbar-width: thin; scrollbar-color: var(--violet-dim) transparent; justify-content: flex-start; width: 100%; }
+        .galerie::-webkit-scrollbar { height: 6px; }
+        .galerie::-webkit-scrollbar-track { background: transparent; }
+        .galerie::-webkit-scrollbar-thumb { background: var(--red-dim); border-radius: 3px; }
+        .galerie-carte { position: relative; flex: 0 0 80px; aspect-ratio: 1; padding: 0; border: 3px solid var(--violet-dim); background: #0a0000; cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .galerie-carte img { width: 100%; height: 100%; object-fit: cover; }
+        .galerie-carte .lettre { font: 700 2rem "Courier New", monospace; color: #fff; text-shadow: 0 0 6px var(--violet), 0 0 12px var(--violet); }
+        .galerie-carte:hover, .galerie-carte:focus-visible { border-color: var(--violet); box-shadow: 0 0 0px var(--violet); outline: none; }
+
+        @media (min-width: 1100px) {
+          .panel { width: min(1100px, calc((100vw - 2rem) / 1.25)); max-width: none; }
+        }
+
+        /* Bouton favori (cœur) dans la barre de navigation */
+        .fav-heart { padding: 0.5rem 0.8rem; margin: 0 0.8rem; font-size: 1.4rem; line-height: 1; cursor: pointer; transition: all 0.2s; color: #ffffff; user-select: none; border: 2px solid var(--violet); background: #000; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; border-radius: 0.4rem; }
+        .fav-heart:hover { transform: scale(1.15); color: #ffffff; border-color: var(--violet); box-shadow: 0 0 8px var(--violet); outline: none; }
+        .fav-heart:focus-visible { outline: 2px solid var(--violet); outline-offset: 2px; }
+        .fav-heart.active { color: #ffffff; background: rgba(255, 255, 255, 0.15); border-color: var(--violet); box-shadow: 0 0 12px var(--violet), inset 0 0 8px rgba(138, 43, 226, 0.3); }
+        .share-btn { padding: 0.5rem 0.8rem; margin: 0 0.8rem; font-size: 1.4rem; line-height: 1; cursor: pointer; transition: all 0.2s; color: #ffffff; user-select: none; border: 2px solid var(--violet); background: #000; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; border-radius: 0.4rem; }
+        .share-btn:hover { transform: scale(1.15); color: var(--red); border-color: var(--violet); box-shadow: 0 0 8px var(--violet); outline: none; }
+        .share-btn:focus-visible { outline: 2px solid var(--violet); outline-offset: 2px; }
+
+        /* Bouton "Mes favoris" dans le popover */
+        .btn-mes-favoris { display: block; width: 100%; padding: 0.7rem 0.8rem; border: 1px solid var(--violet-dim); background: #000; color: var(--red-light); font: inherit; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; text-align: center; }
+        .btn-mes-favoris:hover, .btn-mes-favoris:focus-visible { background: var(--red); color: #000; border-color: var(--violet); box-shadow: 0 0 12px var(--violet); outline: none; }
+
+        .btn-install-pwa { display: block; width: 100%; padding: 0.7rem 0.8rem; border: 1px solid var(--violet-dim); background: #000; color: var(--red-light); font: inherit; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; text-align: center; }
+        .btn-install-pwa:hover, .btn-install-pwa:focus-visible { background: var(--red); color: #000; border-color: var(--violet); box-shadow: 0 0 12px var(--violet); outline: none; }
+
+        /* Boutons de contrôle des favoris dans le panneau */
+        .fav-controls { flex: 0 0 auto; padding: 1rem 0; border-top: 1px solid var(--violet-dim); text-align: center; gap: 0.5rem; display: flex; flex-direction: column; }
+        /* Favoris et résultats de recherche : la grille est directement dans le panneau, qui a une hauteur
+         m aximale. Elle défile au lieu de déborder ; le titre et les boutons restent en place. */           *
+         /* Panneaux (source, catégorie, recherche, favoris, code de conduite) : plein écran, au-dessus de la
+          b arre du haut. Dimensions en % du conteneur (fixe, plein écran) et non en vw/vh : elles restent    *
+          justes quand la page est agrandie (réglage « taille du site »). Placé après les règles
+          @media ci-dessus, qui ne fixent plus que les marges intérieures. */
+         .categorie-container { z-index: 500; align-items: stretch; }
+         .categorie-panneau { flex: 1 1 auto; width: 100%; height: 100%; max-width: none; max-height: none; }
+         /* grid-auto-rows: max-content : la grille a ici une hauteur limitée (elle défile). Sans cela, ses lignes
+          « auto » se tassent sous la hauteur des cartes (les cartes ont overflow: hidden, donc une hauteur  *
+          minimale nulle) et les cartes se superposent. */
+         .categorie-panneau > .grille { flex: 1 1 auto; min-height: 0; overflow-y: auto; align-content: start; grid-auto-rows: max-content; overscroll-behavior: contain; }
+         .fav-export, .fav-import { display: block; padding: 0.6rem; border: 1px solid var(--violet-dim); background: #000; color: var(--red-light); font: inherit; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; text-align: center; }
+         .fav-export:hover, .fav-import:hover { background: var(--red); color: #000; border-color: var(--violet); box-shadow: 0 0 8px var(--violet); }
+         #fav-file-input { display: none; }
+
+         /* Conteneur défilant */
+
+         .galerie-slider {
+           position: relative;
+           display: flex;
+           align-items: center;
+           width: 100%;
+           min-width: 0;
+         }
+
+         .galerie {
+           display: flex;
+           flex: 1;
+           gap: 0.5rem;
+           overflow-x: auto;
+           overflow-y: hidden;
+           scroll-behavior: smooth;
+           scrollbar-width: none;
+           overscroll-behavior-x: contain;
+           -webkit-overflow-scrolling: touch;
+         }
+
+         .galerie::-webkit-scrollbar {
+           display: none;
+         }
+
+         /* Cartes (version active) */
+         .galerie-carte {
+           position: relative;
+           flex: 0 0 115px;
+           height: 154px;
+           border-radius: var(--rayon-carte);
+           overflow: hidden;
+           isolation: isolate;
+           -webkit-mask-image: -webkit-radial-gradient(white, black); /* correctif Safari */
+           background: #222;
+           cursor: pointer;
+           z-index: 1;
+           margin: 0;
+           padding: 0;
+
+           transition:
+           transform .35s cubic-bezier(.2,.8,.2,1),
+           box-shadow .35s ease,
+           filter .35s ease;
+
+           box-shadow: none;
+         }
+
+         .galerie-carte img {
+           width: 100%;
+           height: 100%;
+           object-fit: cover;
+           display: block;
+           border-radius: inherit;
+
+           transition: transform .5s ease;
+         }
+
+         /*Grow au survol*/
+         .galerie-carte:hover {
+           transform: translateY(-7px) scale(1.07);
+           box-shadow:
+           0 18px 35px rgba(0,0,0,.35);
+           z-index: 5;
+         }
+
+         .galerie-carte:hover img {
+           transform: scale(1.12);
+         }
+
+         .galerie-carte-wrapper {
+           display: flex;
+           flex-direction: column;
+           gap: 0;
+           align-items: center;
+           width: 115px;
+           margin: 0;
+           padding: 0;
+           flex: 0 0 auto;
+         }
+
+         .galerie-carte-date {
+           position: absolute;
+           bottom: 0;
+           left: 0;
+           right: 0;
+           z-index: 2;
+           padding: 4px 6px;
+           background: rgba(0, 0, 0, 0.75);
+           color: #fff;
+           font-size: 10px;
+           line-height: 1.3;
+           text-align: center;
+           font-family: "Courier New", monospace;
+         }
+
+         .galerie-carte-titre {
+           display: none;
+         }
+
+
+         /* Responsive * SOPHIA*/
+         @media (max-width: 600px) {
+           .galerie-carte {
+             flex-basis: 91px;
+             height: 121px;
+           }
+         }
+
+         @media (prefers-reduced-motion: reduce) {
+           .galerie {
+             scroll-behavior: auto;
+           }
+
+           .galerie-carte,
+           .galerie-carte img {
+             transition: none;
+           }
+         }
+
+
+         /* ==========================================================================
+          R ègles venues du code Python (kioske/rendu.py, kioske/rendu_statique.py).                          *
+          Tout le CSS du site est dans ce fichier ; l'ordre des blocs ci-dessous est
+          celui dans lequel ils étaient ajoutés aux pages.
+          ========================================================================== */
+
+         /* --- Éléments des panneaux créés par le script de l'accueil --- */
+         .panneau-entete { display: flex; flex-direction: column; margin-bottom: 1rem; }
+         .panneau-entete-ligne { flex-direction: row; align-items: center; justify-content: space-between; }
+         .categorie-panneau h2.panneau-titre { text-align: center; margin: -1rem 0 0.8rem 0; }
+         /* bouton × placé dans l'en-tête (et non en haut à droite du panneau) */
+         .categorie-panneau .categorie-fermer.fermer-entete { position: static; width: auto; height: auto; padding: 0.4rem 0.8rem; }
+         .panneau-defilant { flex: 1; overflow: auto; min-height: 0; }
+         /* Galerie d'un bloc de catégorie de l'accueil : petites vignettes entre le titre et les étiquettes,
+          d ans le style du bloc (bordure fine de la couleur du thème, coins des étiquettes). Flèches < et >  *
+          de part et d'autre, comme la grande galerie ; défilement au doigt ou à la barre aussi, fine et de la
+          couleur du thème. Pas d'agrandissement au survol, il serait rogné par le bloc. */
+         .galerie-slider-bloc { gap: .3rem; margin: .5rem 0; }
+         .galerie-bloc { flex: 1 1 auto; min-width: 0; gap: 0.3rem; margin: 0; padding: 0 0 .35rem; scrollbar-width: thin;
+           scrollbar-color: var(--violet-dim) transparent; }
+           .galerie-bloc::-webkit-scrollbar { display: block; height: 6px; }
+           .galerie-bloc .galerie-carte { flex: 0 0 5.5rem; height: 4rem; border: 1px solid var(--violet); border-radius: .3rem;
+             background: #0a0000; box-shadow: none; -webkit-mask-image: none; }
+             .galerie-bloc .galerie-carte:hover, .galerie-bloc .galerie-carte:focus-visible { transform: none;
+               box-shadow: none; filter: brightness(1.2); }
+               .galerie-bloc .galerie-carte:focus-visible { outline: 2px solid var(--violet); outline-offset: -2px; }
+               .galerie-bloc .galerie-carte:hover img { transform: none; }
+               @media (max-width: 600px) {
+                 .galerie-bloc .galerie-carte { flex-basis: 4.6rem; height: 3.4rem; }
+               }
+               /* Galerie d'un panneau de catégorie : au-dessus de la grille, défile avec elle. Plus petite que la
+                g alerie de l'accueil (cartes 165 × 220 px) pour laisser la place aux cartes du panneau. */         *
+                .galerie-panneau { margin-bottom: 0.6rem; }
+                .galerie-panneau .galerie { padding: 1rem; gap: 0.5rem; }
+                .galerie-panneau .galerie-carte { flex-basis: 100px; height: 133px; }
+                .galerie-panneau .galerie-carte:hover { transform: translateY(-3px) scale(1.04); }
+                @media (max-width: 600px) {
+                  .galerie-panneau .galerie { padding: 1rem; gap: 0.5rem; }
+                  .galerie-panneau .galerie-carte { flex-basis: 80px; height: 107px; }
+                }
+                .pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; }
+                .pagination-btn { background: #0a0000; border: 1px solid var(--violet-dim); color: var(--red); cursor: pointer; font: inherit; }
+                .pagination-btn:disabled { opacity: 0.5; }
+                .pagination-info { min-width: 80px; text-align: center; color: var(--red); }
+                .panneau-actions { display: flex; gap: 0.6rem; margin-top: 0.3rem; border-top: 1px solid var(--violet-dim); padding-top: 0.3rem; justify-content: center; flex-wrap: wrap; }
+                .panneau-bouton { padding: 0.4rem 0.8rem; background: #0a0000; border: 1px solid var(--violet-dim); color: var(--red); cursor: pointer; font: inherit; transition: all 0.2s ease; font-size: 0.85rem; }
+                .panneau-bouton:hover { background: var(--red); color: #000; }
+                /* « ✓ Copié ! » : bouton de copie du code de conduite, bouton de partage d'un article */
+                .panneau-bouton.est-copie, .share-btn.est-copie { color: #ffffff; }
+                .grille-vide { grid-column: 1 / -1; color: #ffffff; padding: 2rem; text-align: center; }
+                /* bouton « + » d'une catégorie, sur l'accueil */
+                .tag-categorie { margin-left: auto; padding: 0.2rem 0.5rem; font-size: 0.8rem; background: #000; border: 1px solid var(--violet); color: var(--red); cursor: pointer; font-weight: normal; }
+                /* barre de recherche des pages d'article et de catégorie */
+                .recherche-form { display: flex; gap: 0.5rem; }
+                .recherche-bouton { padding: 0.6rem 1rem; background: var(--red-dim); border: 1px solid var(--violet); color: var(--red); cursor: pointer; border-radius: 0.3rem; }
+
+                /* --- Flux personnalisé --- */
+                .custom-flux-toggle-all {
+                  margin-bottom: 1rem;
+                  padding-bottom: 1rem;
+                  border-bottom: 1px solid var(--violet-dim);
+                  text-align: center;
+                }
+
+                .custom-flux-toggle-all .panneau-bouton {
+                  min-width: 120px;
+                }
+
+                .custom-flux-category {
+                  margin-bottom: 1.2rem;
+                  padding: 0.8rem;
+                  border: 1px solid var(--violet-dim);
+                  border-radius: 0.4rem;
+                  background: rgba(255, 255, 255, 0.02);
+                }
+
+                .custom-flux-category:last-child {
+                  margin-bottom: 0;
+                }
+
+                .custom-flux-category-title {
+                  font-size: 0.85rem;
+                  text-transform: uppercase;
+                  letter-spacing: 0.05em;
+                  color: var(--red);
+                  margin: 0 0 0.6rem 0;
+                  font-weight: bold;
+                  padding-bottom: 0.4rem;
+                  border-bottom: 1px solid var(--violet-dim);
+                }
+
+                .custom-flux-checkboxes-group {
+                  display: grid;
+                  grid-template-columns: 1fr 1fr;
+                  gap: 0.6rem;
+                }
+
+                @media (max-width: 600px) {
+                  .custom-flux-checkboxes-group {
+                    grid-template-columns: 1fr;
+                  }
+                }
+
+                .custom-flux-checkbox-label {
+                  display: flex;
+                  align-items: center;
+                  gap: 0.5rem;
+                  padding: 0.4rem;
+                  cursor: pointer;
+                  transition: all 0.2s;
+                  border-radius: 0.3rem;
+                  user-select: none;
+                }
+
+                .custom-flux-checkbox-label:hover {
+                  background: rgba(255, 255, 255, 0.08);
+                }
+
+                .custom-flux-checkbox {
+                  cursor: pointer;
+                  width: 16px;
+                  height: 16px;
+                  accent-color: var(--red);
+                  flex-shrink: 0;
+                }
+
+                .custom-flux-checkbox-label span {
+                  font-size: 0.8rem;
+                  color: var(--red-light);
+                  overflow-wrap: break-word;
+                }
+
+                #custom-flux-indicator {
+                display: none;
+                font-size: 0.75rem;
+                color: var(--red);
+                margin-left: 0.5rem;
+                white-space: nowrap;
+                }
+
+                /* --- Code de conduite (panneau de l'accueil) --- */
+                .conduct-panneau h2 { font-size: clamp(1.1rem, 2.6vw, 1.3rem); color: var(--violet); margin: 0; padding: 0; }
+                .conduct-panneau h3 { font-size: 1rem; color: #fff; margin: 1.2rem 0 0.4rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--violet-dim); }
+                .conduct-panneau p { margin: 0.5rem 0; line-height: 1.5; }
+                .conduct-panneau ul { margin: 0.5rem 0 0.5rem 1.2rem; }
+                .conduct-panneau li { margin-bottom: 0.3rem; }
+                .conduct-panneau blockquote { margin: 0.5rem 0; padding: 0.6rem 0.9rem; border-left: 3px solid var(--violet); background: rgba(255, 255, 255, .05); font-style: italic; }
+                .conduct-panneau strong { color: #fff; }
+
+                /* --- Page de catégorie --- */
+                /* :where() limite ces règles à la page de catégorie sans leur ajouter de priorité */
+                /* Cartes Pokemon : restaurer l'aspect */
+                .carte-lien {
+                  display: flex;
+                  flex-direction: column;
+                  text-decoration: none;
+                  color: inherit;
+                  aspect-ratio: 3 / 4;
+                  border: 2px solid var(--violet);
+                  border-radius: 0.5rem;
+                  overflow: hidden;
+                  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+                  transition: transform 0.2s, box-shadow 0.2s;
+                }
+                .carte-lien:hover {
+                  transform: translateY(-2px);
+                  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.7);
+                }
+                :where(.panel-category) .carte-image {
+                  flex: 0 0 35%;
+                  overflow: hidden;
+                  background: #0a0000;
+                }
+                :where(.panel-category) .carte-image img {
+                  width: 100%;
+                  height: 100%;
+                  object-fit: cover;
+                }
+                :where(.panel-category) .carte-corps {
+                  flex: 1;
+                  display: flex;
+                  flex-direction: column;
+                  overflow: hidden;
+                  padding: 0.5rem;
+                  font-size: 0.75rem;
+                }
+                /* Titre de la catégorie */
+                .panel-category h1 {
+                  font-size: 1.1rem;
+                  margin: 0 0 1rem 0;
+                  font-weight: bold;
+                }
+
+                /* --- Page des flux RSS --- */
+                .rss-page { max-width: 560px; margin: 2rem auto; padding: 2rem; }
+                .rss-page h2 { font-size: 1.8rem; margin-bottom: 1.5rem; }
+                .rss-page h3 { font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+                .rss-lien { display: block; padding: 0.8rem 1rem; margin-bottom: 0.5rem; border: 1px solid var(--violet-dim); color: var(--red-light); text-decoration: none; transition: all 0.2s; }
+                .rss-lien:hover { background: var(--red); color: #000; }
+                .rss-lien svg { display: inline-block; width: 1.2rem; height: 1.2rem; margin-right: 0.5rem; vertical-align: middle; }
+                .rss-principal { border: 2px solid var(--violet); font-weight: bold; }
+
+                /* --- Carte d'article ouverte : page d'article, et carte affichée par-dessus l'accueil ou une page de
+                 c atégorie. Les règles internes sont limitées à .panel-article par :where(), qui n'ajoute aucune    *
+                 priorité : le rendu est le même des deux côtés. --- */
+                /* Bouton retour = style Précédent/Suivant */
+                .btn-retour {
+                  position: absolute;
+                  top: 1rem;
+                  left: 1rem;
+                  padding: 0.6rem 1.2rem;
+                  background: #0a0000;
+                  border: 1px solid var(--violet-dim);
+                  color: var(--red);
+                  font-family: inherit;
+                  font-size: 0.9rem;
+                  font-weight: bold;
+                  cursor: pointer;
+                  transition: all 0.2s;
+                  z-index: 9999;
+                }
+                .btn-retour:hover, .btn-retour:focus-visible {
+                  background: var(--red);
+                  color: #000;
+                  border-color: var(--violet);
+                  box-shadow: 0 0 12px var(--violet);
+                  outline: none;
+                }
+                /* Format Pokemon pour la carte d'article : responsive */
+                .panel-article {
+                  /* Sur desktop : hauteur raisonnable */
+                  height: min(90vh, calc(100vw * 4 / 3 - 4rem));
+                  width: auto;
+                  max-width: none !important;
+                  aspect-ratio: 3 / 4;
+                  display: flex;
+                  flex-direction: column;
+                  border: 2px solid var(--violet) !important;
+                  border-radius: 0.8rem !important;
+                  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6) !important;
+                  padding: 0 !important;
+                  margin: 1rem auto !important;
+                  overflow: hidden;
+                  position: relative;
+                }
+                /* Tablette : adapter à la largeur */
+                @media (max-width: 1024px) {
+                  .panel-article {
+                    height: min(85dvh, calc((100vw - 2rem) * 4 / 3));
+                    width: calc(100vw - 2rem);
+                    margin: 1rem auto !important;
+                    border-radius: 0.6rem !important;
+                  }
+                }
+                /* Mobile : plein écran */
+                @media (max-width: 640px) {
+                  .panel-article {
+                    height: 100dvh;
+                    width: 100vw;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    border-radius: 0 !important;
+                    border: none !important;
+                  }
+                }
+                /* Image d'article : fixe en haut (35% de la hauteur) */
+                :where(.panel-article) .article-image {
+                  flex: 0 0 35%;
+                  overflow: hidden;
+                  background: #0a0000;
+                  border-bottom: 1px solid var(--violet-dim);
+                  position: sticky;
+                  top: 0;
+                  z-index: 5;
+                }
+                :where(.panel-article) .article-image img {
+                  width: 100%;
+                  height: 100%;
+                  object-fit: cover;
+                }
+                /* Contenu de l'article : scrollable au milieu */
+                :where(.panel-article) article {
+                  flex: 1;
+                  overflow-y: auto;
+                  padding: 1rem;
+                  font-size: 1rem;
+                  line-height: 1.4;
+                  display: flex;
+                  flex-direction: column;
+                  gap: 0.6rem;
+                  -webkit-overflow-scrolling: touch;
+                }
+                :where(.panel-article) article h1 {
+                  font-size: 1.1rem;
+                  margin: 0;
+                  font-weight: bold;
+                }
+                :where(.panel-article) article h2 {
+                  font-size: 1.1rem;
+                  margin: 0;
+                  font-weight: bold;
+                }
+                :where(.panel-article) article p {
+                  margin: 0;
+                  font-size: 0.95rem;
+                }
+                :where(.panel-article) .meta {
+                  font-size: 0.85rem;
+                  color: var(--red-light);
+                }
+                /* Boutons de navigation : fixes en bas */
+                :where(.panel-article) .article-nav {
+                  flex: 0 0 auto;
+                  display: flex;
+                  gap: 0.5rem;
+                  padding: 0.5rem;
+                  border-top: 1px solid var(--violet-dim);
+                  justify-content: space-around;
+                  position: sticky;
+                  bottom: 0;
+                  background: #0a0000;
+                  z-index: 5;
+                }
+
+                /* Carte d'article ouverte en JavaScript par-dessus la page */
+                .carte-ouverte { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; overflow: auto; }
+                .carte-ouverte-fond { position: fixed; inset: 0; background: rgba(0, 0, 0, .7); cursor: pointer; }
+                .carte-ouverte .panel-article { flex: 0 0 auto; background: #0a0000; }
+
+                /* --- Propre à la page d'article (body de classe page-article) : la carte occupe toute la page sur petit écran --- */
+                @media (max-width: 1024px) {
+                  :where(body.page-article) {
+                    padding: 0 !important;
+                    margin: 0 !important;
+                  }
+                }
+                @media (max-width: 640px) {
+                  :where(.page-article) main {
+                    padding: 0 !important;
+                    margin: 0 !important;
+                  }
+                }
+
+                /* ==========================================================================
+                 T hèmes. Un thème (kioske.cfg, [theme.<nom>]) = un fond, la pluie ou non, l'opacité du grand panneau*.
+                 Le build pose le thème par défaut sur <html> : data-fond, data-pluie et --panneau-opacite.
+                 static/theme.js les remplace par le thème choisi par le visiteur.
+                 ========================================================================== */
+                :root[data-fond="noir"] { --bg: #000; }
+                /* nuit étoilée, bande de la Voie lactée */
+                :root[data-fond="pluie"] {
+                  --bg: radial-gradient(1px 1px at 12% 18%, #fff 50%, transparent 51%),
+                  radial-gradient(1px 1px at 47% 63%, #ddd 50%, transparent 51%),
+                  radial-gradient(1.5px 1.5px at 81% 27%, #fff 50%, transparent 51%),
+                  radial-gradient(1px 1px at 64% 88%, #ccc 50%, transparent 51%),
+                  radial-gradient(1px 1px at 29% 45%, #eee 50%, transparent 51%),
+                  radial-gradient(1px 1px at 92% 71%, #fff 50%, transparent 51%),
+                  radial-gradient(1px 1px at 6% 82%, #bbb 50%, transparent 51%),
+                  radial-gradient(1.5px 1.5px at 38% 9%, #fff 50%, transparent 51%),
+                  radial-gradient(1px 1px at 73% 52%, #ddd 50%, transparent 51%),
+                  linear-gradient(-35deg, transparent 22%, rgba(200, 190, 255, .14) 38%, rgba(255, 245, 225, .30) 50%, rgba(200, 190, 255, .14) 62%, transparent 78%),
+                  #000;
+                }
+                /* Pluie matricielle (thèmes avec pluie = oui). Les colonnes sont créées par static/theme.js ; leurs signes
+                 s ont dans l'attribut data-g et affichés par ::before : la page ne contient aucun texte japonais. */*
+                 :root {
+                   /* Pluie matricielle : violet plat (la queue s'estompe en transparence) */
+                   --r-tete: #8a2be2;
+                   --r-haut: #8a2be2;
+                   --r-moyen: #8a2be2;
+                   --r-bas: #8a2be2;
+                 }
+
+                 html[data-theme="white_neon"] #pluie i::before {
+                   background: linear-gradient(to top, var(--r-tete) 0%, var(--r-haut) 10%, var(--r-moyen) 40%, var(--r-bas) 70%, rgba(138, 43, 226, 0.3) 100%) !important;
+                   -webkit-background-clip: text !important;
+                   background-clip: text !important;
+                 }
+
+                 #pluie {
+                 display: none;
+                 position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+                 }
+                 #pluie i {
+                 position: absolute; top: 0;
+                 transform: translateY(-100%);
+                 animation-name: chute; animation-timing-function: linear; animation-iteration-count: infinite;
+                 will-change: transform;
+                 }
+                 #pluie i::before {
+                 content: attr(data-g); display: block;
+                 font: normal 16px/1.15 monospace; white-space: pre; text-align: center;
+                 color: transparent;
+                 background: linear-gradient(to top, var(--r-tete) 0, var(--r-haut) 6%, var(--r-moyen) 30%, color-mix(in srgb, var(--r-bas) 60%, transparent) 60%, transparent 100%);
+                 -webkit-background-clip: text; background-clip: text;
+                 }
+                 :root[data-pluie="oui"] #pluie { display: block; }
+                 @keyframes chute { from { transform: translateY(-100%); } to { transform: translateY(100vh); } }
+                 @media (prefers-reduced-motion: reduce) { #pluie i { animation: none; transform: translateY(20vh); } }

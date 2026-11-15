@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 
 from .config import NOM_SITE, URL_SITE, CFG
 from .gabarits import remplir
-from .texte import esc, article_id, slug_article, slug_categorie
+from .texte import esc, adresse_sure, article_id, slug_article, slug_categorie
 from .javascript import (JS_CARTE_OUVERTE, JS_FAVORIS, JS_INSTALLATION_PWA, JS_PAGE_ARTICLE, JS_PAGE_CATEGORIE,
                          JS_PARTAGE, JS_RETOUR_APP, JS_SERVICE_WORKER)
 from .themes import ATTRIBUTS_HTML, CSS, SCRIPT_THEME, VARIABLES_HTML
@@ -63,9 +63,6 @@ def render_article_page(item: dict, preview: dict, prev_article: dict | None = N
 
     canonical = f"{URL_SITE}/articles/{article_id(item['link'])}-{slug_article(title, item['link'])}/"
 
-    largeur_carte_ouverte = CFG.get("site", "largeur_carte_ouverte", fallback="min(600px, 85vw)")
-
-
     # Image de partage : utiliser le preview "carte Pokémon" si disponible, sinon l'image de l'article
     share_image = preview_image if preview_image else image
     meta_og_image = f'<meta property="og:image" content="{esc(URL_SITE)}/{esc(share_image)}">' if share_image else ""
@@ -79,7 +76,6 @@ def render_article_page(item: dict, preview: dict, prev_article: dict | None = N
         "article.html",
         attributs_html=ATTRIBUTS_HTML,
         variables_html=VARIABLES_HTML,
-        largeur_carte_ouverte=largeur_carte_ouverte,
         titre=esc(title),
         description=esc(summary[:160]),
         adresse_canonique=canonical,
@@ -95,7 +91,7 @@ def render_article_page(item: dict, preview: dict, prev_article: dict | None = N
         site_origine=esc(host),
         source=esc(source),
         contenu=esc(contenu),
-        lien_origine=esc(item["link"]),
+        lien_origine=esc(adresse_sure(item["link"], "")),
         boutons_navigation=nav_buttons,
         js_retour_app=JS_RETOUR_APP,
         js_favoris=JS_FAVORIS,
@@ -108,9 +104,6 @@ def render_article_page(item: dict, preview: dict, prev_article: dict | None = N
 def render_category_page(category_name: str, articles: list[dict],
                         previews: dict[str, dict]) -> str:
     """Page HTML d'une catégorie avec ses articles triés par date."""
-    largeur_carte_ouverte = CFG.get("site", "largeur_carte_ouverte", fallback="min(600px, 85vw)")
-
-
     # Param pour retour à la catégorie
     cat_slug = slug_categorie(category_name)
     from_param = f"?from=/categories/{cat_slug}/"
@@ -150,7 +143,6 @@ def render_category_page(category_name: str, articles: list[dict],
         "categorie.html",
         attributs_html=ATTRIBUTS_HTML,
         variables_html=VARIABLES_HTML,
-        largeur_carte_ouverte=largeur_carte_ouverte,
         categorie=esc(category_name),
         nom_site_echappe=esc(NOM_SITE),
         nom_site=NOM_SITE,

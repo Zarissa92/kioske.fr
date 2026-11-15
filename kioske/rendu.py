@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
 from . import immuable
-from .config import DOMAINE, DOSSIER_RSS_CATEGORIES, NOM_SITE, URL_SITE, CFG
+from .config import DOMAINE, DOSSIER_RSS_CATEGORIES, GALERIE_PANNEAU, NOM_SITE, URL_SITE, CFG
 from .gabarits import remplir
 from .javascript import (JS_ACCUEIL, JS_CARTE_OUVERTE, JS_DONNEES_ACCUEIL, JS_FAVORIS, JS_FLUX_PERSONNALISE,
                          JS_GALERIE, JS_INSTALLATION_PWA, JS_PAGE_RSS, JS_PARTAGE, JS_RETOUR_APP,
@@ -201,7 +201,7 @@ def render_page(items: list[dict], previews: dict[str, dict],
 
         if panneau_nom:
             # Panneau avec sous-catégories
-            blocs += f'<section class="groupe panneau"><h3>{esc(panneau_nom)}</h3>'
+            blocs += f'<section class="groupe panneau"><h3 class="titre-panneau" data-category-name="{esc(panneau_nom)}">{esc(panneau_nom)}</h3>'
             categories_du_panneau = sorted([c for c in categories_panneau.keys() if c != AUTRES])
 
             for categorie in categories_du_panneau:
@@ -221,17 +221,18 @@ def render_page(items: list[dict], previews: dict[str, dict],
                     articles_cat.extend(articles)
 
                 # Si la catégorie porte le même nom que le panneau : masquer le h2 visuellement
+                galerie_bloc = render_galerie_bloc(categorie, articles_cat, previews) if GALERIE_PANNEAU else ""
                 if categorie == panneau_nom:
                     blocs += (
-                        f'<h2 style="display: none;"><span class="compte">({len(sources_keys)})</span> <button type="button" class="tag-categorie" data-category-name="{esc(categorie)}">+</button></h2>'
-                        f'{render_galerie_bloc(categorie, articles_cat, previews)}'
+                        f'<h2 class="titre-panneau" style="display: none;" data-category-name="{esc(categorie)}"><span class="compte">({len(sources_keys)})</span></h2>'
+                        f'{galerie_bloc}'
                         f'<div class="nuage" aria-label="{esc(categorie)}">{"".join(tags)}</div>'
                     )
                 else:
                     blocs += (
                         f'<div class="sous-categorie">'
-                        f'<h2>{esc(categorie)} <span class="compte">({len(sources_keys)})</span> <button type="button" class="tag-categorie" data-category-name="{esc(categorie)}">+</button></h2>'
-                        f'{render_galerie_bloc(categorie, articles_cat, previews)}'
+                        f'<h2 class="titre-panneau" data-category-name="{esc(categorie)}">{esc(categorie)} <span class="compte">({len(sources_keys)})</span></h2>'
+                        f'{galerie_bloc}'
                         f'<div class="nuage" aria-label="{esc(categorie)}">{"".join(tags)}</div></div>'
                     )
             blocs += '</section>'
@@ -254,10 +255,11 @@ def render_page(items: list[dict], previews: dict[str, dict],
                     )
                     articles_cat.extend(articles)
 
+                galerie_bloc = render_galerie_bloc(categorie, articles_cat, previews) if GALERIE_PANNEAU else ""
                 blocs += (
                     f'<section class="groupe">'
-                    f'<h2>{esc(categorie)} <span class="compte">({len(sources_keys)})</span> <button type="button" class="tag-categorie" data-category-name="{esc(categorie)}">+</button></h2>'
-                    f'{render_galerie_bloc(categorie, articles_cat, previews)}'
+                    f'<h2 class="titre-panneau" data-category-name="{esc(categorie)}">{esc(categorie)} <span class="compte">({len(sources_keys)})</span></h2>'
+                    f'{galerie_bloc}'
                     f'<div class="nuage" aria-label="{esc(categorie)}">{"".join(tags)}</div></section>'
                 )
     liens_rss = "".join(
@@ -270,18 +272,9 @@ def render_page(items: list[dict], previews: dict[str, dict],
     bloc, bas = immuable.parties()
     galerie_html = render_galerie(items, previews)
     # Référencement : le titre et la description décrivent le contenu réel (sources et catégories du jour).
-    titre_page = f"{NOM_SITE} ({DOMAINE})"
+    titre_page = NOM_SITE
     description = "Le KiosKe : une veille automatique des médias indépendants, des luttes et des voix LGBTQIA+. Une seule page statique (HTML5, CSS et JavaScript minimal), reconstruite toutes les 30 minutes sur le serveur à partir de flux RSS et de chaînes Twitch. Les images sont hébergées par le site : la page ne charge rien d'un autre site, sans publicité ni pistage."
     keywords = "kioske, veille, médias indépendants, LGBTQIA+, Mélenchon, RSS, Twitch, informatique libre"
-    # Taille du site et hauteur des cartes : réglées dans kioske.cfg seulement (bornées à 75-125 %),
-    # écrites dans l'attribut style de <html>. Les visiteurs ne peuvent plus les changer.
-    taille_defaut = min(125, max(75, CFG.getint("site", "taille_defaut", fallback=90)))
-    largeur_carte_ouverte = CFG.get("site", "largeur_carte_ouverte", fallback="min(600px, 85vw)")
-    hauteur_carte_ouverte = min(125, max(75, CFG.getint("site", "hauteur_carte_ouverte", fallback=115)))
-    bordure_panneau_epaisseur = CFG.getint("site", "bordure_panneau_epaisseur", fallback=8)
-    espacement_panneau_vertical = CFG.get("site", "espacement_panneau_vertical", fallback="2.4rem")
-    espacement_panneau_horizontal = CFG.get("site", "espacement_panneau_horizontal", fallback="0.5rem")
-
     # Réseaux sociaux
     lien_discord = CFG.get("reseaux", "discord", fallback="")
     lien_mastodon = CFG.get("reseaux", "mastodon", fallback="")
@@ -349,6 +342,16 @@ def render_page(items: list[dict], previews: dict[str, dict],
         articles_data.sort(key=lambda a: a.pop("_tri"), reverse=True)
         categories_json[categorie] = articles_data
 
+    # Ajouter les panneaux à categories_json : regrouper tous les articles des sous-catégories
+    for panneau_nom, categories_panneau in par_panneau.items():
+        if panneau_nom:  # Ignorer les sources sans panneau
+            panneau_articles = []
+            for categorie in sorted([c for c in categories_panneau.keys() if c != AUTRES]):
+                if categorie in categories_json:
+                    panneau_articles.extend(categories_json[categorie])
+            # Les articles sont déjà triés par catégorie, juste les ajouter au panneau
+            categories_json[panneau_nom] = panneau_articles
+
     # Charger le contenu du code de conduite
     conduite_html = ""
     if CODE_DE_CONDUITE_PATH.exists():
@@ -366,7 +369,7 @@ def render_page(items: list[dict], previews: dict[str, dict],
     # Données lues par kioske/js/donnees_accueil.js
     donnees_json = json_pour_page(
         {"sources": groupes_json, "categories": categories_json, "conduite": conduite_html,
-         "sources_metadata": sources_metadata})
+         "sources_metadata": sources_metadata, "galerie_panneau": GALERIE_PANNEAU})
 
     # Générer les boutons de réseaux sociaux conditionnellement
     boutons_reseaux = ""
@@ -381,12 +384,6 @@ def render_page(items: list[dict], previews: dict[str, dict],
         "accueil.html",
         attributs_html=ATTRIBUTS_HTML,
         variables_html=VARIABLES_HTML,
-        zoom=taille_defaut / 100,
-        largeur_carte_ouverte=largeur_carte_ouverte,
-        hauteur_carte_ouverte=hauteur_carte_ouverte / 100,
-        bordure_panneau_epaisseur=bordure_panneau_epaisseur,
-        espacement_panneau_vertical=espacement_panneau_vertical,
-        espacement_panneau_horizontal=espacement_panneau_horizontal,
         titre=esc(titre_page),
         description=esc(description),
         mots_cles=keywords,

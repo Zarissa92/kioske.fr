@@ -18,6 +18,28 @@ html, body, body * { font-family: "Russo One", "Courier New", monospace !importa
   --panneau-opacite: .7;
   --panneau-fond: rgba(10, 0, 0, var(--panneau-opacite));
   --panel: #0a0000;
+  --rayon-carte: 20px; /* rayon des coins, proportions de carte à jouer */
+
+  /* ----- Néon à moitié intensifié pour white_neon -----
+     Dégradé du néon : blanc au cœur, blanc au halo.
+     Intensité réduite : rayons divisés par 2 par rapport à style.css. */
+  --rayon-panneau: 24px;  /* coins arrondis des panneaux, blocs et menus */
+  --rayon-bouton: 12px;    /* coins arrondis des boutons et champs */
+
+  /* Néons blanc : même intensité que red_neon (divisés par 2) */
+  --lueur-carte: 0 0 8px var(--neon-halo), 0 0 20px var(--neon-halo);
+  --lueur-carte-survol: 0 0 2px var(--neon-halo), 0 0 6px var(--neon-halo), 0 0 13px var(--neon-halo);
+  --lueur-inset-carte-blanc: inset 0 0 5px var(--neon-halo);
+  --neon-coeur: #ffffff;   /* blanc pur */
+  --neon-halo: #ffffff;    /* blanc pur */
+  --lueur-douce: 0 0 5px var(--neon-coeur), 0 0 13px var(--neon-halo);                 /* panneaux, navbar, nuages */
+  --lueur-moyenne: 0 0 2px var(--neon-coeur), 0 0 4px var(--neon-coeur), 0 0 9px var(--neon-halo); /* petits boutons, focus */
+  --lueur-forte: 0 0 2px var(--neon-coeur), 0 0 5px var(--neon-coeur), 0 0 10px var(--neon-halo);   /* boutons au survol */
+  --lueur-max: 0 0 2px var(--neon-coeur), 0 0 6px var(--neon-coeur), 0 0 13px var(--neon-halo);     /* cartes au survol */
+  --lueur-panneau: 0 0 12px var(--neon-coeur), 0 0 30px var(--neon-halo);               /* grands panneaux */
+  --lueur-texte: 0 0 2px var(--neon-coeur), 0 0 5px var(--neon-coeur), 0 0 10px var(--neon-halo);   /* lettres des cartes */
+  --lueur-inset: inset 0 0 6px var(--neon-coeur);                                      /* halo intérieur des panneaux */
+  --lueur-inset-carte: inset 0 0 5px var(--neon-coeur);                                 /* halo intérieur des cartes */
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -276,6 +298,35 @@ html, body {
   border-color: var(--red);
   box-shadow: 0 0 12px var(--red);
 }
+/* Sous-menu déroulant pour les thèmes */
+.navbar-menu-title.submenu-toggle {
+  display: block;
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: var(--red-light);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+.navbar-menu-title.submenu-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--red-dim);
+}
+.navbar-menu-title.submenu-toggle[aria-expanded="true"] {
+  background: var(--red);
+  color: #000;
+  border-color: var(--red);
+  box-shadow: 0 0 8px var(--red);
+}
+.submenu {
+  padding: 0.4rem 0;
+  margin-top: 0.4rem;
+}
 .menu-button {
   display: block;
   box-sizing: border-box;
@@ -308,12 +359,13 @@ html, body {
   padding: 1.2rem 1.5rem;
   background: var(--panneau-fond);  /* grand panneau : défini par le thème coché */
   border: 1px solid var(--red-dim);
-  box-shadow: 0 0 30px color-mix(in srgb, var(--red) 35%, transparent), inset 0 0 20px color-mix(in srgb, var(--red) 10%, transparent);
+  box-shadow: 0 0 50px color-mix(in srgb, var(--red) 50%, transparent), inset 0 0 30px color-mix(in srgb, var(--red) 15%, transparent);
+  border-radius: var(--rayon-panneau);
   text-align: center;
 }
 .infos-container { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 100; }
 .infos-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .7); cursor: pointer; }
-.popover-infos { position: relative; z-index: 1; width: min(600px, calc(100vw - 2rem)); height: fit-content; max-height: calc(100vh - 2rem); overflow: auto; padding: 0; box-sizing: border-box; background: #0a0000; color: var(--red-light); border: 1px solid var(--red); box-shadow: 0 0 30px color-mix(in srgb, var(--red) 50%, transparent), inset 0 0 20px color-mix(in srgb, var(--red) 10%, transparent); }
+.popover-infos { position: relative; z-index: 1; width: min(600px, calc(100vw - 2rem)); height: fit-content; max-height: calc(100vh - 2rem); overflow: auto; padding: 0; box-sizing: border-box; background: #0a0000; color: var(--red-light); border: 1px solid var(--red); border-radius: var(--rayon-panneau); box-shadow: 0 0 50px color-mix(in srgb, var(--red) 60%, transparent), inset 0 0 30px color-mix(in srgb, var(--red) 15%, transparent); }
 .infos-fermer { position: absolute; top: .5rem; right: .5rem; width: 2rem; height: 2rem; border: 1px solid var(--red-dim); background: #000; color: var(--red); font: inherit; font-size: 1.2rem; cursor: pointer; z-index: 300; }
 .infos-fermer:hover, .infos-fermer:focus-visible { background: var(--red); color: #000; outline: none; }
 .popover-contenu { padding: 2rem 1.5rem 1.5rem; }
@@ -390,9 +442,6 @@ h1 { font-size: clamp(1.8rem, 6vw, 2.8rem); line-height: 1.2; margin-bottom: 0.6
   .panel { padding: 2rem 1.2rem; }
 }
 
-/* la pluie matricielle a été retirée : le fond est le dégradé de --bg */
-@property --rouge { syntax: '<color>'; inherits: true; initial-value: #ff1a1a; }
-
 /* sources : une case par source ; le clic ouvre ses articles dans un panneau (popover, sans JavaScript) */
 .cartes { position: relative; z-index: 1; max-width: 1200px; width: calc(100% - 32px); margin: 0 auto 1rem; }
 /* Les cartes remplissent leur colonne : leur taille se règle par le nombre de colonnes. */
@@ -425,6 +474,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 	color: var(--red-light);
 	border: 2px solid var(--red);
 	border-left: var(--bordure-panneau-epaisseur, 8px) solid var(--red);
+	border-radius: var(--rayon-panneau);
 	border-right: var(--bordure-panneau-epaisseur, 8px) solid var(--red);
 	border-top: var(--bordure-panneau-epaisseur, 8px) solid var(--red);
 	border-bottom: var(--bordure-panneau-epaisseur, 8px) solid var(--red);
@@ -500,17 +550,18 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .mentions a:hover, .mentions a:focus-visible { color: var(--red); text-decoration: underline; opacity: 1; outline: none; }
 /* ----- nuage des sources (même principe que la page principale) ----- */
 .nuage { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem; margin: 0.5rem 0 0; padding: .7rem;
-  background: #0a0000; border: 1px solid var(--red); box-shadow: 0 0 18px color-mix(in srgb, var(--red) 25%, transparent); }
-.nuage .tag { display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .55rem; border: 1px solid var(--red);
+  background: #0a0000; border: 1px solid var(--red); box-shadow: 0 0 30px color-mix(in srgb, var(--red) 40%, transparent); }
+.nuage .tag { display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .55rem; border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: .3rem; background: #faf7f7; color: #000; font: inherit; font-size: .8rem; line-height: 1.4;
-  text-shadow: none; white-space: normal; max-width: 100%; overflow-wrap: anywhere; cursor: pointer; }
+  text-shadow: none; white-space: normal; max-width: 100%; overflow-wrap: anywhere; cursor: pointer;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--neon-halo) 50%, transparent), inset 0 0 8px rgba(255, 255, 255, 0.1); transition: all 0.2s; }
 .nuage button.tag { margin: 0; }
 .nuage .tag .nb { font-size: .72rem; opacity: .75; text-shadow: none; white-space: nowrap; }
-.nuage .tag:hover, .nuage .tag:focus-visible { color: #fff; background: var(--red); text-shadow: none; outline: none; }
+.nuage .tag:hover, .nuage .tag:focus-visible { color: #fff; background: var(--red); text-shadow: none; outline: none; box-shadow: 0 0 15px rgba(255, 255, 255, 0.6), inset 0 0 8px rgba(255, 255, 255, 0.2); }
 /* catégories : un bloc par catégorie des fichiers de sources/, son nuage à l'intérieur */
 .groupes { margin: 0.6rem 0 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: .8rem; }
-.groupe { min-width: 0; padding: .6rem .7rem .7rem; background: #0a0000; border: 1px solid var(--red);
-  box-shadow: 0 0 18px color-mix(in srgb, var(--red) 25%, transparent); }
+.groupe { min-width: 0; padding: .6rem .7rem .7rem; background: #0a0000; border: 1px solid var(--red); border-radius: var(--rayon-panneau);
+  box-shadow: 0 0 30px color-mix(in srgb, var(--red) 40%, transparent); }
 /* téléphone : les étiquettes passent à la ligne au lieu de dépasser du panneau */
 @media (max-width: 640px) {
   .nuage { min-width: 0; }
@@ -518,11 +569,16 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   .grille { --colonnes: 2; }
   .carte { width: 100%; }
   .carte-corps { padding: .3rem .3rem; }
-  .carte .meta, .carte .carte-extrait { display: none; }
+  /*.carte .meta, .carte .carte-extrait { display: none; }*/
+  .carte:hover .meta, .carte:hover .carte-extrait { display: block; }
   .carte .carte-titre { font-size: .4rem; margin: 0; line-height: 1; }
   .carte-plus { width: 0.6rem; height: 0.6rem; font-size: 0.4rem; right: 0.15rem; bottom: 0.15rem; }
 }
-.groupe h2 { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--red-light); font-weight: 700; }
+.titre-panneau { padding: 0.8rem; margin-top: 0.5rem; border-radius: 1rem; margin-bottom: 0.5rem; transition: all 0.2s; border: 2px solid transparent; }
+.groupe h3.titre-panneau { color: #ffffff; font-weight: 700; display: block; box-shadow: 0 0 10px rgba(255, 255, 255, 0.3), inset 0 0 10px rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.5); }
+.groupe h2.titre-panneau { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: #ffffff; font-weight: 700; display: block; box-shadow: 0 0 10px rgba(255, 255, 255, 0.3), inset 0 0 10px rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.5); }
+.titre-panneau:hover { background: rgba(255, 255, 255, 0.05); transform: translateY(-2px); box-shadow: 0 0 20px rgba(255, 255, 255, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.15); }
+.groupe h3.titre-panneau:hover { box-shadow: 0 0 20px rgba(255, 255, 255, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.2); }
 .groupe .nuage { margin: 0; padding: 0; border: 0; background: none; box-shadow: none; justify-content: flex-start; }
 /* marge à droite du titre : ancienne place de l'icône RSS, gardée pour ne pas changer la mise en page */
 .groupe { position: relative; }
@@ -543,7 +599,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .galerie::-webkit-scrollbar { height: 6px; }
 .galerie::-webkit-scrollbar-track { background: transparent; }
 .galerie::-webkit-scrollbar-thumb { background: var(--red-dim); border-radius: 3px; }
-.galerie-carte { position: relative; flex: 0 0 80px; aspect-ratio: 1; padding: 0; border: 1px solid var(--red-dim); background: #0a0000; cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.galerie-carte { position: relative; flex: 0 0 80px; aspect-ratio: 1; padding: 0; border: 3px solid var(--red-dim); background: #0a0000; cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
 .galerie-carte img { width: 100%; height: 100%; object-fit: cover; }
 .galerie-carte .lettre { font: 700 2rem "Courier New", monospace; color: #fff; text-shadow: 0 0 6px var(--red), 0 0 12px var(--red); }
 .galerie-carte:hover, .galerie-carte:focus-visible { border-color: var(--red); box-shadow: 0 0 0px var(--red); outline: none; }
@@ -553,11 +609,11 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 }
 
 /* Bouton favori (cœur) dans la barre de navigation */
-.fav-heart { padding: 0.5rem 0.8rem; margin: 0 0.8rem; font-size: 1.4rem; line-height: 1; cursor: pointer; transition: all 0.2s; color: #888; user-select: none; border: 2px solid #888; background: #000; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; border-radius: 0.4rem; }
-.fav-heart:hover { transform: scale(1.15); color: #c000ff; border-color: #c000ff; box-shadow: 0 0 8px #c000ff; outline: none; }
+.fav-heart { padding: 0.5rem 0.8rem; margin: 0 0.8rem; font-size: 1.4rem; line-height: 1; cursor: pointer; transition: all 0.2s; color: #ffffff; user-select: none; border: 2px solid #ffffff; background: #000; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; border-radius: 0.8rem; }
+.fav-heart:hover { transform: scale(1.15); color: #ffffff; border-color: #ffffff; box-shadow: 0 0 8px #ffffff; outline: none; }
 .fav-heart:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
-.fav-heart.active { color: #c000ff; background: rgba(192, 0, 255, 0.15); border-color: #c000ff; box-shadow: 0 0 12px #c000ff, inset 0 0 8px rgba(192, 0, 255, 0.3); }
-.share-btn { padding: 0.5rem 0.8rem; margin: 0 0.8rem; font-size: 1.4rem; line-height: 1; cursor: pointer; transition: all 0.2s; color: #888; user-select: none; border: 2px solid #888; background: #000; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; border-radius: 0.4rem; }
+.fav-heart.active { color: #ffffff; background: rgba(255, 255, 255, 0.15); border-color: #ffffff; box-shadow: 0 0 12px #ffffff, inset 0 0 8px rgba(255, 255, 255, 0.3); }
+.share-btn { padding: 0.5rem 0.8rem; margin: 0 0.8rem; font-size: 1.4rem; line-height: 1; cursor: pointer; transition: all 0.2s; color: #ffffff; user-select: none; border: 2px solid #ffffff; background: #000; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; border-radius: 0.8rem; }
 .share-btn:hover { transform: scale(1.15); color: var(--red); border-color: var(--red); box-shadow: 0 0 8px var(--red); outline: none; }
 .share-btn:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 
@@ -585,10 +641,6 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .fav-export, .fav-import { display: block; padding: 0.6rem; border: 1px solid var(--red-dim); background: #000; color: var(--red-light); font: inherit; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; text-align: center; }
 .fav-export:hover, .fav-import:hover { background: var(--red); color: #000; border-color: var(--red); box-shadow: 0 0 8px var(--red); }
 #fav-file-input { display: none; }
-
-:root {
-    --rayon-carte: 12px; /* rayon des coins, proportions de carte à jouer */
-}
 
 /* Conteneur défilant */
 
@@ -721,7 +773,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 /* --- Éléments des panneaux créés par le script de l'accueil --- */
 .panneau-entete { display: flex; flex-direction: column; margin-bottom: 1rem; }
 .panneau-entete-ligne { flex-direction: row; align-items: center; justify-content: space-between; }
-.categorie-panneau h2.panneau-titre { text-align: center; margin: -3rem 0 0.8rem 0; }
+.categorie-panneau h2.panneau-titre { text-align: center; margin: -1rem 0 0.8rem 0; }
 /* bouton × placé dans l'en-tête (et non en haut à droite du panneau) */
 .categorie-panneau .categorie-fermer.fermer-entete { position: static; width: auto; height: auto; padding: 0.4rem 0.8rem; }
 .panneau-defilant { flex: 1; overflow: auto; min-height: 0; }
@@ -733,7 +785,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .galerie-bloc { flex: 1 1 auto; min-width: 0; gap: 0.3rem; margin: 0; padding: 0 0 .35rem; scrollbar-width: thin;
   scrollbar-color: var(--red-dim) transparent; }
 .galerie-bloc::-webkit-scrollbar { display: block; height: 6px; }
-.galerie-bloc .galerie-carte { flex: 0 0 5.5rem; height: 4rem; border: 1px solid var(--red); border-radius: .3rem;
+.galerie-bloc .galerie-carte { flex: 0 0 5.5rem; height: 4rem; border: 1px solid var(--red); border-radius: .8rem;
   background: #0a0000; box-shadow: none; -webkit-mask-image: none; }
 .galerie-bloc .galerie-carte:hover, .galerie-bloc .galerie-carte:focus-visible { transform: none;
   box-shadow: none; filter: brightness(1.2); }
@@ -760,8 +812,8 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .panneau-bouton { padding: 0.4rem 0.8rem; background: #0a0000; border: 1px solid var(--red-dim); color: var(--red); cursor: pointer; font: inherit; transition: all 0.2s ease; font-size: 0.85rem; }
 .panneau-bouton:hover { background: var(--red); color: #000; }
 /* « ✓ Copié ! » : bouton de copie du code de conduite, bouton de partage d'un article */
-.panneau-bouton.est-copie, .share-btn.est-copie { color: #00ff00; }
-.grille-vide { grid-column: 1 / -1; color: #888; padding: 2rem; text-align: center; }
+.panneau-bouton.est-copie, .share-btn.est-copie { color: #ffffff; }
+.grille-vide { grid-column: 1 / -1; color: #ffffff; padding: 2rem; text-align: center; }
 /* bouton « + » d'une catégorie, sur l'accueil */
 .tag-categorie { margin-left: auto; padding: 0.2rem 0.5rem; font-size: 0.8rem; background: #000; border: 1px solid var(--red); color: var(--red); cursor: pointer; font-weight: normal; }
 /* barre de recherche des pages d'article et de catégorie */
@@ -1062,7 +1114,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
    ========================================================================== */
 :root[data-fond="noir"] { --bg: #000; }
 /* nuit étoilée, bande de la Voie lactée */
-:root[data-fond="etoiles"] {
+:root[data-fond="pluie"] {
   --bg: radial-gradient(1px 1px at 12% 18%, #fff 50%, transparent 51%),
     radial-gradient(1px 1px at 47% 63%, #ddd 50%, transparent 51%),
     radial-gradient(1.5px 1.5px at 81% 27%, #fff 50%, transparent 51%),
@@ -1078,8 +1130,18 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 /* Pluie matricielle (thèmes avec pluie = oui). Les colonnes sont créées par static/theme.js ; leurs signes
    sont dans l'attribut data-g et affichés par ::before : la page ne contient aucun texte japonais. */
 :root {
-  --r-tete: #8f00ff; --r-haut: #ff1a1a; --r-moyen: #b5179e; --r-bas: #4b3fd8;
+  --r-tete: #ffffff;
+  --r-haut: #ffffff;
+  --r-moyen: #cccccc;
+  --r-bas: #999999;
 }
+
+html[data-theme="white_neon"] #pluie i::before {
+  background: linear-gradient(to top, var(--r-tete) 0%, var(--r-haut) 10%, var(--r-moyen) 40%, var(--r-bas) 70%, rgba(153, 153, 153, 0.3) 100%) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+}
+
 #pluie {
   display: none;
   position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;

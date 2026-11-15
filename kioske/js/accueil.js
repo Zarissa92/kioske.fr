@@ -67,14 +67,23 @@ window.addEventListener('popstate', (e) => {
   }
 });
 // Menu de la barre du haut : ouverture au bouton, fermeture au clic dehors.
+// Menus : fermer l'autre quand on ouvre un
 // aria-expanded suit la classe « open », quel que soit le code qui la change.
 const menuNavbar = document.getElementById('navbar-menu');
 const btnMenuNavbar = document.querySelector('.btn-menu');
+const settingsMenu = document.getElementById('navbar-settings');
+const btnSettingsNavbar = document.querySelector('.btn-settings');
+
 if (menuNavbar && btnMenuNavbar) {
   new MutationObserver(() => {
     btnMenuNavbar.setAttribute('aria-expanded', String(menuNavbar.classList.contains('open')));
   }).observe(menuNavbar, { attributes: true, attributeFilter: ['class'] });
   btnMenuNavbar.addEventListener('click', () => {
+    // Fermer le menu paramètres s'il est ouvert
+    if (settingsMenu && settingsMenu.style.display !== 'none') {
+      settingsMenu.style.display = 'none';
+      if (btnSettingsNavbar) btnSettingsNavbar.setAttribute('aria-expanded', 'false');
+    }
     menuNavbar.style.display = menuNavbar.style.display === 'none' ? 'block' : 'none';
     menuNavbar.classList.toggle('open');
   });
@@ -88,10 +97,14 @@ if (menuNavbar && btnMenuNavbar) {
 }
 
 // Menu Paramètres (⚙️) : même logique
-const settingsMenu = document.getElementById('navbar-settings');
-const btnSettingsNavbar = document.querySelector('.btn-settings');
 if (settingsMenu && btnSettingsNavbar) {
   btnSettingsNavbar.addEventListener('click', () => {
+    // Fermer le menu principal s'il est ouvert
+    if (menuNavbar && menuNavbar.style.display !== 'none') {
+      menuNavbar.style.display = 'none';
+      menuNavbar.classList.remove('open');
+      if (btnMenuNavbar) btnMenuNavbar.setAttribute('aria-expanded', 'false');
+    }
     const isVisible = settingsMenu.style.display !== 'none';
     settingsMenu.style.display = isVisible ? 'none' : 'block';
     btnSettingsNavbar.setAttribute('aria-expanded', String(!isVisible));
@@ -166,7 +179,12 @@ function creerCarte({ adresse, image, source, meta, titre, extrait }) {
   const span = (classe, texte) => {
     const s = document.createElement('span');
     s.className = classe;
-    if (texte !== undefined) s.textContent = texte || '';
+    if (texte !== undefined) {
+      // Décode les entités HTML et utilise textContent pour la sécurité
+      const div = document.createElement('div');
+      div.innerHTML = texte || '';
+      s.textContent = div.textContent;
+    }
     return s;
   };
   const carte = document.createElement('a');
@@ -367,7 +385,7 @@ function createCategoryPanel(categoryName) {
     id: idPanneau('cat-', categoryName), titre: categoryName, cle: categoryName,
     articles: window.categoriesData[categoryName] || [],
     ancre: page => 'cat=' + encodeURIComponent(categoryName) + '&p=' + page,
-    galerie: true
+    galerie: !!window.galeriePanneau
   });
 }
 
@@ -506,7 +524,20 @@ document.querySelectorAll('.nuage .tag').forEach(tag => {
   });
 });
 
-// Gestion des boutons "+ " des catégories
+// Gestion des titres cliquables (h2, h3) pour ouvrir les panneaux
+document.querySelectorAll('.titre-panneau').forEach(titre => {
+  titre.addEventListener('click', (e) => {
+    e.preventDefault();
+    const categoryName = titre.getAttribute('data-category-name');
+    if (categoryName) {
+      createCategoryPanel(categoryName);
+      const categoryId = idPanneau('cat-', categoryName);
+      showPopover(categoryId);
+    }
+  });
+});
+
+// Gestion des boutons "+ " des catégories (ancienne méthode, conservée pour compatibilité)
 document.querySelectorAll('.tag-categorie').forEach(btn => {
   btn.addEventListener('click', (e) => {
     e.preventDefault();
@@ -763,4 +794,27 @@ if (btnOpenConduct) {
     if (menu) menu.classList.remove('open');
   });
 }
+
+// Gestionnaire pour les sous-menus déroulants : fermer les autres quand on en ouvre un
+document.querySelectorAll('.submenu-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const submenuId = btn.getAttribute('data-submenu');
+    const submenu = document.getElementById(`submenu-${submenuId}`);
+    const isOpen = submenu.style.display !== 'none';
+
+    // Fermer tous les autres sous-menus
+    document.querySelectorAll('.submenu-toggle').forEach(otherBtn => {
+      if (otherBtn !== btn) {
+        const otherSubmenuId = otherBtn.getAttribute('data-submenu');
+        const otherSubmenu = document.getElementById(`submenu-${otherSubmenuId}`);
+        otherSubmenu.style.display = 'none';
+        otherBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // Basculer le sous-menu courant
+    submenu.style.display = isOpen ? 'none' : 'flex';
+    btn.setAttribute('aria-expanded', String(!isOpen));
+  });
+});
 

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" ${attributs_html} style="${variables_html} zoom: ${zoom}; --largeur-carte-ouverte: ${largeur_carte_ouverte}; --hauteur-carte-ouverte: ${hauteur_carte_ouverte}; --bordure-panneau-epaisseur: ${bordure_panneau_epaisseur}px; --espacement-panneau-vertical: ${espacement_panneau_vertical}; --espacement-panneau-horizontal: ${espacement_panneau_horizontal};">
+<html lang="fr" ${attributs_html} style="${variables_html}">
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="content-language" content="fr">
@@ -59,8 +59,8 @@ ${js_donnees_accueil}${js_service_worker}</script>
 
   <div class="navbar-menu" id="navbar-settings" style="display: none;">
     <div class="navbar-menu-group">
-      <div class="navbar-menu-title">🎨 Thèmes</div>
-      <div class="theme-options">
+      <button type="button" class="navbar-menu-title submenu-toggle" data-submenu="themes" aria-expanded="false">🎨 Thèmes ▼</button>
+      <div class="theme-options submenu" id="submenu-themes" style="display: none;">
         ${choix_theme}
       </div>
     </div>

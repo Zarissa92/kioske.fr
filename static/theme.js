@@ -54,6 +54,22 @@
     });
   }
 
+  function chargerCss(id) {
+    // Charger le CSS du thème selon les données JSON
+    const theme = themes.find(t => t.id === id);
+    if (!theme || !theme.css) return; // Pas de CSS personnalisé pour ce thème
+
+    // Remplacer la balise <link> existante ou en créer une
+    let lien = document.getElementById('theme-css-link');
+    if (!lien) {
+      lien = document.createElement('link');
+      lien.id = 'theme-css-link';
+      lien.rel = 'stylesheet';
+      document.head.appendChild(lien);
+    }
+    lien.href = theme.css;
+  }
+
   function appliquer(id) {
     const theme = themes.find(t => t.id === id) || themes.find(t => t.id === defaut);
     if (!theme) return;
@@ -61,7 +77,15 @@
     racine.dataset.fond = theme.fond;
     racine.dataset.pluie = theme.pluie ? 'oui' : 'non';
     racine.style.setProperty('--panneau-opacite', theme.opacite / 100);
+
+    // Appliquer les couleurs de pluie depuis la config du thème
+    if (theme.pluie_tete) racine.style.setProperty('--r-tete', theme.pluie_tete);
+    if (theme.pluie_haut) racine.style.setProperty('--r-haut', theme.pluie_haut);
+    if (theme.pluie_moyen) racine.style.setProperty('--r-moyen', theme.pluie_moyen);
+    if (theme.pluie_bas) racine.style.setProperty('--r-bas', theme.pluie_bas);
+
     if (theme.pluie) fabriquerPluie();
+    chargerCss(theme.id);
     marquerBoutons(theme.id);
   }
 

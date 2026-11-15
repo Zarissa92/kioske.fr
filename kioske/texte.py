@@ -9,6 +9,15 @@ def esc(value) -> str:
     return html.escape(str(value or ""), quote=True)
 
 
+def adresse_sure(adresse: str | None, defaut: str = "#") -> str:
+    """Valide qu'une adresse est sûre : chemin du site (/) ou http(s). Sinon retourne defaut.
+    Protège contre l'injection javascript: via des flux RSS malveillants."""
+    a = str(adresse or "").strip()
+    if re.match(r"^/(?![/\\])", a) or re.match(r"^https?://", a, re.IGNORECASE):
+        return a
+    return defaut
+
+
 def strip_html(text: str, limit: int | None = 280) -> str:
     text = html.unescape(re.sub(r"<[^>]+>", " ", text or ""))
     text = re.sub(r"\s+", " ", text).strip()
@@ -55,7 +64,7 @@ def slug_article(titre: str, lien: str = "") -> str:
     « Mon Article Intéressant » + « https://... » → « mon-article-intere-a1b2c3d4 »"""
     import hashlib
     titre_slug = unicodedata.normalize("NFKD", titre).encode("ascii", "ignore").decode().lower()
-    titre_slug = re.sub(r"[^a-z0-9]+", "-", titre_slug).strip("-")[:30]
+    titre_slug = re.sub(r"[^a-z0-9]+", "-", titre_slug).strip("-")[:30].rstrip("-")
     if lien:
         hash_court = hashlib.sha256(lien.encode()).hexdigest()[:8]
         return f"{titre_slug}-{hash_court}" if titre_slug else hash_court

@@ -1,8 +1,8 @@
 """Thèmes du site, décrits dans kioske.cfg (sections [theme.<nom>]).
 
 Le build pose le thème par défaut sur <html> (attributs data-…) et donne la liste des thèmes à
-static/theme.js, qui applique le choix du visiteur et fabrique la pluie. Tout le CSS, thèmes compris,
-est dans kioske/style.css : ce module n'en écrit pas.
+static/theme.js, qui applique le choix du visiteur et fabrique la pluie. Le CSS peut être différent
+selon le thème (clé `css` optionnelle, défaut : style.css).
 """
 from __future__ import annotations
 
@@ -11,8 +11,6 @@ import json
 
 from .config import CFG, CONFIG, PAQUET
 from .texte import esc
-
-CSS = (PAQUET / "style.css").read_text(encoding="utf-8")
 
 # Fonds possibles (clé `fond` d'un thème). Leur dessin est dans style.css : :root[data-fond="…"].
 FONDS = ("etoiles", "noir")
@@ -30,8 +28,14 @@ def charger_themes(cfg: configparser.ConfigParser = CFG) -> tuple[list[dict], st
         ident = section.removeprefix("theme.")
         try:
             theme = {k: cfg.get(section, k) for k in ("nom", "fond", "pluie", "opacite_panneau")}
+            # Couleurs optionnelles de la pluie matricielle
+            for couleur_key in ("pluie_tete", "pluie_haut", "pluie_moyen", "pluie_bas"):
+                if cfg.has_option(section, couleur_key):
+                    theme[couleur_key] = cfg.get(section, couleur_key)
         except configparser.Error as exc:
             raise SystemExit(f"thème « {ident} » incomplet dans {chemin.name} : {exc}")
+        # Clé css optionnelle (défaut : style.css)
+        theme["css"] = cfg.get(section, "css", fallback="style.css")
         if theme["fond"] not in FONDS:
             raise SystemExit(f"fond « {theme['fond']} » inconnu dans {ident} (valeurs : {', '.join(FONDS)})")
         try:
@@ -54,6 +58,22 @@ def charger_themes(cfg: configparser.ConfigParser = CFG) -> tuple[list[dict], st
     return themes, defaut
 
 
+def charger_css_theme() -> str:
+    """CSS du thème par défaut (chargé au build)."""
+    themes, defaut = charger_themes()
+    theme_defaut = next(t for t in themes if t["id"] == defaut)
+    css_url = theme_defaut.get("css", "")
+    # Si c'est une URL web (/style_red_neon.css), enlever le slash et trouver le fichier local
+    if css_url.startswith("/"):
+        css_fichier = css_url.lstrip("/")
+    else:
+        css_fichier = css_url if css_url else "style.css"
+    chemin_css = PAQUET / css_fichier
+    if not chemin_css.exists():
+        raise SystemExit(f"fichier CSS « {css_fichier} » du thème « {defaut} » introuvable (expected: {chemin_css})")
+    return chemin_css.read_text(encoding="utf-8")
+
+
 def _morceaux_de_page() -> tuple[str, str, str, str]:
     """Les quatre morceaux que chaque page reprend tels quels (voir les constantes ci-dessous)."""
     themes, defaut = charger_themes()
@@ -62,8 +82,18 @@ def _morceaux_de_page() -> tuple[str, str, str, str]:
     variables = f"--panneau-opacite: {d['opacite_panneau'] / 100:g};"
     donnees = json.dumps(
         {"defaut": defaut,
-         "themes": [{"id": t["id"], "fond": t["fond"], "pluie": t["pluie"], "opacite": t["opacite_panneau"]}
-                    for t in themes]},
+         "themes": [{
+             "id": t["id"],
+             "fond": t["fond"],
+             "pluie": t["pluie"],
+             "opacite": t["opacite_panneau"],
+             "css": t.get("css", ""),
+             "pluie_tete": t.get("pluie_tete", ""),
+             "pluie_haut": t.get("pluie_haut", ""),
+             "pluie_moyen": t.get("pluie_moyen", ""),
+             "pluie_bas": t.get("pluie_bas", "")
+          }
+          for t in themes]},
         ensure_ascii=False).replace("</", "<\\/")
     script = (f'<script type="application/json" id="kioske-themes">{donnees}</script>\n'
               '<script src="/theme.js"></script>')
@@ -76,6 +106,8 @@ def _morceaux_de_page() -> tuple[str, str, str, str]:
     return attributs, variables, script, choix
 
 
+# CSS : feuille de style du thème par défaut (chargée au build).
+CSS = charger_css_theme()
 # ATTRIBUTS_HTML : attributs du thème par défaut, à poser sur <html>.
 # VARIABLES_HTML : sa variable CSS, à mettre dans l'attribut style de <html>.
 # SCRIPT_THEME   : à mettre dans <head> — liste des thèmes, puis static/theme.js.

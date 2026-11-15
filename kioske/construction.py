@@ -21,7 +21,7 @@ from zoneinfo import ZoneInfo
 
 from . import apercus, immuable
 from .config import (ARTICLES_PAR_SOURCE, BUILD, CHAINES_TWITCH, DOMAINE, DOSSIER_RSS_CATEGORIES, FLUX_RSS,
-                     HISTORIQUE_DB, NOM_PAGE, REGLAGES_FLUX, ROOT, STATIC, TWITCH_SCAN, URL_SITE, RSS_MAX)
+                     HISTORIQUE_DB, NOM_PAGE, PAQUET, REGLAGES_FLUX, ROOT, STATIC, TWITCH_SCAN, URL_SITE, RSS_MAX)
 from .flux import load_feed
 from .historique import Historique
 from .images import appliquer_images, purger_images, telecharger_images
@@ -80,6 +80,24 @@ def ecrire_si_change(cible: Path, texte: str) -> None:
     if not cible.exists() or cible.read_text(encoding="utf-8") != texte:
         cible.parent.mkdir(parents=True, exist_ok=True)
         cible.write_text(texte, encoding="utf-8")
+
+
+def copier_css_themes() -> None:
+    """Copie les CSS des thèmes de kioske/ vers static/."""
+    from .themes import charger_themes
+
+    try:
+        themes, _ = charger_themes()
+        for theme in themes:
+            css_file = theme.get("css", "")
+            if css_file:
+                css_file = css_file.lstrip("/")
+                source = PAQUET / css_file
+                if source.exists():
+                    cible = STATIC / css_file
+                    copier_si_change(source, cible)
+    except SystemExit:
+        pass  # kioske.cfg vide ou incohérent, thèmes non disponibles
 
 
 def copier_statiques() -> None:
@@ -403,6 +421,7 @@ def construire(args: argparse.Namespace) -> None:
 
         # === Fichiers statiques ===
         print("9. COPIE DES FICHIERS STATIQUES")
+        copier_css_themes()
         copier_statiques()
         print(f"   → Fichiers statiques copiés\n")
 

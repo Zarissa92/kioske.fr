@@ -27,7 +27,7 @@ set -Eeuo pipefail
 DOSSIER="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$DOSSIER/deploy/lib_config.sh"  # cfg <section> <clé> : valeurs de kioske.cfg
 DOMAINE="$(cfg site domaine)"
-RACINE_WEB="$(cfg serveur racine_web)"
+RACINE_WEB="${RACINE_WEB:-/home/<utilisateur>/kioske.fr/public}"
 SITE_NGINX="/etc/nginx/sites-available/$DOMAINE"
 CERT_DIR="/etc/letsencrypt/live/$DOMAINE"
 LOG_NGINX="/var/log/nginx/$DOMAINE.access.log"

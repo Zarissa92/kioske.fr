@@ -5,6 +5,7 @@
 
 # ---------- Données et caches générés (recréés par les scripts) ----------
 build/
+static/style*.css
 data/historique.db
 data/cache/
 data/build.lock
@@ -20,7 +21,6 @@ venv_blog/
 .venv/
 
 # ---------- Sauvegardes et copies locales ----------
-old/
 export/
 *.bak
 index.avant_*.html
