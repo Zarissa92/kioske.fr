@@ -7,7 +7,7 @@ const { attendre, charger, clic, touche, panneauOuvert, poserHistorique, surAccu
   const { w, d, erreurs } = charger('index.html', '/');
   await attendre(300);
   poserHistorique(w);
-  const btnCat = d.querySelector('.tag-categorie');
+  const btnCat = d.querySelector('.titre-panneau[data-category-name]');
   const croix = () => panneauOuvert(d).querySelector('.categorie-fermer');
 
   clic(w, btnCat); await attendre();

@@ -180,10 +180,9 @@ function creerCarte({ adresse, image, source, meta, titre, extrait }) {
     const s = document.createElement('span');
     s.className = classe;
     if (texte !== undefined) {
-      // Décode les entités HTML et utilise textContent pour la sécurité
-      const div = document.createElement('div');
-      div.innerHTML = texte || '';
-      s.textContent = div.textContent;
+      // Texte brut uniquement : jamais innerHTML. Les entités ont déjà été décodées côté Python
+      // (texte.strip_html), donc un « &lt;img onerror&gt; » reste du texte affiché, pas une balise.
+      s.textContent = texte || '';
     }
     return s;
   };
@@ -533,22 +532,6 @@ document.querySelectorAll('.titre-panneau').forEach(titre => {
       createCategoryPanel(categoryName);
       const categoryId = idPanneau('cat-', categoryName);
       showPopover(categoryId);
-    }
-  });
-});
-
-// Gestion des boutons "+ " des catégories (ancienne méthode, conservée pour compatibilité)
-document.querySelectorAll('.tag-categorie').forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    e.preventDefault();
-    const categoryName = btn.getAttribute('data-category-name');
-    if (categoryName) {
-      createCategoryPanel(categoryName);
-      const categoryId = idPanneau('cat-', categoryName);
-      showPopover(categoryId);
-      // Fermer le menu +
-      const infosContainer = document.getElementById('bloc-infos-container');
-      if (infosContainer) infosContainer.hidden = true;
     }
   });
 });

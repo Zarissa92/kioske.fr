@@ -1,8 +1,11 @@
 [Panneau: Vidéo et radio]
+[Vidéo et radio: Youtube]
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCdnaDhU-LDQrIEEmSIfq0-Q"
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCGvjUWz3mGV9cssraATuEsw"
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCYxsgv2jlCcMLq8pNlwrJSQ"
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCPVS8efBdhXGGYs4JW2IJcQ"
+"https://www.youtube.com/feeds/videos.xml?channel_id=UC__xRB5L4toU9yYawt_lIKg"
+[Vidéo et radio: Podcasts]
 "https://www.infolibertaire.net/feed/podcasts/"
 "https://www.mediapart.fr/journal/podcasts/rss"
 

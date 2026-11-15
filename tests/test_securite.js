@@ -15,7 +15,7 @@ const sain = (el) => !el.querySelector('b, img[onerror], script') && el.textCont
   const cat = Object.keys(w.categoriesData)[0];
   const a = w.categoriesData[cat][0];
   Object.assign(a, { title: PIEGE, summary: PIEGE, host: PIEGE, date: PIEGE, source: PIEGE, image: '' });
-  clic(w, [...d.querySelectorAll('.tag-categorie')].find(b => b.getAttribute('data-category-name') === cat)); await attendre();
+  clic(w, [...d.querySelectorAll('.titre-panneau[data-category-name]')].find(b => b.getAttribute('data-category-name') === cat)); await attendre();
   let carte = panneauOuvert(d).querySelector('a.carte');
   t.verif('panneau de catégorie : titre, résumé, date et site restent du texte', sain(carte) && carte.querySelector('.carte-titre').textContent === PIEGE);
   clic(w, panneauOuvert(d).querySelector('.categorie-fermer')); await attendre();

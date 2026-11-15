@@ -16,7 +16,7 @@ const { attendre, charger, clic, touche, panneauOuvert, nbFavoris, premierArticl
   t.verif('« Charger des favoris » ouvre le choix de fichier', ouvertures === 1);
   clic(w, d.querySelector('#favoris .categorie-fermer')); await attendre();
 
-  clic(w, d.querySelector('.tag-categorie')); await attendre();
+  clic(w, d.querySelector('.titre-panneau[data-category-name]')); await attendre();
   clic(w, panneauOuvert(d).querySelector('a.carte')); await attendre(300);
   const carte = d.querySelector('.carte-ouverte');
   const coeur = carte.querySelector('.fav-heart');

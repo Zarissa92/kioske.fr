@@ -5,7 +5,11 @@ const { attendre, charger, clic, panneauOuvert, poserHistorique, surAccueil, sui
 (async () => {
   // ---------- galerie du panneau de catégorie
   let t = suite('Galerie du panneau de catégorie');
-  let { w, d, erreurs } = charger('index.html', '/');
+  // kioske.cfg désactive les galeries de panneau (galerie_panneau = 0) : le test les force à 1 dans la
+  // page chargée, pour vérifier le comportement JavaScript sans changer le réglage du site.
+  let { w, d, erreurs } = charger('index.html', '/', {
+    html: (h) => h.replace('"galerie_panneau": 0', '"galerie_panneau": 1'),
+  });
   await attendre(300);
   poserHistorique(w);
   const cats = Object.keys(w.categoriesData);
@@ -13,7 +17,7 @@ const { attendre, charger, clic, panneauOuvert, poserHistorique, surAccueil, sui
   w.categoriesData[cats[0]].slice(2, 17).forEach((a, i) => { a.image = '/img/veille/factice' + i + '.jpg'; });
   w.categoriesData[cats[0]][2].title = 'Titre "piégé" <b>x</b>';
   w.categoriesData[cats[1]].forEach(a => { a.image = ''; });
-  const bouton = (nom) => [...d.querySelectorAll('.tag-categorie')].find(b => b.getAttribute('data-category-name') === nom);
+  const bouton = (nom) => [...d.querySelectorAll('.titre-panneau[data-category-name]')].find(b => b.getAttribute('data-category-name') === nom);
 
   clic(w, bouton(cats[0])); await attendre();
   const cont = panneauOuvert(d);
@@ -58,7 +62,7 @@ const { attendre, charger, clic, panneauOuvert, poserHistorique, surAccueil, sui
       '<button class="galerie-arrow-left" type="button" aria-label="Défiler vers la gauche">&lt;</button>' +
       '<div class="galerie galerie-bloc">' + cartes + '</div>' +
       '<button class="galerie-arrow-right" type="button" aria-label="Défiler vers la droite">&gt;</button></section>';
-    return html.replace(/(<div class="sous-categorie"><h2>.*?<\/h2>)/, '$1' + bloc);
+    return html.replace(/(<div class="sous-categorie"><h2[^>]*>.*?<\/h2>)/, '$1' + bloc);
   };
   ({ w, d, erreurs } = charger('index.html', '/', { html: factice }));
   await attendre(300);
@@ -78,7 +82,7 @@ const { attendre, charger, clic, panneauOuvert, poserHistorique, surAccueil, sui
   t.verif('un clic sur une vignette ouvre l\'article', carte2 && !carte2.hidden && w.history.state.carte);
   clic(w, carte2.querySelector('.btn-retour')); await attendre();
   t.verif('« ← Retour » ramène à l\'accueil', carte2.hidden && surAccueil(w) && w.location.pathname === '/');
-  clic(w, d.querySelector('.groupe .tag-categorie')); await attendre();
+  clic(w, d.querySelector('.groupe .titre-panneau[data-category-name]')); await attendre();
   t.verif('le bouton + du bloc ouvre toujours le panneau', !!w.history.state.panneau);
   t.verif('aucune erreur JavaScript', erreurs.length === 0, erreurs.join(' | '));
   t.fin();

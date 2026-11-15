@@ -39,7 +39,7 @@ JAILS_F2B=(kioske-scan kioske-hors-site kioske-interdit kioske-debit)   # un fil
 IP_JAMAIS_BANNIES="$(cfg serveur ip_jamais_bannies)"
 JAIL_PREREQUIS="sans_pitie"
 
-EMAIL=" "
+EMAIL=""
 SANS_CERT=0
 NGINX_SIMPLE=0
 SIMULATION=0
