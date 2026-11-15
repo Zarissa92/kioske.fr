@@ -748,7 +748,18 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 }
 
 .galerie-carte-titre {
-    display: none;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    padding: 4px 6px;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    font-size: 10px;
+    line-height: 1.3;
+    text-align: center;
+    font-family: "Courier New", monospace;
 }
 
 

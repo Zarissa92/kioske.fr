@@ -39,8 +39,12 @@ function toggleFavorite(event) {
       const a = new URL(img.src, location.href);
       image = a.origin === location.origin ? a.pathname + a.search : a.href;
     }
-    // Récupère l'extrait (summary) de la carte
-    const summary = carte?.querySelector('.carte-extrait')?.textContent || '';
+    // Récupère l'extrait (summary) : depuis la carte d'accueil OU depuis l'attribut data-summary de la page d'article
+    let summary = carte?.querySelector('.carte-extrait')?.textContent || '';
+    if (!summary && location.pathname.startsWith('/articles/')) {
+      // Sur la page d'article, utilise l'attribut data-summary du flux RSS
+      summary = document.querySelector('main.panel-article')?.getAttribute('data-summary') || '';
+    }
 
     favorites[articleLink] = {
       titre: titre,

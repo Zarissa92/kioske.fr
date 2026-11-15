@@ -121,8 +121,7 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> str:
           cartes_galerie.append(
               f'<div class="galerie-carte-wrapper" data-source="{esc(source_name)}">'
               f'<a href="{esc(article_url)}" class="galerie-carte" '
-              f'title="{esc(title)}">{media}<div class="galerie-carte-date">{date_time_str}</div></a>'
-              f'<div class="galerie-carte-titre">{esc(titre_court)}</div>'
+              f'title="{esc(title)}">{media}<div class="galerie-carte-titre">{esc(titre_court)}</div></a>'
               f'</div>'
           )
 
