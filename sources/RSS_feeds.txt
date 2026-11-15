@@ -1,41 +1,61 @@
-[Panneau: Médias d'enquête]
-"https://portail.basta.media/spip.php?page=backend"
-"https://api.blast-info.fr/rss.xml"
-"https://streetpress.com/rss.xml"
-"https://www.mediapart.fr/journal/podcasts/rss"
-"https://www.monde-diplomatique.fr/rss/"
-"https://www.off-investigation.fr/feed/"
-"https://api.arretsurimages.net/api/public/rss/all-content"
-"https://reflets.info/feeds/public"
-"https://disclose.ngo/feed/"
 [Panneau: Vidéo et radio]
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCdnaDhU-LDQrIEEmSIfq0-Q"
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCGvjUWz3mGV9cssraATuEsw"
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCYxsgv2jlCcMLq8pNlwrJSQ"
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCPVS8efBdhXGGYs4JW2IJcQ"
 "https://www.infolibertaire.net/feed/podcasts/"
-[Panneau: Militance et luttes]
+"https://www.mediapart.fr/journal/podcasts/rss"
+
+
+[Panneau: Médias Libre]
+
+[Médias Libre: Médias d'enquête]
+"https://portail.basta.media/spip.php?page=backend"
+"https://api.blast-info.fr/rss.xml"
+"https://streetpress.com/rss.xml"
+"https://www.off-investigation.fr/feed/"
+"https://api.arretsurimages.net/api/public/rss/all-content"
+"https://reflets.info/feeds/public"
+"https://disclose.ngo/feed/"
+"https://frustrationmagazine.fr/feed"
+
+[Médias Libre: General]
+"https://www.monde-diplomatique.fr/rss/"
 "https://www.politis.fr/flux-rss/"
-"https://ajis.asso.fr/feed"
 "https://lesjours.fr/rss.xml"
-"https://urbania.ca/articles.rss"
-"https://histoirescrepues.fr/rss/"
 "https://portail.basta.media/spip.php?page=backend"
 "https://www.infolibertaire.net/feed"
-"https://rezo.net/backend/"
+
+[Médias Libre: Divers]
+"https://histoirescrepues.fr/rss/"
+"https://ajis.asso.fr/feed"
+"https://urbania.ca/articles.rss"
 "https://contre-attaque.net/feed/"
-"https://frustrationmagazine.fr/feed"
 "https://agauche.org/feed/"
+"https://rezo.net/backend/"
+
+
+
 [Panneau: International]
 "https://orientxxi.info/?page=backend&lang=fr"
+
+
 [Panneau: Technologie]
+
+[Technologie: Militant.e.s]
 "https://www.laquadrature.net/feed/"
+
+[Technologie: Généraliste]
 "https://next.ink/feed/"
+
+
 [panneau: LGBT]
+
 [LGBT: FR]
 "https://www.problematik-media.com/feed.xml"
 "https://www.outrans.org/feed/"
 "https://revueladeferlante.fr/feed/"
+
 [LGBT: EN]
 "https://thepinktimes.com/rss.xml"
 "https://www.thepinknews.com/feed/"

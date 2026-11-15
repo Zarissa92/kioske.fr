@@ -1,4 +1,4 @@
-# kioske.fr — 1.1.1
+# kioske.fr — 1.1.3
 
 Le **KiosKe** : une veille automatique des médias indépendants, des luttes et des voix LGBTQIA+.
 Pages HTML statiques (HTML5, CSS, JavaScript sans dépendance) générées toutes les 30 minutes sur le serveur
@@ -18,6 +18,12 @@ modifié par le build.
 > Projet autonome depuis le 2026-11-11 (copie de `gauchiasses.fr`), réorganisé le même jour : code
 > dans le paquet `kioske/`, site généré dans `build/`, réglages dans `kioske.cfg`.
 > **À vérifier :** l'`origin` du dépôt git pointe encore vers `kit-gauchiasses.fr`.
+>
+> **Modifications récentes — 1.1.3 (2026-11-15)** :
+> - **Menu hamburger ≡ épuré** — suppression des thèmes et du bouton « Installer l'app » du menu ≡. Le menu contient maintenant seulement : Flux RSS, Discord, Mastodon, Code de conduite. Les thèmes et installation restent accessibles via le menu ⚙️ (Paramètres).
+>
+> **Modifications récentes — 1.1.2 (2026-11-15)** :
+> - **Bugfix : menu hamburger ≡ ne montrait plus Discord, Mastodon et Code de conduite** — le JavaScript qui ouvre/ferme le menu sélectionnait par erreur le menu ⚙️ (Paramètres) au lieu du menu ≡ (car les deux avaient la classe `navbar-menu`). Corrigé en utilisant l'ID du menu hamburger directement (`getElementById('navbar-menu')` au lieu de `querySelector('.navbar-menu')`).
 >
 > **Modifications récentes — 1.1.1 (2026-11-15)** :
 > - **Bugfix : titre en doublon pour panneaux sans sous-catégories** — quand un panneau contenait une catégorie du même nom (ex. `[Panneau: Médias d'enquête]` avec sources directes, pas de `[Categorie:]`), le titre s'affichait deux fois (h3 du panneau et h2 de la catégorie). Maintenant, le h2 est masqué visuellement mais reste dans le DOM pour la compatibilité des tests et JavaScript.

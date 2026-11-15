@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'kioske-v30';
+const CACHE_VERSION = 'kioske-v32';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',

@@ -68,7 +68,7 @@ window.addEventListener('popstate', (e) => {
 });
 // Menu de la barre du haut : ouverture au bouton, fermeture au clic dehors.
 // aria-expanded suit la classe « open », quel que soit le code qui la change.
-const menuNavbar = document.querySelector('.navbar-menu');
+const menuNavbar = document.getElementById('navbar-menu');
 const btnMenuNavbar = document.querySelector('.btn-menu');
 if (menuNavbar && btnMenuNavbar) {
   new MutationObserver(() => {
