@@ -12,6 +12,7 @@ Usage (voir bin/publier_public.py) :
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 from pathlib import Path
 
 from . import immuable
@@ -60,7 +61,14 @@ def main(argv: list[str] | None = None) -> None:
                         help=f"dossier de sortie (défaut : {RACINE_WEB}, racine_web de kioske.cfg)")
     args = parser.parse_args(argv)
 
+    debut = datetime.now(timezone.utc)
     with verrou():  # le build et la copie forment un tout : pas de build concurrent entre les deux
         if not args.sans_build:
             construire(analyser_arguments(["--simple"] if args.simple else []))
         publier(args.public)
+    fin = datetime.now(timezone.utc)
+    duree = fin - debut
+    print("="*60)
+    print(f"Heure de fin : {fin.strftime('%d/%m/%Y %H:%M:%S')}")
+    print(f"Durée totale : {duree.total_seconds():.1f}s")
+    print("="*60 + "\n")

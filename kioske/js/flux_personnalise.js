@@ -303,34 +303,11 @@ function updateFluxPersonnalise() {
   }
 }
 
-// Ajouter le bouton au menu (sera appelé après que le menu soit construit)
-function addCustomFluxButtonToMenu() {
-  const menuNavbar = document.querySelector('.navbar-menu-group:last-child');
-  if (!menuNavbar) return;
-
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'menu-button';
-  btn.id = 'btn-custom-flux';
-  btn.textContent = '⚙️ Personnaliser';
-  btn.addEventListener('click', () => {
-    createCustomFluxPanel();
-    showPopover('custom-flux');
-    const navbarMenu = document.querySelector('.navbar-menu');
-    if (navbarMenu) navbarMenu.classList.remove('open');
-  });
-
-  menuNavbar.appendChild(btn);
-  updateFluxPersonnalise();
-}
-
 // Initialiser quand le DOM est prêt
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    addCustomFluxButtonToMenu();
     appliquerFiltreAccueil();
   });
 } else {
-  addCustomFluxButtonToMenu();
   appliquerFiltreAccueil();
 }

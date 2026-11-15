@@ -56,6 +56,16 @@ def entier(section: str, cle: str) -> int:
     return int(texte)
 
 
+def entier_opt(section: str, cle: str, defaut: int) -> int:
+    """Valeur optionnelle (entier avec défaut si absent ou vide)."""
+    texte = CFG.get(section, cle, fallback="").strip()
+    if not texte:
+        return defaut
+    if not texte.isdigit():
+        raise SystemExit(f"{CONFIG.name} : [{section}] {cle} = « {texte} » : nombre entier positif attendu")
+    return int(texte)
+
+
 DOMAINE = valeur("site", "domaine")
 URL_SITE = f"https://{DOMAINE}"
 NOM_SITE = valeur("site", "nom")
@@ -65,3 +75,6 @@ RSS_MAX = entier("veille", "articles_flux_rss")
 TWITCH_SCAN = entier("veille", "videos_par_chaine")
 ARTICLES_PAR_SOURCE = entier("veille", "articles_par_source")  # 0 = tous
 DELAI_ECHEC = entier("veille", "delai_nouvel_essai_heures") * 3600  # secondes
+
+GALERIE_PRINCIPALE = entier_opt("site", "galerie_principale", 1)
+GALERIE_PANNEAU = entier_opt("site", "galerie_panneau", 1)

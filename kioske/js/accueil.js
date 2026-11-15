@@ -74,10 +74,63 @@ if (menuNavbar && btnMenuNavbar) {
   new MutationObserver(() => {
     btnMenuNavbar.setAttribute('aria-expanded', String(menuNavbar.classList.contains('open')));
   }).observe(menuNavbar, { attributes: true, attributeFilter: ['class'] });
-  btnMenuNavbar.addEventListener('click', () => menuNavbar.classList.toggle('open'));
+  btnMenuNavbar.addEventListener('click', () => {
+    menuNavbar.style.display = menuNavbar.style.display === 'none' ? 'block' : 'none';
+    menuNavbar.classList.toggle('open');
+  });
   document.addEventListener('click', (e) => {
     const navbar = document.querySelector('.kioske-navbar');
-    if (navbar && !navbar.contains(e.target)) menuNavbar.classList.remove('open');
+    if (navbar && !navbar.contains(e.target)) {
+      menuNavbar.classList.remove('open');
+      menuNavbar.style.display = 'none';
+    }
+  });
+}
+
+// Menu Paramètres (⚙️) : même logique
+const settingsMenu = document.getElementById('navbar-settings');
+const btnSettingsNavbar = document.querySelector('.btn-settings');
+if (settingsMenu && btnSettingsNavbar) {
+  btnSettingsNavbar.addEventListener('click', () => {
+    const isVisible = settingsMenu.style.display !== 'none';
+    settingsMenu.style.display = isVisible ? 'none' : 'block';
+    btnSettingsNavbar.setAttribute('aria-expanded', String(!isVisible));
+  });
+
+  // Fermer au clic sur un bouton
+  settingsMenu.querySelectorAll('.menu-button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      settingsMenu.style.display = 'none';
+      btnSettingsNavbar.setAttribute('aria-expanded', 'false');
+    });
+  });
+
+  // Fermer au clic dehors
+  document.addEventListener('click', (e) => {
+    const navbar = document.querySelector('.kioske-navbar');
+    if (navbar && !navbar.contains(e.target)) {
+      settingsMenu.style.display = 'none';
+      btnSettingsNavbar.setAttribute('aria-expanded', 'false');
+    }
+  });
+}
+
+// Bouton Personnaliser flux dans le menu paramètres
+const btnCustomFluxNavbar = document.getElementById('btn-custom-flux-navbar');
+if (btnCustomFluxNavbar) {
+  btnCustomFluxNavbar.addEventListener('click', () => {
+    createCustomFluxPanel();
+    showPopover('custom-flux');
+  });
+}
+
+// Bouton Installer l'app dans le menu paramètres
+const btnInstallPwaSettings = document.getElementById('btn-install-pwa-settings');
+if (btnInstallPwaSettings) {
+  btnInstallPwaSettings.addEventListener('click', () => {
+    const evt = new Event('click');
+    const btnInstallPwa = document.getElementById('btn-install-pwa');
+    if (btnInstallPwa) btnInstallPwa.dispatchEvent(evt);
   });
 }
 

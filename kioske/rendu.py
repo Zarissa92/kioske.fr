@@ -152,9 +152,12 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> str:
 
 
 def render_page(items: list[dict], previews: dict[str, dict],
-                categories: dict[str, str] | None = None) -> str:
-    """La page d'accueil complète (le KiosKe) : bloc immuable, étiquettes par catégorie, fenêtres et articles."""
+                categories: dict[str, str] | None = None,
+                panneaux: dict[str, str] | None = None) -> str:
+    """La page d'accueil complète (le KiosKe) : bloc immuable, étiquettes par panneau/catégorie, fenêtres et articles."""
     categories = categories or {}
+    panneaux = panneaux or {}
+
     # Regroupement par source (clé : URL du flux ou twitch:nom). Le nom affiché est celui de
     # l'article le plus récent, pour qu'un flux renommé n'apparaisse pas deux fois.
     # Sources dans l'ordre alphabétique, articles les plus récents d'abord.
@@ -167,43 +170,92 @@ def render_page(items: list[dict], previews: dict[str, dict],
         noms.setdefault(item["key"], item["source"])
     ordre = sorted(groupes, key=lambda cle: cle_alphabetique(noms[cle]))
 
-    # Catégories : dans l'ordre du fichier de flux, « Des Liens » en dernier.
-    par_categorie: dict[str, list[str]] = {}
+    # Grouper par panneau, puis par catégorie
+    par_panneau: dict[str, dict[str, list[str]]] = {}
+    par_categorie: dict[str, list[str]] = {}  # structure globale pour le code JavaScript plus bas
     for cle in ordre:
-        par_categorie.setdefault(categories.get(cle, AUTRES), []).append(cle)
+        panneau = panneaux.get(cle, "")
+        categorie = categories.get(cle, AUTRES)
+
+        # Ajouter à la structure globale
+        par_categorie.setdefault(categorie, []).append(cle)
+
+        if panneau:
+            # Nouveau format avec panneaux
+            if panneau not in par_panneau:
+                par_panneau[panneau] = {}
+            par_panneau[panneau].setdefault(categorie, []).append(cle)
+        else:
+            # Ancien format sans panneaux
+            if "" not in par_panneau:
+                par_panneau[""] = {}
+            par_panneau[""].setdefault(categorie, []).append(cle)
+
     ordre_categories = ordre_des_categories(items, categories)
     slugs = slugs_categories(ordre_categories)
 
-    tags_par_categorie: dict[str, list[str]] = {c: [] for c in ordre_categories}
-    for categorie in ordre_categories:
-        # Créer les étiquettes des sources
-        for cle in par_categorie[categorie]:
-            source = noms[cle]
-            articles = groupes[cle]
-            nb = len(articles)
-            # Encoder la clé pour l'utiliser comme attribut HTML et JS
-            cle_encodee = esc(cle).replace('"', '&quot;')
-            tags_par_categorie[categorie].append(
-                f'<button type="button" class="tag" data-source-key="{cle_encodee}" data-source-name="{esc(truncate_label(source))}">'
-                f'{esc(truncate_label(source))} <span class="nb">×{nb}</span></button>'
-            )
+    # Créer les blocs : pour chaque panneau, afficher ses catégories
+    blocs = ""
+    for panneau_nom in par_panneau:
+        categories_panneau = par_panneau[panneau_nom]
 
-    # Articles de chaque catégorie, du plus récent au plus ancien (« items » est déjà trié)
-    articles_par_categorie: dict[str, list[dict]] = {c: [] for c in ordre_categories}
-    for item in items:
-        articles_par_categorie[categories.get(item["key"], AUTRES)].append(item)
+        if panneau_nom:
+            # Panneau avec sous-catégories
+            blocs += f'<section class="groupe panneau"><h3>{esc(panneau_nom)}</h3>'
+            categories_du_panneau = sorted([c for c in categories_panneau.keys() if c != AUTRES])
 
-    blocs = "".join(
-        f'<section class="groupe">'
-        f'<h2>{esc(c)} <span class="compte">({len(par_categorie[c])})</span> <button type="button" class="tag-categorie" data-category-name="{esc(c)}">+</button></h2>'
-        f'{render_galerie_bloc(c, articles_par_categorie[c], previews)}'
-        f'<div class="nuage" aria-label="{esc(c)}">{"".join(tags_par_categorie[c])}</div></section>'
-        for c in ordre_categories
-    )
+            for categorie in categories_du_panneau:
+                sources_keys = categories_panneau[categorie]
+                tags = []
+                articles_cat = []
+
+                for cle in sources_keys:
+                    source = noms[cle]
+                    articles = groupes[cle]
+                    nb = len(articles)
+                    cle_encodee = esc(cle).replace('"', '&quot;')
+                    tags.append(
+                        f'<button type="button" class="tag" data-source-key="{cle_encodee}" data-source-name="{esc(truncate_label(source))}">'
+                        f'{esc(truncate_label(source))} <span class="nb">×{nb}</span></button>'
+                    )
+                    articles_cat.extend(articles)
+
+                blocs += (
+                    f'<div class="sous-categorie">'
+                    f'<h2>{esc(categorie)} <span class="compte">({len(sources_keys)})</span> <button type="button" class="tag-categorie" data-category-name="{esc(categorie)}">+</button></h2>'
+                    f'{render_galerie_bloc(categorie, articles_cat, previews)}'
+                    f'<div class="nuage" aria-label="{esc(categorie)}">{"".join(tags)}</div></div>'
+                )
+            blocs += '</section>'
+        else:
+            # Catégories sans panneau (filtrer AUTRES)
+            categories_du_panneau = sorted([c for c in categories_panneau.keys() if c != AUTRES])
+            for categorie in categories_du_panneau:
+                sources_keys = categories_panneau[categorie]
+                tags = []
+                articles_cat = []
+
+                for cle in sources_keys:
+                    source = noms[cle]
+                    articles = groupes[cle]
+                    nb = len(articles)
+                    cle_encodee = esc(cle).replace('"', '&quot;')
+                    tags.append(
+                        f'<button type="button" class="tag" data-source-key="{cle_encodee}" data-source-name="{esc(truncate_label(source))}">'
+                        f'{esc(truncate_label(source))} <span class="nb">×{nb}</span></button>'
+                    )
+                    articles_cat.extend(articles)
+
+                blocs += (
+                    f'<section class="groupe">'
+                    f'<h2>{esc(categorie)} <span class="compte">({len(sources_keys)})</span> <button type="button" class="tag-categorie" data-category-name="{esc(categorie)}">+</button></h2>'
+                    f'{render_galerie_bloc(categorie, articles_cat, previews)}'
+                    f'<div class="nuage" aria-label="{esc(categorie)}">{"".join(tags)}</div></section>'
+                )
     liens_rss = "".join(
         f'<link rel="alternate" type="application/rss+xml" title="{DOMAINE} : {esc(c)} (flux RSS)" '
         f'href="{DOSSIER_RSS_CATEGORIES}/{slugs[c]}.xml">'
-        for c in ordre_categories
+        for c in ordre_categories if c in slugs
     )
     nuage = f'<div class="groupes">{blocs}</div>'
 
@@ -373,7 +425,7 @@ def render_rss_page(categories: dict[str, str] | None = None, items: list[dict] 
     flux_categories = ""
     for categorie in ordre_categories:
         slug = slugs[categorie]
-        flux_categories += f'<h3>{esc(categorie)}</h3><a href="rss/{slug}.xml" class="rss-lien">{ICONE_RSS} {esc(categorie)}</a>'
+        flux_categories += f'<h2>{esc(categorie)}</h2><a href="rss/{slug}.xml" class="rss-lien">{ICONE_RSS} {esc(categorie)}</a>'
 
     bloc, bas = immuable.parties()
 

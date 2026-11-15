@@ -1,4 +1,4 @@
-# kioske.fr
+# kioske.fr — 1.0
 
 Le **KiosKe** : une veille automatique des médias indépendants, des luttes et des voix LGBTQIA+.
 Pages HTML statiques (HTML5, CSS, JavaScript sans dépendance) générées toutes les 30 minutes sur le serveur
@@ -19,7 +19,15 @@ modifié par le build.
 > dans le paquet `kioske/`, site généré dans `build/`, réglages dans `kioske.cfg`.
 > **À vérifier :** l'`origin` du dépôt git pointe encore vers `kit-gauchiasses.fr`.
 >
-> **Modifications récentes** :
+> **Modifications récentes — 1.0 (2026-11-15)** :
+> - **Panneaux organisés hiérarchiquement** : format `[Panneau:Nom]` + `[Categorie:Nom]` dans les sources. Les sources apparaissent groupées par panneau, puis par catégorie au sein de chaque panneau. Ancien format `[Categorie]` toujours supporté (sources sans panneau). Détection automatique du format et adaptation du rendu.
+> - **Galeries optionnelles** : deux options `kioske.cfg` pour activer/désactiver la galerie principale (`galerie_principale`) et les galeries des panneaux (`galerie_panneau`), défaut 1 (activé).
+> - **Flux personnalisé** : sélection des sources à afficher par catégorie, filtrage en temps réel, sauvegarde dans `localStorage`. Bouton ⚙️ Personnaliser dans le menu paramètres. Suppression du doublon « Personnaliser » créé en JavaScript (garde du HTML).
+> - **Service worker v26** (passé à v28 après panneaux).
+> - **CSS et spacing optimisés** : espaces du bas réduits (suppression de `min-height: 100%` sur body, réduction du margin-bottom de `.mentions`).
+> - **Affichage des heures de build** : heure de fin et durée du build et de la publication, au format `jj/mm/aaaa HH:MM:SS`.
+>
+> **Modifications précédentes** :
 > - **Galerie principale améliorée** (2026-11-14) :
 >   - **Dates/heures visibles** : en bas de chaque image, la date de parution (jj/mm/aaaa HH:MM) avec fond noir semi-transparent.
 >   - **Titres en 3 lignes** : sous chaque carte, un extrait du titre sans mots tronqués, limité à 3 lignes.

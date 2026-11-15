@@ -29,7 +29,7 @@ from .previews import generer_previews
 from .rendu import render_page, render_rss_page
 from .rendu_statique import render_article_page, render_category_page
 from .rss import render_rss
-from .sources import AUTRES, ordre_des_categories, read_categories, read_feeds, read_local, read_twitch
+from .sources import AUTRES, ordre_des_categories, read_categories, read_feeds, read_local, read_twitch, read_panneaux
 from .texte import slugs_categories, article_id, slug_article
 from .twitch import load_twitch
 from .verrou import verrou
@@ -95,9 +95,10 @@ def copier_statiques() -> None:
                      "</urlset>\n")
 
 
-def ecrire_page(items: list[dict], previews: dict[str, dict], categories: dict[str, str]) -> None:
+def ecrire_page(items: list[dict], previews: dict[str, dict], categories: dict[str, str], panneaux: dict[str, str] | None = None) -> None:
     """Écrit build/index.html. Le bloc immuable est contrôlé avant et après l'écriture."""
-    page = render_page(items, previews, categories)
+    panneaux = panneaux or {}
+    page = render_page(items, previews, categories, panneaux)
     immuable.verifier_page(page)
     BUILD.mkdir(parents=True, exist_ok=True)
     sortie = BUILD / NOM_PAGE
@@ -379,6 +380,7 @@ def construire(args: argparse.Namespace) -> None:
         # === Catégories ===
         print("5. LECTURE DES CATÉGORIES")
         categories = read_categories(args.rss, args.tw)
+        panneaux = read_panneaux(args.rss, args.tw)
         nb_categories = len(set(categories.values()))
         print(f"   → {nb_categories} catégorie(s) lue(s)\n")
 
@@ -394,7 +396,7 @@ def construire(args: argparse.Namespace) -> None:
 
         # === Pages principales ===
         print("8. GÉNÉRATION DES PAGES PRINCIPALES")
-        ecrire_page(items, previews, categories)
+        ecrire_page(items, previews, categories, panneaux)
         ecrire_page_rss(categories, items)
         if not args.simple:
             ecrire_flux_rss(items, categories)

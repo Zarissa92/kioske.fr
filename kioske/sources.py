@@ -12,8 +12,71 @@ from pathlib import Path
 LINE_RE = re.compile(r'^\s*"([^"]+)"\s*(?::\s*\d+)?\s*(?:#.*)?$')  # ": ID" accepté, ignoré
 CONFIG_RE = re.compile(r'^\s*(!)?\s*"([^"]+)"\s*(?:\|\s*(.+?))?\s*$')
 TWITCH_LINE_RE = re.compile(r'^\s*"([^"]+)"\s*(?::\s*\d+)?\s*(?:#.*)?$')  # ": ID" accepté, ignoré
-CATEGORY_RE = re.compile(r'^\s*\[([^\[\]]+)\]\s*$')  # « [Catégorie] » seul sur sa ligne
+BRACKET_RE = re.compile(r'^\s*\[([^\[\]]+)\]\s*$')  # « [Nom] » seul sur sa ligne
+CATEGORY_RE = BRACKET_RE  # backward compat
 AUTRES = "Des Liens"  # titre du bloc des sources qui ne sont dans aucune catégorie
+
+
+def detect_format(path: Path) -> str:
+    """Détecte ancien format [Cat] ou nouveau [Panneau:...] / [Cat:...]."""
+    if not path.exists():
+        return "ancien"
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if BRACKET_RE.match(line) and ":" in line:
+            return "nouveau"
+    return "ancien"
+
+
+def read_panneaux_and_categories(feeds: Path, twitch: Path) -> tuple[dict[str, str], dict[str, str]]:
+    """Retourne (panneaux, catégories) pour le format nouveau [Panneau:...][Cat:...].
+    panneaux: dict[source_key] = panneau_name
+    categories: dict[source_key] = categorie_name
+    """
+    panneaux: dict[str, str] = {}
+    categories: dict[str, str] = {}
+
+    for path, est_twitch in ((feeds, False), (twitch, True)):
+        if not path.exists():
+            continue
+
+        regex = TWITCH_LINE_RE if est_twitch else LINE_RE
+        panneau_actuel = None
+        categorie_actuelle = None
+
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+
+            match = BRACKET_RE.match(line)
+            if match:
+                contenu = match.group(1)
+                if ":" in contenu:
+                    typ, nom = contenu.split(":", 1)
+                    typ = typ.strip().lower()
+                    nom = nom.strip()
+
+                    if typ == "panneau":
+                        panneau_actuel = nom
+                        categorie_actuelle = None
+                    else:
+                        categorie_actuelle = nom
+                continue
+
+            m = regex.match(line)
+            if not m:
+                continue
+
+            cle = f"twitch:{m.group(1).lower().strip()}" if est_twitch else m.group(1)
+
+            if panneau_actuel:
+                panneaux[cle] = panneau_actuel
+            if categorie_actuelle:
+                categories[cle] = categorie_actuelle
+            else:
+                categories.setdefault(cle, AUTRES)
+
+    return panneaux, categories
 
 
 def read_feeds(path: Path) -> list[str]:
@@ -75,8 +138,15 @@ def read_twitch(path: Path) -> list[str]:
 
 
 def read_categories(feeds: Path, twitch: Path) -> dict[str, str]:
-    """Catégorie de chaque source. Une ligne « [Nom] » seule ouvre une catégorie ; les sources
-    qui suivent y vont, jusqu'à la ligne suivante. Clé : l'URL d'un flux RSS, ou « twitch:nom »."""
+    """Catégorie de chaque source. Supporte ancien format [Cat] et nouveau [Panneau:...][Cat:...]."""
+    # Déterminer le format
+    fmt = detect_format(feeds) if feeds.exists() else detect_format(twitch)
+
+    if fmt == "nouveau":
+        _, categories = read_panneaux_and_categories(feeds, twitch)
+        return categories
+
+    # Ancien format
     categories: dict[str, str] = {}
     for path, est_twitch in ((feeds, False), (twitch, True)):
         if not path.exists():
@@ -87,16 +157,27 @@ def read_categories(feeds: Path, twitch: Path) -> dict[str, str]:
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-            titre = CATEGORY_RE.match(line)
+            titre = BRACKET_RE.match(line)
             if titre:
-                courante = titre.group(1).strip()
+                contenu = titre.group(1)
+                if ":" not in contenu:  # ignorer les nouvelles lignes avec :
+                    courante = contenu.strip()
                 continue
             m = regex.match(line)
             if not m or courante is None:
                 continue
             cle = f"twitch:{m.group(1).lower().strip()}" if est_twitch else m.group(1)
-            categories.setdefault(cle, courante)  # une source ne garde que sa première catégorie
+            categories.setdefault(cle, courante)
     return categories
+
+
+def read_panneaux(feeds: Path, twitch: Path) -> dict[str, str]:
+    """Panneau de chaque source (nouveau format seulement). Ancien format retourne vide."""
+    fmt = detect_format(feeds) if feeds.exists() else detect_format(twitch)
+    if fmt == "nouveau":
+        panneaux, _ = read_panneaux_and_categories(feeds, twitch)
+        return panneaux
+    return {}
 
 
 def ordre_des_categories(items: list[dict], categories: dict[str, str]) -> list[str]:
