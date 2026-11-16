@@ -6,9 +6,21 @@
     font-style: normal;
     font-weight: 400;
     font-display: swap;
-    src: url("../fonts/russo-one.woff2") format("woff2");
+    src: url("/fonts/russo-one.woff2") format("woff2");
 }
-html, body, body * { font-family: "Russo One", "Courier New", monospace !important; }
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/inter.woff2") format("woff2");
+}
+/* Texte courant en Inter (lisible) ; Russo One reste pour les titres, la marque et la navigation. */
+html, body { font-family: "Inter", system-ui, sans-serif; }
+button, input, select, textarea { font-family: inherit; }
+h1, h2, h3, .navbar-brand, .btn-favs, .btn-menu, .btn-settings, .menu-button, .navbar-menu-title, .titre-panneau {
+  font-family: "Russo One", "Courier New", monospace;
+}
 :root {
     --color-text-main: #ffffff;
     --color-text-accent: #ffffff;
@@ -41,7 +53,7 @@ html, body {
     background: var(--bg);
     background-attachment: fixed;  /* le dégradé reste en place pendant le défilement */
     color: var(--color-text-main);
-    font-family: "Courier New", Courier, monospace;
+    font-family: "Inter", system-ui, sans-serif;
     overflow-x: hidden;
     overflow-y: auto;
 }
@@ -223,9 +235,11 @@ html, body {
   outline: none;
 }
 .btn-menu, .btn-settings {
-  font-size: 1.2rem;
+  font-size: 0.9rem;
   padding: 0.5rem 1rem;
 }
+.btn-notifications { font-size: 1.2rem; }
+.btn-menu .icone-menu { font-size: 1.2rem; }
 .navbar-menu {
   position: absolute;
   top: 100%;
@@ -386,6 +400,8 @@ h1 { font-size: clamp(1.8rem, 6vw, 2.8rem); line-height: 1.2; margin-bottom: 0.6
 @media (max-width: 768px) {
     .kioske-navbar {
         padding: 0.6rem 1rem;
+        /* flex, pas grid : la recherche passe sur sa propre ligne (grid ne fait pas passer les éléments à la ligne) */
+        display: flex;
         flex-wrap: wrap;
     }
     .navbar-brand {
@@ -565,6 +581,8 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
             .groupe h3.titre-panneau:hover { text-shadow: 0 0 12px #d9f6ff, 0 0 24px #5bcefa, 0 0 36px rgba(217, 246, 255, 0.5) }
 .groupe h2.titre-panneau:hover { text-shadow: 0 0 12px #d9f6ff, 0 0 24px #5bcefa, 0 0 36px rgba(217, 246, 255, 0.5); }
             .groupe .nuage { margin: 0; padding: 0; border: 0; background: none; justify-content: flex-start; }
+            /* deux blocs qui se suivent dans un panneau (sous-catégorie puis source directe) : un espace entre eux */
+            .groupe .sous-categorie + .sous-categorie, .groupe .sous-categorie + .nuage, .groupe .nuage + .nuage { margin-top: .6rem; }
             /* marge à droite du titre : ancienne place de l'icône RSS, gardée pour ne pas changer la mise en page */
             .groupe { position: relative; }
             .groupe h2 { padding-right: 2rem; }
@@ -718,7 +736,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
                 font-size: 10px;
                 line-height: 1.3;
                 text-align: center;
-                font-family: "Courier New", monospace;
+                font-family: inherit;
             }
 
             .galerie-carte-titre {
@@ -733,7 +751,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
                 font-size: 10px;
                 line-height: 1.3;
                 text-align: center;
-                font-family: "Courier New", monospace;
+                font-family: inherit;
             }
 
             /* Responsive * SOPHIA*/
@@ -773,6 +791,38 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
              *  de part et d'autre, comme la grande galerie ; défilement au doigt ou à la barre aussi, fine et de la
              *  couleur du thème. Pas d'agrandissement au survol, il serait rogné par le bloc. */
             .galerie-slider-bloc { gap: .3rem; margin: .5rem 0; }
+/* Flèches < et > de la galerie : mêmes couleurs que les boutons du thème (.btn-favs) */
+.galerie-arrow-left, .galerie-arrow-right {
+  flex: 0 0 auto;
+  align-self: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: #1a0000;
+  border: 1px solid var(--color-text-accent);
+  border-radius: 2px;
+  color: var(--color-light);
+  font: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 6; /* au-dessus des cartes survolées (z-index 5) */
+}
+.galerie-arrow-left:hover, .galerie-arrow-left:focus-visible,
+.galerie-arrow-right:hover, .galerie-arrow-right:focus-visible {
+  background: var(--color-text-main);
+  color: #000;
+  outline: none;
+}
+/* Petites galeries des blocs de l'accueil : flèches plus petites */
+.galerie-slider-bloc .galerie-arrow-left, .galerie-slider-bloc .galerie-arrow-right {
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: 0.9rem;
+}
             .galerie-bloc { flex: 1 1 auto; min-width: 0; gap: 0.3rem; margin: 0; padding: 0 0 .35rem; scrollbar-width: thin;
                 scrollbar-color: var(--violet-dim) transparent; }
                 .galerie-bloc::-webkit-scrollbar { display: block; height: 6px; }

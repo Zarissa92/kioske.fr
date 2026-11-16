@@ -15,13 +15,11 @@ SOURCES = ROOT / "sources"
 FLUX_RSS = SOURCES / "RSS_feeds.txt"
 CHAINES_TWITCH = SOURCES / "Twitch_feeds.txt"
 REGLAGES_FLUX = SOURCES / "flux_corrige_main.txt"
-BLOC_IMMUABLE = ROOT / "accueil" / "bloc_immuable.html"  # cagnotte, Discord, code de conduite
 STATIC = ROOT / "static"  # favicon, icône, image de partage, polices : recopiés tels quels dans build/
 
 # Données (jamais publiées)
 DATA = ROOT / "data"
 HISTORIQUE_DB = DATA / "historique.db"
-EMPREINTE = DATA / "immuable.json"
 CACHE_DIR = DATA / "cache"
 VERROU = DATA / "build.lock"
 

@@ -9,7 +9,7 @@ const { attendre, charger, clic, touche, panneauOuvert, nbFavoris, premierArticl
   t.verif('données lues depuis le JSON de la page',
     Object.keys(w.sourcesData).length > 0 && Object.keys(w.categoriesData).length > 0 && w.conductCode.length > 0);
   const onclicks = [...d.querySelectorAll('[onclick]')];
-  t.verif('aucun onclick hors du bloc immuable', onclicks.every(e => e.closest('#bloc-infos')), '(' + onclicks.length + ' dans le bloc)');
+  t.verif('aucun onclick dans la page', onclicks.length === 0, '(' + onclicks.length + ')');
   let ouvertures = 0; d.getElementById('fav-file-input').click = () => { ouvertures++; };
   clic(w, d.querySelector('.btn-favs')); await attendre();
   clic(w, d.getElementById('fav-import-btn'));

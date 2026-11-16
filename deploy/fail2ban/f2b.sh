@@ -20,10 +20,10 @@ if [[ -z "$SITE_CONF" || ! -f "$SITE_CONF" ]]; then
     echo "Usage : sudo $0 /chemin/vers/le/fichier/site" >&2
     exit 1
 fi
-if [[ ! -f "$JAIL_FILE" ]] || ! grep -q '^\[sans_pitie\]' "$JAIL_FILE"; then
-    echo "La jail sans_pitie est introuvable dans $JAIL_FILE. Lancez d'abord le script de déploiement fail2ban." >&2
-    exit 1
-fi
+# La jail sans_pitie (ancien serveur) est facultative : sans elle, la page « Tu es banni » et l'action
+# nginx-geo-ban sont tout de même installées ; les jails du site portent leur propre banaction.
+JAIL_SANS_PITIE=0
+if [[ -f "$JAIL_FILE" ]] && grep -q '^\[sans_pitie\]' "$JAIL_FILE"; then JAIL_SANS_PITIE=1; fi
 if ! command -v nginx >/dev/null 2>&1; then
     echo "nginx n'est pas installé." >&2
     exit 1
@@ -124,26 +124,30 @@ fi
 nginx -t
 systemctl reload nginx
 
-# ---------- jail sans_pitie : banaction nginx ----------
-# Remplace la ligne si elle existe, SINON l'insère juste après [sans_pitie]
-tmp=$(mktemp)
-awk '
-    /^\[sans_pitie\][[:space:]]*$/ { print; print "banaction         = nginx-geo-ban"; s = 1; next }
-    /^\[/ { s = 0 }
-    s && /^banaction[[:space:]]*=/ { next }
-    { print }
-' "$JAIL_FILE" > "$tmp"
-cat "$tmp" > "$JAIL_FILE"
-rm -f "$tmp"
+if (( JAIL_SANS_PITIE )); then
+    # ---------- jail sans_pitie : banaction nginx ----------
+    # Remplace la ligne si elle existe, SINON l'insère juste après [sans_pitie]
+    tmp=$(mktemp)
+    awk '
+        /^\[sans_pitie\][[:space:]]*$/ { print; print "banaction         = nginx-geo-ban"; s = 1; next }
+        /^\[/ { s = 0 }
+        s && /^banaction[[:space:]]*=/ { next }
+        { print }
+    ' "$JAIL_FILE" > "$tmp"
+    cat "$tmp" > "$JAIL_FILE"
+    rm -f "$tmp"
 
-if ! awk '
-    /^\[/ { s = ($0 == "[sans_pitie]") }
-    s && /^banaction[[:space:]]*=[[:space:]]*nginx-geo-ban/ { f = 1 }
-    END { exit !f }
-' "$JAIL_FILE"; then
-    echo "Ligne banaction introuvable dans [sans_pitie]." >&2
-    rollback
-    exit 1
+    if ! awk '
+        /^\[/ { s = ($0 == "[sans_pitie]") }
+        s && /^banaction[[:space:]]*=[[:space:]]*nginx-geo-ban/ { f = 1 }
+        END { exit !f }
+    ' "$JAIL_FILE"; then
+        echo "Ligne banaction introuvable dans [sans_pitie]." >&2
+        rollback
+        exit 1
+    fi
+else
+    echo "Jail sans_pitie absente : pas de banaction à poser sur elle (les jails du site ont la leur)."
 fi
 
 # ---------- redémarrage ----------
@@ -158,7 +162,7 @@ fi
 
 trap - ERR
 echo "Déploiement terminé."
-fail2ban-client status sans_pitie
+if (( JAIL_SANS_PITIE )); then fail2ban-client status sans_pitie; fi
 if nginx -T 2>/dev/null | grep -q 'fail2ban-banni'; then
     echo "Include nginx vérifié."
 fi

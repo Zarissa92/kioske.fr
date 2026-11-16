@@ -2,11 +2,10 @@
 # kioske.sh — déploiement de kioske.fr. Un seul point d'entrée pour toutes les parties.
 #
 # Sans argument, déploie TOUT, dans cet ordre. Chaque étape s'arrête à sa première erreur :
-#   immuable   le bloc immuable doit être enregistré (sinon rien n'est publié)
 #   serveur    venv et timer de publication (installer_serveur.sh)
 #   veille     construit le site dans build/ (page, flux, images), puis le publie dans la racine web
 #   nginx      configure le site : HTTP, puis HTTPS si le certificat existe (deployer_nginx.sh)
-#   fail2ban   page « Tu es banni », filtres et jails du site ; étape ignorée si la jail sans_pitie manque
+#   fail2ban   page « Tu es banni », filtres et jails du site ; la jail sans_pitie (ancien serveur) n'est pas requise
 #   statut     contrôle final (verifier_serveur.sh), sans bloquer le déploiement
 #
 # Usage :
@@ -18,7 +17,7 @@
 #   deploy/kioske.sh --simulation             # affiche ce qui serait fait, sans rien lancer
 #   deploy/kioske.sh aide
 #
-# Étapes : immuable, serveur, veille, nginx, fail2ban, statut.
+# Étapes : serveur, veille, nginx, fail2ban, statut.
 # À lancer sur le serveur, en utilisateur normal (meli) : les étapes qui en ont besoin demandent sudo.
 # Jamais le Python système : le venv du projet (venv/ sur le serveur, venv_blog/ sur le PC) est utilisé.
 # Domaine et racine web : lus dans kioske.cfg.
@@ -36,14 +35,13 @@ JAIL_F2B="/etc/fail2ban/jail.d/kioske.local"
 ANCIENNE_JAIL_F2B="/etc/fail2ban/jail.d/kioske-scan.local"
 JAILS_F2B=(kioske-scan kioske-hors-site kioske-interdit kioske-debit)   # un filtre deploy/fail2ban/<nom>.conf chacune
 IP_JAMAIS_BANNIES="$(cfg serveur ip_jamais_bannies)"
-JAIL_PREREQUIS="sans_pitie"
 
 EMAIL=""
 SANS_CERT=0
 NGINX_SIMPLE=0
 SIMULATION=0
 ETAPES=()
-ETAPES_TOUT=(immuable serveur veille nginx fail2ban statut)
+ETAPES_TOUT=(serveur veille nginx fail2ban statut)
 
 info()   { printf '\033[1;34m[info]\033[0m %s\n' "$*"; }
 ok()     { printf '\033[1;32m[ok]\033[0m %s\n' "$*"; }
@@ -76,11 +74,6 @@ python_projet() {
 
 # ---------- Étapes ----------
 
-etape_immuable() {
-    info "Bloc immuable : vérification de l'empreinte"
-    lancer "$(python_projet)" "$DOSSIER/bin/garde_immuable.py" verifier
-}
-
 etape_serveur() {
     info "Serveur : venv et timer de publication"
     lancer bash "$DOSSIER/deploy/installer_serveur.sh"
@@ -110,15 +103,11 @@ etape_nginx() {
 etape_fail2ban() {
     info "fail2ban : page « Tu es banni », filtres et jails du site (${JAILS_F2B[*]})"
     if (( SIMULATION == 1 )); then
-        printf '  [simulation] f2b.sh (si la jail %s existe), puis installation des filtres et des jails %s\n' "$JAIL_PREREQUIS" "${JAILS_F2B[*]}"
+        printf '  [simulation] f2b.sh, puis installation des filtres et des jails %s\n' "${JAILS_F2B[*]}"
         return 0
     fi
     if ! command -v fail2ban-client >/dev/null 2>&1; then
         avert "fail2ban n'est pas installé (sudo apt-get install fail2ban). Étape ignorée."
-        return 0
-    fi
-    if ! sudo fail2ban-client status "$JAIL_PREREQUIS" >/dev/null 2>&1; then
-        avert "La jail [$JAIL_PREREQUIS] n'existe pas dans /etc/fail2ban/jail.d/hardening.local : étape ignorée."
         return 0
     fi
     [[ -f "$SITE_NGINX" ]] || erreur "$SITE_NGINX absent : l'étape nginx doit réussir avant fail2ban."
@@ -186,7 +175,7 @@ while (( $# > 0 )); do
         --sans-certificat) SANS_CERT=1; shift ;;
         --certificat-ok) NGINX_SIMPLE=1; shift ;;
         --simulation) SIMULATION=1; shift ;;
-        immuable|serveur|veille|nginx|fail2ban|statut) ETAPES+=("$1"); shift ;;
+        serveur|veille|nginx|fail2ban|statut) ETAPES+=("$1"); shift ;;
         *) erreur "Option ou étape inconnue : $1 (voir deploy/kioske.sh aide)" ;;
     esac
 done

@@ -162,7 +162,7 @@ EMPLACEMENTS="$(cat <<'NGINX'
 
     # Fichiers que navigateurs et robots demandent d'eux-mêmes et que le site n'a pas : 404 ordinaire,
     # sans passer par le journal hors-site (un visiteur ne doit pas être banni pour un favicon.ico).
-    location ~ ^/(favicon\.ico|apple-touch-icon[a-z0-9-]*\.png|browserconfig\.xml|ads\.txt|app-ads\.txt|humans\.txt|security\.txt|fonts/?)$ {
+    location ~ ^/(favicon\.ico|favicon\.png|apple-touch-icon[a-z0-9-]*\.png|browserconfig\.xml|ads\.txt|app-ads\.txt|humans\.txt|security\.txt|fonts/?)$ {
         return 404;
     }
     location ^~ /.well-known/ {

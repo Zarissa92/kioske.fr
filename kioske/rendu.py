@@ -9,7 +9,6 @@ from pathlib import Path
 from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
-from . import immuable
 from .config import DOMAINE, DOSSIER_RSS_CATEGORIES, GALERIE_PANNEAU, NOM_SITE, URL_SITE, CFG
 from .gabarits import remplir
 from .javascript import (JS_ACCUEIL, JS_CARTE_OUVERTE, JS_DONNEES_ACCUEIL, JS_FAVORIS, JS_FLUX_PERSONNALISE,
@@ -153,7 +152,7 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> str:
 def render_page(items: list[dict], previews: dict[str, dict],
                 categories: dict[str, str] | None = None,
                 panneaux: dict[str, str] | None = None) -> str:
-    """La page d'accueil complète (le KiosKe) : bloc immuable, étiquettes par panneau/catégorie, fenêtres et articles."""
+    """La page d'accueil complète (le KiosKe) : étiquettes par panneau/catégorie, fenêtres et articles."""
     categories = categories or {}
     panneaux = panneaux or {}
 
@@ -268,7 +267,6 @@ def render_page(items: list[dict], previews: dict[str, dict],
     )
     nuage = f'<div class="groupes">{blocs}</div>'
 
-    bloc, bas = immuable.parties()
     galerie_html = render_galerie(items, previews)
     # Référencement : le titre et la description décrivent le contenu réel (sources et catégories du jour).
     titre_page = NOM_SITE
@@ -401,8 +399,6 @@ def render_page(items: list[dict], previews: dict[str, dict],
         boutons_reseaux=boutons_reseaux,
         galerie=galerie_html,
         nuage=nuage,
-        bloc_immuable=bloc,
-        bas_immuable=bas,
         js_favoris=JS_FAVORIS,
         js_partage=JS_PARTAGE,
         js_accueil=JS_ACCUEIL,
@@ -433,8 +429,6 @@ def render_rss_page(categories: dict[str, str] | None = None, items: list[dict] 
         slug = slugs[categorie]
         flux_categories += f'<h2>{esc(categorie)}</h2><a href="rss/{slug}.xml" class="rss-lien">{ICONE_RSS} {esc(categorie)}</a>'
 
-    bloc, bas = immuable.parties()
-
     return remplir(
         "rss.html",
         attributs_html=ATTRIBUTS_HTML,
@@ -449,7 +443,5 @@ def render_rss_page(categories: dict[str, str] | None = None, items: list[dict] 
         domaine=DOMAINE,
         flux_principal=flux_principal,
         flux_categories=flux_categories,
-        bloc_immuable=bloc,
-        bas_immuable=bas,
         js_page_rss=JS_PAGE_RSS,
     )

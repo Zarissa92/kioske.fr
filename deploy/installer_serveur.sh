@@ -46,9 +46,6 @@ if [[ "${1:-}" == "--desinstaller" ]]; then
 fi
 [[ -z "${1:-}" ]] || erreur "Option inconnue : $1 (seule --desinstaller est acceptée)"
 
-# La base du garde immuable doit être là : sinon la page principale ne sera jamais publiée.
-[[ -f "$DOSSIER/data/immuable.json" ]] || erreur "data/immuable.json absent : copie-le depuis ton PC (fonction fish kioske_update)."
-
 # 1. Paquets système
 manquants=()
 for p in python3 python3-venv; do

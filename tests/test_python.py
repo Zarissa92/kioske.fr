@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from kioske import gabarits, javascript  # noqa: E402
+from kioske import gabarits, javascript, sources  # noqa: E402
 from kioske.rendu import NB_GALERIE_BLOC, render_galerie_bloc  # noqa: E402
 
 
@@ -96,6 +96,44 @@ class PageRemplaceeDe404(unittest.TestCase):
         conf = self.NGINX.read_text(encoding="utf-8")
         self.assertIn("error_page 404 /404.html;", conf)
         self.assertIn("location = /404.html", conf)
+
+
+class CommentairesDesSources(unittest.TestCase):
+    """« # » ignore la fin de ligne (hors guillemets), et les sources restent lues."""
+
+    def setUp(self):
+        import tempfile
+        self.dossier = Path(tempfile.mkdtemp())
+        self.flux = self.dossier / "RSS_feeds.txt"
+        self.twitch = self.dossier / "Twitch_feeds.txt"
+        self.flux.write_text(
+            "# commentaire seul\n"
+            "[Panneau: Test] # après panneau\n"
+            "[Test: Cat] # après catégorie\n"
+            '"https://a.example/rss" # après flux\n'
+            '"https://b.example/#frag"\n',
+            encoding="utf-8")
+        self.twitch.write_text(
+            "[Panneau: Test]\n"
+            "# rien\n"
+            '"chaine1" # note\n',
+            encoding="utf-8")
+
+    def test_flux_lus_malgre_les_commentaires(self):
+        self.assertEqual(sources.read_feeds(self.flux),
+                         ["https://a.example/rss", "https://b.example/#frag"])
+
+    def test_chaines_lues_malgre_les_commentaires(self):
+        self.assertEqual(sources.read_twitch(self.twitch), ["chaine1"])
+
+    def test_panneau_et_categorie_lus_apres_commentaire(self):
+        panneaux, categories = sources.read_panneaux_and_categories(self.flux, self.twitch)
+        self.assertEqual(panneaux["https://a.example/rss"], "Test")
+        self.assertEqual(categories["https://a.example/rss"], "Cat")
+        self.assertEqual(panneaux["twitch:chaine1"], "Test")
+
+    def test_diese_entre_guillemets_fait_partie_de_l_url(self):
+        self.assertIn("https://b.example/#frag", sources.read_feeds(self.flux))
 
 
 class EditeurCfg(unittest.TestCase):

@@ -35,11 +35,6 @@
 !/tests/
 !/tests/**
 
-# Données : seul le bloc immuable est suivi (historique, caches et verrou restent locaux)
-!/data/
-/data/*
-!/data/immuable.json
-
 # ---------- Exclusions à l'intérieur des dossiers suivis ----------
 # (placées après les inclusions : elles l'emportent)
 __pycache__/

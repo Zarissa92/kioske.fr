@@ -56,25 +56,21 @@ ${js_donnees_accueil}${js_service_worker}</script>
     <button type="button" class="btn-settings btn-notifications" id="btn-notifications" title="Notifications des flux personnalisés" aria-label="Notifications des flux personnalisés" aria-haspopup="dialog" hidden>🔔</button>
 
     <div class="navbar-button-group">
-      <button type="button" class="btn-settings" id="btn-settings" title="Paramètres" aria-label="Paramètres" aria-controls="navbar-settings" aria-expanded="false">⚙️</button>
-      <div class="navbar-menu" id="navbar-settings" style="display: none;">
+      <button type="button" class="btn-menu" id="btn-menu" title="Menu" aria-controls="navbar-menu" aria-expanded="false"><span class="icone-menu" aria-hidden="true">≡</span> Menu</button>
+      <div class="navbar-menu" id="navbar-menu" style="display: none;">
         <div class="navbar-menu-group">
           <button type="button" class="navbar-menu-title submenu-toggle" data-submenu="themes" aria-expanded="false">🎨 Thèmes ▼</button>
           <div class="theme-options submenu" id="submenu-themes" style="display: none;">
             ${choix_theme}
           </div>
+          <button type="button" class="menu-button" id="btn-sobre" aria-pressed="false">✨ Mode sobre : désactivé</button>
         </div>
 
         <div class="navbar-menu-group">
           <button type="button" class="menu-button" id="btn-custom-flux-navbar">⚙️ Personnaliser flux</button>
           <button type="button" class="menu-button" id="btn-install-pwa-settings">⬇ Installer l'app</button>
         </div>
-      </div>
-    </div>
 
-    <div class="navbar-button-group">
-      <button type="button" class="btn-menu" id="btn-menu" title="Menu" aria-label="Menu" aria-controls="navbar-menu" aria-expanded="false">≡</button>
-      <div class="navbar-menu" id="navbar-menu">
         <div class="navbar-menu-group">
           ${boutons_reseaux}<button type="button" class="menu-button" id="btn-open-conduite">📖 Code de conduite</button>
         </div>
@@ -101,8 +97,6 @@ ${js_donnees_accueil}${js_service_worker}</script>
       <button type="button" class="btn-install-pwa" id="btn-install-pwa">⬇ Installer l'app</button>
     </div>
     <div class="popover-section">
-      ${bloc_immuable}
-      ${bas_immuable}
     </div>
   </div>
   </div>

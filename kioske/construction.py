@@ -19,7 +19,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
-from . import apercus, immuable
+from . import apercus
 from .config import (ARTICLES_PAR_SOURCE, BUILD, CHAINES_TWITCH, DOMAINE, DOSSIER_RSS_CATEGORIES, FLUX_RSS,
                      HISTORIQUE_DB, NOM_PAGE, PAQUET, REGLAGES_FLUX, ROOT, STATIC, TWITCH_SCAN, URL_SITE, RSS_MAX)
 from .flux import load_feed
@@ -114,16 +114,14 @@ def copier_statiques() -> None:
 
 
 def ecrire_page(items: list[dict], previews: dict[str, dict], categories: dict[str, str], panneaux: dict[str, str] | None = None) -> None:
-    """Écrit build/index.html. Le bloc immuable est contrôlé avant et après l'écriture."""
+    """Écrit build/index.html."""
     panneaux = panneaux or {}
     page = render_page(items, previews, categories, panneaux)
-    immuable.verifier_page(page)
     BUILD.mkdir(parents=True, exist_ok=True)
     sortie = BUILD / NOM_PAGE
     tmp = sortie.with_name(sortie.name + ".tmp")
     tmp.write_text(page, encoding="utf-8")
     tmp.replace(sortie)
-    immuable.verifier_page(sortie.read_text(encoding="utf-8"))
     print(f"OK : {len(items)} article(s) écrits dans {sortie.relative_to(ROOT)}")
 
 

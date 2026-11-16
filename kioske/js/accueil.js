@@ -32,8 +32,7 @@ function closePopover() {
 // historique : 'ajouter' (nouvelle entrée), 'remplacer' (ouverture au chargement), 'aucun' (retour/avance du navigateur)
 function showPopover(id, historique = 'ajouter') {
   // Fermer le menu navbar quand on ouvre un panneau
-  const navbarMenu = document.querySelector('.navbar-menu');
-  if (navbarMenu) navbarMenu.classList.remove('open');
+  fermerMenuNavbar();
 
   const container = document.getElementById('container-' + id);
   const dejaOuvert = !!container && openPopover === container;
@@ -66,66 +65,29 @@ window.addEventListener('popstate', (e) => {
     masquerPanneau();  // panneau disparu (page rechargée) : accueil
   }
 });
-// Menu de la barre du haut : ouverture au bouton, fermeture au clic dehors.
-// Menus : fermer l'autre quand on ouvre un
-// aria-expanded suit la classe « open », quel que soit le code qui la change.
+// Menu ≡ (le seul de la barre : thèmes, mode sobre, flux, installation, réseaux, code de conduite).
+// Ouverture au bouton, fermeture au clic dehors, à Échap, ou après un choix. aria-expanded suit l'état.
+function fermerMenuNavbar() {
+  const menu = document.getElementById('navbar-menu');
+  const bouton = document.getElementById('btn-menu');
+  if (menu) { menu.classList.remove('open'); menu.style.display = 'none'; }
+  if (bouton) bouton.setAttribute('aria-expanded', 'false');
+}
 const menuNavbar = document.getElementById('navbar-menu');
 const btnMenuNavbar = document.getElementById('btn-menu');
-const settingsMenu = document.getElementById('navbar-settings');
-const btnSettingsNavbar = document.getElementById('btn-settings');
-
 if (menuNavbar && btnMenuNavbar) {
-  new MutationObserver(() => {
-    btnMenuNavbar.setAttribute('aria-expanded', String(menuNavbar.classList.contains('open')));
-  }).observe(menuNavbar, { attributes: true, attributeFilter: ['class'] });
   btnMenuNavbar.addEventListener('click', () => {
-    // Fermer le menu paramètres s'il est ouvert
-    if (settingsMenu && settingsMenu.style.display !== 'none') {
-      settingsMenu.style.display = 'none';
-      if (btnSettingsNavbar) btnSettingsNavbar.setAttribute('aria-expanded', 'false');
-    }
-    menuNavbar.style.display = menuNavbar.style.display === 'none' ? 'block' : 'none';
-    menuNavbar.classList.toggle('open');
+    const ouvrir = menuNavbar.style.display === 'none';
+    menuNavbar.style.display = ouvrir ? 'block' : 'none';
+    menuNavbar.classList.toggle('open', ouvrir);
+    btnMenuNavbar.setAttribute('aria-expanded', String(ouvrir));
   });
   document.addEventListener('click', (e) => {
     const navbar = document.querySelector('.kioske-navbar');
-    if (navbar && !navbar.contains(e.target)) {
-      menuNavbar.classList.remove('open');
-      menuNavbar.style.display = 'none';
-    }
+    if (navbar && !navbar.contains(e.target)) fermerMenuNavbar();
   });
-}
-
-// Menu Paramètres (⚙️) : même logique
-if (settingsMenu && btnSettingsNavbar) {
-  btnSettingsNavbar.addEventListener('click', () => {
-    // Fermer le menu principal s'il est ouvert
-    if (menuNavbar && menuNavbar.style.display !== 'none') {
-      menuNavbar.style.display = 'none';
-      menuNavbar.classList.remove('open');
-      if (btnMenuNavbar) btnMenuNavbar.setAttribute('aria-expanded', 'false');
-    }
-    const isVisible = settingsMenu.style.display !== 'none';
-    settingsMenu.style.display = isVisible ? 'none' : 'block';
-    btnSettingsNavbar.setAttribute('aria-expanded', String(!isVisible));
-  });
-
-  // Fermer au clic sur un bouton
-  settingsMenu.querySelectorAll('.menu-button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      settingsMenu.style.display = 'none';
-      btnSettingsNavbar.setAttribute('aria-expanded', 'false');
-    });
-  });
-
-  // Fermer au clic dehors
-  document.addEventListener('click', (e) => {
-    const navbar = document.querySelector('.kioske-navbar');
-    if (navbar && !navbar.contains(e.target)) {
-      settingsMenu.style.display = 'none';
-      btnSettingsNavbar.setAttribute('aria-expanded', 'false');
-    }
-  });
+  // Un bouton du menu (mode sobre, flux, installation, réseaux…) le referme ; les thèmes non
+  menuNavbar.querySelectorAll('.menu-button').forEach(b => b.addEventListener('click', () => fermerMenuNavbar()));
 }
 
 // Bouton Personnaliser flux dans le menu paramètres
@@ -166,6 +128,12 @@ document.querySelectorAll('.categorie-backdrop').forEach(backdrop => {
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
+    const menu = document.getElementById('navbar-menu');
+    if (menu && menu.style.display !== 'none') {
+      fermerMenuNavbar();
+      document.getElementById('btn-menu')?.focus();
+      return;
+    }
     if (carteOuverte && !carteOuverte.hidden) {
       fermerCarte();
     } else {
@@ -650,8 +618,7 @@ function adresseSure(adresse, defaut = '#') {
 
 function openFavoritesPanel() {
   // Fermer le menu navbar quand on ouvre le panneau des favoris
-  const navbarMenu = document.querySelector('.navbar-menu');
-  if (navbarMenu) navbarMenu.classList.remove('open');
+  fermerMenuNavbar();
 
   document.getElementById('bloc-infos-container').hidden = true;
 
@@ -777,8 +744,7 @@ if (btnOpenConduct) {
     createConductPanel();
     showPopover('conduct');
     // Fermer le menu
-    const menu = document.querySelector('.navbar-menu');
-    if (menu) menu.classList.remove('open');
+    fermerMenuNavbar();
   });
 }
 

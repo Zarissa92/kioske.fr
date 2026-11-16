@@ -15,13 +15,12 @@ import argparse
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import immuable
 from .config import BUILD, DOSSIER_IMAGES, DOSSIER_RSS_CATEGORIES, NOM_PAGE, RACINE_WEB
 from .construction import analyser_arguments, construire, copier_si_change
 from .verrou import verrou
 
 # Sans ces fichiers, rien n'est publié.
-OBLIGATOIRES = [NOM_PAGE, "favicon.svg", "preview.png", "apple-touch-icon.png", "rss.xml", "fonts/russo-one.woff2"]
+OBLIGATOIRES = [NOM_PAGE, "favicon.svg", "preview.png", "apple-touch-icon.png", "rss.xml", "fonts/russo-one.woff2", "fonts/inter.woff2"]
 # Dossiers entièrement générés : un fichier qui n'est plus dans build/ est retiré de la racine web.
 DOSSIERS_PURGES = [DOSSIER_IMAGES, DOSSIER_RSS_CATEGORIES]
 
@@ -53,8 +52,6 @@ def publier(public: Path) -> None:
     for nom in OBLIGATOIRES:
         if not (BUILD / nom).exists():
             raise SystemExit(f"Fichier absent, rien publié : build/{nom} (lance d'abord un build complet)")
-    # La page n'est publiée que si son bloc immuable est intact (source et page générée).
-    immuable.verifier_page(page.read_text(encoding="utf-8"))
 
     fichiers = [f for f in sorted(BUILD.rglob("*")) if f.is_file() and f.suffix != ".tmp"]
     copies = 0

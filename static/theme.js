@@ -9,6 +9,8 @@
 // japonais.
 (function () {
   const CLE = 'kioske-theme';
+  const CLE_SOBRE = 'kioske-sobre';
+  const FEUILLE_SOBRE = '/style_sobre.css';
   const racine = document.documentElement;
 
   let themes = [];
@@ -21,6 +23,26 @@
 
   function lireChoix() {
     try { return localStorage.getItem(CLE); } catch (e) { return null; }
+  }
+
+  function lireSobre() {
+    try { return localStorage.getItem(CLE_SOBRE) === '1'; } catch (e) { return false; }
+  }
+
+  // Mode sobre : feuille à part (static/style_sobre.css), ajoutée seulement quand le mode est activé
+  function appliquerSobre(actif) {
+    racine.dataset.sobre = actif ? 'oui' : 'non';
+    let lien = document.getElementById('sobre-css');
+    if (actif && !lien) {
+      lien = document.createElement('link');
+      lien.id = 'sobre-css';
+      lien.rel = 'stylesheet';
+      lien.href = FEUILLE_SOBRE;
+      document.head.appendChild(lien);
+    }
+    if (lien) lien.disabled = !actif;
+    const pluie = document.getElementById('pluie');
+    if (actif && pluie) pluie.remove();
   }
 
   function fabriquerPluie() {
@@ -84,11 +106,12 @@
     if (theme.pluie_moyen) racine.style.setProperty('--r-moyen', theme.pluie_moyen);
     if (theme.pluie_bas) racine.style.setProperty('--r-bas', theme.pluie_bas);
 
-    if (theme.pluie) fabriquerPluie();
+    if (theme.pluie && racine.dataset.sobre !== 'oui') fabriquerPluie();
     chargerCss(theme.id);
     marquerBoutons(theme.id);
   }
 
+  appliquerSobre(lireSobre());
   appliquer(lireChoix() || defaut);
 
   // La page n'est pas encore lue en entier : la pluie et les boutons attendent <body>
@@ -100,5 +123,23 @@
         appliquer(b.dataset.themeId);
       });
     });
+
+    // Bouton « Mode sobre » du menu ⚙️ (accueil seulement) : l'effet vaut pour toutes les pages
+    const boutonSobre = document.getElementById('btn-sobre');
+    if (boutonSobre) {
+      const majSobre = () => {
+        const actif = racine.dataset.sobre === 'oui';
+        boutonSobre.setAttribute('aria-pressed', String(actif));
+        boutonSobre.textContent = actif ? '✨ Mode sobre : activé' : '✨ Mode sobre : désactivé';
+      };
+      majSobre();
+      boutonSobre.addEventListener('click', () => {
+        const actif = racine.dataset.sobre !== 'oui';
+        try { localStorage.setItem(CLE_SOBRE, actif ? '1' : '0'); } catch (e) {}
+        appliquerSobre(actif);
+        if (!actif) appliquer(racine.dataset.theme); // remet la pluie du thème, s'il en a une
+        majSobre();
+      });
+    }
   });
 })();

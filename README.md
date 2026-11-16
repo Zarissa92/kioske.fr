@@ -12,8 +12,6 @@ et documentation.
 
 **Mots-clés** : kioske, veille, médias indépendants, LGBTQIA+, RSS, Twitch, informatique libre.
 
-En haut de la page, le **bloc immuable** (cagnotte, lien Discord, code de conduite) n'est jamais
-modifié par le build.
 
 Projet autonome depuis le 2026-11-11, réorganisé depuis : code dans le paquet `kioske/`, site généré dans `build/`, réglages dans `kioske.cfg`. Voir l'historique git pour les modifications détaillées.
 
@@ -39,14 +37,13 @@ L'image est une capture figée : l'animation se voit dans la page.
 3. [Tests](#tests)
 4. [Construire et publier](#construire-et-publier)
 5. [Sources de la veille](#sources-de-la-veille)
-6. [Bloc immuable](#bloc-immuable)
-7. [La page](#la-page)
-8. [Données, caches et images](#données-caches-et-images)
-9. [Déploiement sur le serveur](#déploiement-sur-le-serveur)
-10. [Référencement](#référencement)
-11. [PWA (Progressive Web App)](#pwa-progressive-web-app)
-12. [Limites](#limites)
-13. [Licences](#licences)
+6. [La page](#la-page)
+7. [Données, caches et images](#données-caches-et-images)
+8. [Déploiement sur le serveur](#déploiement-sur-le-serveur)
+9. [Référencement](#référencement)
+10. [PWA (Progressive Web App)](#pwa-progressive-web-app)
+11. [Limites](#limites)
+12. [Licences](#licences)
 
 ## Structure
 
@@ -54,15 +51,14 @@ L'image est une capture figée : l'animation se voit dans la page.
 | --- | --- |
 | `kioske.cfg` | **Tous les réglages** : domaine, thèmes, veille, serveur. Lu par Python et par les scripts bash. |
 | `sources/` | Ce que la veille suit : `RSS_feeds.txt`, `Twitch_feeds.txt`, `flux_corrige_main.txt`. Écrits à la main. |
-| `accueil/bloc_immuable.html` | Source du bloc immuable. |
-| `static/` | Fichiers publiés tels quels : `404.html` (page d'erreur, servie par nginx pour toute adresse inexistante), `dispositions-legales.html` (mentions légales, liée en bas de l'accueil ; emplacements à compléter), `favicon.svg`, `apple-touch-icon.png`, `preview.png`, `fonts/`, `theme.js` (thème choisi par le visiteur et pluie matricielle, sur toutes les pages), `sw.js` et `manifest.json` (PWA), icônes `icon-*.png`. |
+| `static/` | Fichiers publiés tels quels : `404.html` (page d'erreur, servie par nginx pour toute adresse inexistante), `dispositions-legales.html` (mentions légales, liée en bas de l'accueil ; emplacements à compléter), `favicon.svg`, `apple-touch-icon.png`, `preview.png`, `fonts/` (Russo One pour les titres et la navigation, Inter pour le texte courant ; chemins absolus `/fonts/…` dans les CSS, pour que les pages d'article et de catégorie les trouvent), `theme.js` (thème choisi par le visiteur, pluie matricielle et mode sobre, sur toutes les pages), `style_sobre.css` (feuille du mode sobre, chargée seulement quand il est activé), `sw.js` et `manifest.json` (PWA), icônes `icon-*.png`. |
 | `kioske/` | Le code (paquet Python), la feuille de style `style.css`, les squelettes HTML des pages (`gabarits/`) et leur JavaScript (`js/`). Voir ci-dessous. |
 | `tests/` | Tests du site, lancés sur le PC par `bash tests/lancer.sh` (voir « Tests »). |
 | `outils/` | Outils locaux, jamais envoyés au serveur. `parametres_gui.py` : fenêtre pour régler `kioske.cfg` (tkinter, bibliothèque standard). Lancement : `venv_blog/bin/python outils/parametres_gui.py`. Commentaires du fichier conservés, copie `kioske.cfg.bak` avant chaque enregistrement. `cfg_editeur.py` : la logique (lecture, validation, écriture), testée par `tests/test_python.py`. |
-| `bin/` | Points d'entrée : `build_site.py`, `publier_public.py`, `garde_immuable.py`. Quelques lignes chacun. |
+| `bin/` | Points d'entrée : `build_site.py`, `publier_public.py`. Quelques lignes chacun. |
 | `deploy/` | Scripts du serveur : `kioske.sh` (point d'entrée), `installer_serveur.sh`, `deployer_nginx.sh`, `verifier_serveur.sh`, `lib_config.sh`, `systemd/`, `fail2ban/`. |
-| `data/` | `immuable.json` (empreinte du bloc, suivie par git) ; `historique.db`, `cache/`, `build.lock` (locaux, jamais publiés). |
-| `build/` | **Le site généré**, complet : `index.html` (accueil), `rss.html` (découverte des flux RSS), `articles/{id}-{slug}/index.html` (une page par article), `categories/{slug}/index.html` (une page par catégorie), `articles-index.json` (index de tous les articles : recherche et favoris), `rss.xml`, `rss/{slug}.xml` (flux par catégories), `img/veille/`, copie de `static/`, `robots.txt`, `sitemap.xml`. Hors git, jamais édité à la main, jamais envoyé au serveur. |
+| `data/` | `historique.db`, `cache/`, `build.lock` (locaux, jamais publiés). |
+| `build/` | **Le site généré**, complet : `index.html` (accueil), `rss.html` (découverte des flux RSS), `articles/{id}-{slug}/index.html` (une page par article), `categories/{slug}/index.html` (une page par catégorie), `articles-index.json` (index de tous les articles : recherche et favoris), `rss.xml`, `rss/{slug}.xml` (flux par catégories), `img/previews/` (cartes de partage ; les images des articles restent chez leur source), copie de `static/`, `robots.txt`, `sitemap.xml`. Hors git, jamais édité à la main, jamais envoyé au serveur. |
 | `requirements.txt` | Dépendances Python (`feedparser`, `yt-dlp`, `legacy-cgi`). |
 | `apercu/preview.svg` | Source de `static/preview.png` (image de partage social) : générer avec `rsvg-convert -w 1200 -h 630 apercu/preview.svg -o static/preview.png`. |
 | `docs/img/` | Captures de ce README. |
@@ -82,7 +78,6 @@ Le paquet `kioske/` :
 | `rendu_statique.py` | Contenu des pages statiques d'articles et de catégories (image, navigation, cartes ; le squelette est dans `gabarits/`). Aucun CSS (il est dans `style.css`) ni JavaScript (il est dans `js/`). |
 | `gabarits.py`, `gabarits/` | Squelettes HTML des pages : `accueil.html`, `article.html`, `categorie.html`, `rss.html`. `${nom}` marque l'endroit d'une valeur ; ni boucle ni condition dans un gabarit. `gabarits.py` fournit `remplir("page.html", nom=valeur, …)` : une valeur manquante arrête le build, et le texte est échappé par Python (`esc()`) avant d'être passé. Un vrai signe dollar s'écrit `$$`. Pour modifier le HTML fixe d'une page, éditer son gabarit ; pour y ajouter une valeur, écrire `${nom}` dans le gabarit et passer `nom=…` dans l'appel `remplir()` de `rendu.py` ou `rendu_statique.py`. |
 | `javascript.py`, `js/` | Tout le JavaScript écrit dans les pages. `js/` : un fichier par rôle — `accueil.js` (panneaux, cartes, recherche, panneau « Mes favoris », menu), `notifications.js` (cloche et notifications des flux personnalisés, désactivées par défaut ; elles arrivent pendant que le site est ouvert), `rafraichissement.js` (l'accueil se recharge seul quand une nouvelle version est publiée, sauf si un panneau est ouvert), `favoris.js` (♡ et favoris enregistrés dans le navigateur, sur toutes les pages qui montrent un article), `partage.js` (bouton 📤), `galerie.js` (flèches des galeries), `carte_ouverte.js` (carte d'article par-dessus la page), `retour_app.js` (bouton précédent dans l'app installée), `installation_pwa.js`, `donnees_accueil.js` (lit le JSON des articles), `service_worker.js`, `page_article.js`, `page_categorie.js`, `page_rss.js`. `javascript.py` les lit (constantes `JS_…`) et fournit `json_pour_page()` pour les données. Pour ajouter un script : créer le fichier dans `js/`, ajouter sa constante dans `javascript.py`, l'insérer dans la page voulue. |
-| `immuable.py` | Garde du bloc immuable. |
 | `verrou.py` | Un seul build ou une seule publication à la fois. |
 | `construction.py`, `publication.py` | Le build (`build/`) et la copie vers la racine web. |
 
@@ -101,7 +96,7 @@ Format INI, commenté dans le fichier. Une valeur manquante ou invalide arrête 
 Deux thèmes disponibles : `red_neon` (néon rouge intense avec pluie matricielle et fond noir) et `white_neon` (néon blanc aux étoiles avec pluie matricielle et néons réduits de moitié). Ajouter une section `[theme.<nom>]` ajoute un bouton de choix sur la page.
 
 Les scripts bash lisent les mêmes valeurs avec `cfg <section> <clé>` (`deploy/lib_config.sh`).
-Après un changement de `intervalle_timer` ou de `racine_web`, relancer `deploy/installer_serveur.sh`.
+Après un changement de `intervalle_timer` ou de la racine web (`RACINE_WEB`), relancer `deploy/installer_serveur.sh`.
 
 ## Tests
 
@@ -124,6 +119,9 @@ parcours des visiteurs dans jsdom, sans navigateur, sur les pages de `build/` :
 | `test_galeries.js` | Galerie des panneaux de catégorie et des blocs de l'accueil : contenu, flèches, liens de retour. |
 | `test_pages.js` | Favoris, partage, données, recherche et code de conduite, sur l'accueil, une page d'article, une page de catégorie et `rss.html`. |
 | `test_securite.js` | Un titre ou un résumé contenant du HTML reste du texte ; un fichier de favoris trafiqué ne passe pas d'adresse `javascript:`. |
+| `test_notifications.js` | Cloche selon le flux, notifications désactivées par défaut, activation sans inondation, seules les sources cochées notifient, arrêt à la désactivation (API Notification simulée). |
+| `test_rafraichissement.js` | Nouvelle version détectée : rechargement si rien n'est ouvert, bannière sinon. |
+| `test_flux_personnalise.js` | Une source ajoutée après le choix reste visible ; une source décochée reste masquée ; un ancien choix garde son comportement. |
 
 `tests/outils.js` charge une page de `build/` dans jsdom et simule `fetch`. Le build local n'a souvent
 aucune image : les tests de galerie en posent de factices. Ce que ces tests ne voient pas : le rendu
@@ -158,7 +156,7 @@ Puis ouvrir `http://localhost:8000/` dans le navigateur. Appuyer sur Ctrl+C pour
 
 Un build local sans réseau (`--simple`) n'a pas les images.
 
-La publication copie `build/` dans la racine web (`racine_web`). Elle se lance **sur le serveur** :
+La publication copie `build/` dans la racine web (`RACINE_WEB`, `/srv/kioske.fr` par défaut). Elle se lance **sur le serveur** :
 
 ```bash
 venv/bin/python bin/publier_public.py                # construit, puis copie (ce que fait le timer)
@@ -186,45 +184,39 @@ jusqu'à la ligne `[…]` suivante. Une source sans catégorie tombe dans le blo
 "ostpolitik"
 ```
 
+- Commentaires : tout ce qui suit un `#` hors guillemets est ignoré, sur une ligne seule ou après une
+  source ou un en-tête `[…]` (`"https://…" # note`). Un `#` entre guillemets fait partie de l'URL.
+  `kioske/sources.py` (`retirer_commentaire`) gère ça pour tous les fichiers de `sources/`.
 - `RSS_feeds.txt` est une **copie** de la liste du bot Discord : si l'une des deux change, recopier l'autre.
 - `Twitch_feeds.txt` est **propre à ce projet** (même format que celle du bot, mais indépendante).
 - `flux_corrige_main.txt` : réglages locaux. `!"URL"` ignore un flux, `"URL" | Nom` change son nom
-  affiché (flux RSS seulement). Pas de commentaire en fin de ligne. Un flux qui ne fournit pas de
+  affiché (flux RSS seulement). Un flux qui ne fournit pas de
   titre donne une étiquette vide (seulement « ×10 ») : lui donner un nom ici, comme pour
   `agauche.org` (« À gauche »). Le nom apparaît au build complet suivant, pas avec `--simple`.
+- Un panneau mêle des sources « à sous-titre » et des sources directes (sans `[Panneau: …: Sous-titre]`) :
+  elles forment des blocs séparés, espacés par le CSS (`.groupe .sous-categorie + …`, dans les 7 thèmes).
 - Une source présente dans deux catégories garde la première. Les étiquettes sont regroupées par URL :
   un flux renommé n'apparaît qu'une fois.
-
-## Bloc immuable
-
-`accueil/bloc_immuable.html` contient le bloc entre `<!-- IMMUABLE:DEBUT -->` et `<!-- IMMUABLE:FIN -->`.
-Le build l'insère tel quel. Deux contrôles :
-
-1. la source doit correspondre à l'empreinte de `data/immuable.json` ;
-2. la page générée doit contenir le bloc **à l'identique**, avant et après son écriture, et encore
-   avant la publication.
-
-```bash
-venv_blog/bin/python bin/garde_immuable.py verifier      # échoue si le bloc a changé
-venv_blog/bin/python bin/garde_immuable.py enregistrer   # accepte la version actuelle (après une modif voulue)
-```
-
-Tant que l'empreinte n'est pas réenregistrée après une modification, rien n'est écrit ni publié.
 
 ## La page
 
 ### Accueil
 
 - **Barre du haut** (fixe en haut de l'écran) : logo avec le nombre d'articles et de sources, champ de
-  recherche, bouton ♡ (favoris), menu ≡. Le menu contient le choix du thème, les liens Flux RSS, Discord et
+  recherche, bouton ♡ (favoris), bouton « ≡ Menu » (un seul menu, l'ancien ⚙️ est fondu dedans). Le menu contient le choix du thème, le mode sobre, la personnalisation des flux, l'installation, les liens Flux RSS, Discord et
   Mastodon (selon `[reseaux]` ; de vrais liens, les externes dans un nouvel onglet avec
-  `rel="noopener noreferrer"`) et le code de conduite. Le bouton ≡ annonce l'état du menu (`aria-expanded`).
+  `rel="noopener noreferrer"`) et le code de conduite. Le menu se ferme au clic dehors, à Échap (le focus revient au bouton) ou après un choix. Le bouton annonce l'état du menu (`aria-expanded`).
 - **Thème au choix du visiteur** : boutons `.theme-bouton`, gérés par `static/theme.js`. Le choix est gardé
   dans `localStorage` (clé `kioske-theme`, aucun cookie) et s'applique à toutes les pages. Le build pose le
   thème par défaut sur `<html>` (`data-fond`, `data-pluie`, `--panneau-opacite`) : sans JavaScript, c'est
   lui qui s'affiche, sans pluie. Les règles sont dans la section « Thèmes » de `kioske/style.css`.
 - **Pluie matricielle** : colonnes créées par `static/theme.js`, signes affichés par CSS depuis un attribut.
   La page ne contient aucun texte japonais (les navigateurs ne proposent plus de la traduire).
+- **Mode sobre** (menu ≡, bouton `#btn-sobre`, clé `localStorage` `kioske-sobre` : `1` activé, `0` coupé) :
+  pas de pluie, pas de halo (`text-shadow`, `box-shadow`), pas d'animation, pas de reflet des favoris. `theme.js`
+  pose `data-sobre` sur `<html>` dès le `<head>` et ajoute la feuille `static/style_sobre.css` (désactivable,
+  `!important` pour passer par-dessus les feuilles de thème). Le bouton n'existe que sur l'accueil ; l'effet
+  vaut sur toutes les pages. Pas encore de réglage par défaut dans `kioske.cfg`. Test : `tests/test_sobre.js`.
 - **`theme.js` est mis en cache** par le service worker : après l'avoir modifié, changer `CACHE_VERSION`
   dans `static/sw.js`.
 - **Recherche** : taper puis Entrée. Le script charge `/articles-index.json` et cherche dans les titres,
@@ -232,6 +224,8 @@ Tant que l'empreinte n'est pas réenregistrée après une modification, rien n'e
   d'article ou de catégorie, la recherche renvoie vers l'accueil (`/?q=…`), qui l'exécute.
 - **Galerie horizontale** : les 12 derniers articles ayant une image. Les flèches < et > font défiler au
   survol.
+  Les flèches prennent les couleurs du thème (fond, bordure, survol) : règle `.galerie-arrow-left/right` dans chaque `kioske/style_<thème>.css`.
+- **Barre du haut sur petit écran** : sous 768 px, elle passe en flex (marque et boutons, puis la recherche sur sa propre ligne). Règle dans le bloc `@media (max-width: 768px)` de chaque `kioske/style_<thème>.css`.
 - **Galerie des blocs de catégorie** : dans chaque bloc de l'accueil, entre le titre et les étiquettes, une
   rangée de petites vignettes des 12 derniers articles de la catégorie ayant une image. Flèches < et >
   comme sur la grande galerie ; elle défile aussi au doigt ou à la barre de défilement. Un clic ouvre la
@@ -326,8 +320,7 @@ Tant que l'empreinte n'est pas réenregistrée après une modification, rien n'e
 - **Lisibilité** : cartes et panneaux opaques ; seul le grand panneau principal est translucide
   (`opacite_panneau`).
 
-Le CSS est dans `kioske/style.css`, inséré dans la page au build. Celui du bloc
-immuable est dans `accueil/bloc_immuable.html`.
+Le CSS est dans `kioske/style.css`, inséré dans la page au build.
 
 ## Données, caches et images
 
@@ -343,7 +336,7 @@ immuable est dans `accueil/bloc_immuable.html`.
 - **Cartes de partage** (`build/img/previews/`) : composées au build à partir de l'image d'origine, lue
   en mémoire et jamais écrite ; seule la carte, petite, est stockée. Une carte est recomposée seulement
   si elle n'existe pas encore.
-- L'ancien dossier `build/img/veille/` est vidé à chaque build (`purger_images`).
+- L'ancien dossier `build/img/veille/` (copies d'images d'avant la bascule) est vidé à chaque build (`purger_images`).
 - **Flux RSS produits** : `build/rss.xml` (les 100 articles les plus récents) et un flux par catégorie
   dans `build/rss/`, avec le texte complet de chaque article.
 
@@ -353,9 +346,9 @@ Le site est construit et servi par le serveur (Debian 13, nginx). Le projet vit 
 `/home/<utilisateur>/kioske.fr`, la racine servie est la racine `/srv/kioske.fr` (demandée au terminal à l'installation, défaut : `/srv/kioske.fr`). L'IP publique est demandée par `deploy/verifier_serveur.sh`.
 
 **Variable d'environnement `RACINE_WEB`** : chemin absolu du répertoire public où le site est publié
-(ex: `/home/<utilisateur>/kioske.fr/public`). Les scripts de déploiement (`deployer_nginx.sh`, `deployer_nginx_simple.sh`,
-`kioske.sh`) la lisent depuis l'environnement ou depuis `kioske.cfg` (`[serveur]`, clé `racine_web`).
-Si elle n'est pas définie, les scripts la demandent en entrée interactif.
+(défaut : `/srv/kioske.fr`). `deploy/kioske.sh` la demande une seule fois et la transmet aux scripts qu'il lance ;
+lancé seul, chaque script la demande s'il ne la reçoit pas. Le timer systemd la reçoit de son unité.
+Elle n'est pas dans `kioske.cfg`.
 
 **Depuis le PC** : la fonction fish `kioske_update` (rsync avec `--delete`).
 
@@ -365,9 +358,9 @@ kioske_update              # envoi vers <utilisateur>@<serveur>:/home/<utilisate
 ```
 
 Elle fonctionne par **liste blanche** : elle n'envoie que ce qui sert au déploiement, à savoir `bin/`,
-`kioske/`, `accueil/`, `sources/`, `static/`, `deploy/`, `data/immuable.json`, `kioske.cfg` et
+`kioske/`, `accueil/`, `sources/`, `static/`, `deploy/`, `kioske.cfg` et
 `requirements.txt`. Tout le reste est exclu, notamment `build/` (le site généré reste sur le serveur),
-`data/` hors `immuable.json` (historique, caches, verrou), `tests/`, `docs/`, les venvs, `README.md`,
+`data/` (historique, caches, verrou), `tests/`, `docs/`, les venvs, `README.md`,
 `TODO.md`, `.git/`, `CLAUDE.md`. Avec `--delete`, les fichiers exclus côté serveur ne sont pas retirés.
 Une copie de l'ancienne fonction reste dans `~/.config/fish/functions/kioske_update.fish.avant-liste-blanche`.
 
@@ -387,17 +380,16 @@ bash deploy/deployer-nginx-simple.sh
 ```bash
 cd /home/<utilisateur>/kioske.fr
 deploy/kioske.sh                          # tout, dans l'ordre
-deploy/kioske.sh --email toi@exemple.fr   # tout, et demande le certificat Let's Encrypt
+deploy/kioske.sh                          # tout, et demande l'adresse e-mail du certificat (Let's Encrypt)
 deploy/kioske.sh veille                   # seulement la mise à jour (ce que lance le timer)
 deploy/kioske.sh --simulation             # affiche sans rien lancer
 ```
 
 | Étape | Ce qu'elle fait |
 | --- | --- |
-| `immuable` | Vérifie l'empreinte du bloc immuable. |
 | `serveur` | `installer_serveur.sh` : venv, racine web, unités systemd, premier passage. |
 | `veille` | `publier_public.py` : construit `build/` puis le copie dans la racine web. |
-| `nginx` | `deployer_nginx.sh` : HTTP, puis HTTPS si le certificat existe. Options `--email`, `--sans-certificat`. |
+| `nginx` | `deployer_nginx.sh` : HTTP, puis HTTPS si le certificat existe. L'adresse e-mail est demandée au terminal (ou passée par `--email`). Option `--sans-certificat`. |
 | `fail2ban` | Page « Tu es banni », filtres et jails du site (`kioske-scan`, `kioske-hors-site`, `kioske-interdit`, `kioske-debit`). Ignorée si la jail `sans_pitie` manque ; demande que l'étape `nginx` soit à jour. |
 | `statut` | `verifier_serveur.sh` : DNS, nginx, HTTPS, certificat, timer, âge de la dernière publication. |
 
@@ -519,11 +511,6 @@ au prochain chargement.
   `curl -sI https://kioske.fr/` affiche `content-security-policy`, `strict-transport-security`,
   `cache-control` et `content-language: fr`, puis essayer la recherche et l'ouverture d'une carte. La CSP est appliquée aux pages
   pour la première fois : si un élément ne s'affiche plus, la console du navigateur indique la règle en cause.
-- **Deux invitations Discord différentes** : le menu ≡ utilise `discord` de `kioske.cfg`, le bloc immuable
-  en contient une autre. À harmoniser si l'une des deux est périmée.
-- **Panneau d'infos sans bouton** : le bouton « Installer l'app » est dans un panneau (`bloc-infos-container`) que plus aucun bouton n'ouvre.
-- **Cartes des pages de catégorie statiques** : la ligne sous l'image affiche l'adresse de l'article au lieu
-  de « date · site ».
 - **Titres et résumés des flux** : insérés tels quels dans le HTML des panneaux par le JavaScript de
   l'accueil ; un flux malveillant pourrait y injecter du code.
 - Un flux injoignable est ignoré avec un message `[flux] …` ; la page est construite sans lui.
@@ -538,5 +525,6 @@ au prochain chargement.
 **kioske.fr** : GNU General Public License v3 (`LICENSE`). Vous pouvez copier, modifier et distribuer ce projet
 sous les termes de la GPL v3.
 
-Articles et vidéos de la veille : leurs auteur.ice.s et sites respectifs. Police Russo One : SIL Open
-Font License (`static/fonts/OFL.txt`).
+Articles et vidéos de la veille : leurs auteur.ice.s et sites respectifs. Police Russo One (titres, marque,
+navigation) : SIL Open Font License (`static/fonts/OFL.txt`). Police Inter (texte courant, sous-ensemble latin
+`static/fonts/inter.woff2`) : SIL Open Font License (`static/fonts/OFL-Inter.txt`).

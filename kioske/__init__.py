@@ -2,6 +2,6 @@
 squelettes des pages dans kioske/gabarits/.
 
 Modules : config (chemins, kioske.cfg), sources, flux, twitch, apercus, images, historique,
-themes, gabarits, javascript, rendu, rss, immuable, verrou, construction, publication.
-Points d'entrée : bin/build_site.py, bin/publier_public.py, bin/garde_immuable.py.
+themes, gabarits, javascript, rendu, rss, verrou, construction, publication.
+Points d'entrée : bin/build_site.py, bin/publier_public.py.
 """

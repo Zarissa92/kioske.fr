@@ -134,10 +134,14 @@ def render_category_page(category_name: str, articles: list[dict],
         else:
             media = f'<span class="lettre">{esc((source_name[:1] or "•").upper())}</span>'
 
+        date = article.get("date")
+        date_paris = date.astimezone(ZoneInfo("Europe/Paris")) if date else None
+        meta = f'{date_paris:%d/%m/%Y} · ' if date_paris else ''
+        meta += source_name
         articles_html.append(
             f'<a href="/articles/{art_id}-{art_slug}/?from={quote(from_param[6:])}" class="carte carte-lien">'
             f'<span class="carte-image" aria-hidden="true">{media}</span>'
-            f'<span class="carte-corps"><span class="meta">{esc(article["link"])}</span>'
+            f'<span class="carte-corps"><span class="meta">{esc(meta)}</span>'
             f'<span class="carte-titre">{esc(title)}</span><span class="carte-extrait">{esc(summary)}</span></span>'
             f'<span class="carte-plus" aria-hidden="true">+</span></a>'
         )

@@ -14,6 +14,13 @@
       font-display: swap;
       src: url("/fonts/russo-one.woff2") format("woff2");
     }
+    @font-face {
+      font-family: "Inter";
+      font-style: normal;
+      font-weight: 100 900;
+      font-display: swap;
+      src: url("/fonts/inter.woff2") format("woff2");
+    }
     :root {
       --color-text-main: #f0f4f6;
       --neon-coeur: #7FE5FF;
@@ -21,8 +28,9 @@
       --color-text-accent: #FF0054;
     }
     html, body { margin: 0; min-height: 100%; background: #000; color: var(--color-text-main); }
+    h1, h2 { font-family: "Russo One", "Courier New", monospace; }
     body {
-      font-family: "Russo One", "Courier New", monospace;
+      font-family: "Inter", system-ui, sans-serif;
       padding: 24px 16px 48px;
       box-sizing: border-box;
       line-height: 1.55;

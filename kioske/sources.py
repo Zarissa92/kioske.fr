@@ -17,11 +17,23 @@ CATEGORY_RE = BRACKET_RE  # backward compat
 AUTRES = "Des Liens"  # titre du bloc des sources qui ne sont dans aucune catégorie
 
 
+def retirer_commentaire(line: str) -> str:
+    """Coupe la ligne au premier « # » hors guillemets. « # » seul sur la ligne = ligne vide."""
+    dans_guillemets = False
+    for i, car in enumerate(line):
+        if car == '"':
+            dans_guillemets = not dans_guillemets
+        elif car == "#" and not dans_guillemets:
+            return line[:i].strip()
+    return line.strip()
+
+
 def detect_format(path: Path) -> str:
     """Détecte ancien format [Cat] ou nouveau [Panneau:...] / [Cat:...]."""
     if not path.exists():
         return "ancien"
     for line in path.read_text(encoding="utf-8").splitlines():
+        line = retirer_commentaire(line)
         if BRACKET_RE.match(line) and ":" in line:
             return "nouveau"
     return "ancien"
@@ -44,7 +56,7 @@ def read_panneaux_and_categories(feeds: Path, twitch: Path) -> tuple[dict[str, s
         categorie_actuelle = None
 
         for line in path.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
+            line = retirer_commentaire(line)
             if not line or line.startswith("#"):
                 continue
 
@@ -87,7 +99,7 @@ def read_feeds(path: Path) -> list[str]:
     """URLs des flux, sans doublons, dans l'ordre du fichier."""
     urls = []
     for line in path.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
+        line = retirer_commentaire(line)
         if not line or line.startswith("#"):
             continue
         if CATEGORY_RE.match(line):  # ligne de catégorie : lue par read_categories
@@ -107,7 +119,7 @@ def read_local(path: Path) -> tuple[set[str], dict[str, str]]:
     if not path.exists():
         return ignored, names
     for line in path.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
+        line = retirer_commentaire(line)
         if not line or line.startswith("#"):
             continue
         m = CONFIG_RE.match(line)
@@ -126,7 +138,7 @@ def read_twitch(path: Path) -> list[str]:
     """Noms des chaînes Twitch, en minuscules, sans doublons."""
     names = []
     for line in path.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
+        line = retirer_commentaire(line)
         if not line or line.startswith("#"):
             continue
         if CATEGORY_RE.match(line):  # ligne de catégorie : lue par read_categories
@@ -158,7 +170,7 @@ def read_categories(feeds: Path, twitch: Path) -> dict[str, str]:
         regex = TWITCH_LINE_RE if est_twitch else LINE_RE
         courante = None
         for line in path.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
+            line = retirer_commentaire(line)
             if not line or line.startswith("#"):
                 continue
             titre = BRACKET_RE.match(line)

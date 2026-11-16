@@ -1,13 +1,22 @@
 [Panneau: Vidéo et radio]
 [Vidéo et radio: Youtube]
-"https://www.youtube.com/feeds/videos.xml?channel_id=UCdnaDhU-LDQrIEEmSIfq0-Q"
-"https://www.youtube.com/feeds/videos.xml?channel_id=UCGvjUWz3mGV9cssraATuEsw"
-"https://www.youtube.com/feeds/videos.xml?channel_id=UCYxsgv2jlCcMLq8pNlwrJSQ"
-"https://www.youtube.com/feeds/videos.xml?channel_id=UCPVS8efBdhXGGYs4JW2IJcQ"
-"https://www.youtube.com/feeds/videos.xml?channel_id=UC__xRB5L4toU9yYawt_lIKg"
+"https://www.youtube.com/feeds/videos.xml?channel_id=UCdnaDhU-LDQrIEEmSIfq0-Q" #mediapart
+"https://www.youtube.com/feeds/videos.xml?channel_id=UCGvjUWz3mGV9cssraATuEsw"  #radio nova
+"https://www.youtube.com/feeds/videos.xml?channel_id=UCYxsgv2jlCcMLq8pNlwrJSQ" #analyse politique
+"https://www.youtube.com/feeds/videos.xml?channel_id=UCPVS8efBdhXGGYs4JW2IJcQ"  #kiffe ta race
+"https://www.youtube.com/feeds/videos.xml?channel_id=UC__xRB5L4toU9yYawt_lIKg"  #blast
+"https://www.youtube.com/feeds/videos.xml?channel_id=UCbbmy1wFvL1Xq0G9I-mLtQg"  #paduteam
+"https://www.youtube.com/feeds/videos.xml?channel_id=UCNq4kPggEIA_ZCNXhnbIXGg"  #book margorito
+"https://www.youtube.com/feeds/videos.xml?channel_id=UCJd1AFjN9vIgVDDB6UE2UQg" #Marouchka
+
+
+[Vidéo et radio: Economie]
+"https://www.youtube.com/feeds/videos.xml?channel_id=UC7sXGI8p8PvKosLWagkK9wQ"  #heureka
+"https://www.youtube.com/feeds/videos.xml?channel_id=UCyJDHgrsUKuWLe05GvC2lng" #stupid eco
+
 [Vidéo et radio: Podcasts]
-"https://www.infolibertaire.net/feed/podcasts/"
 "https://www.mediapart.fr/journal/podcasts/rss"
+"https://feeds.audiomeans.fr/feed/d9cd7538-7491-4873-b0c4-90ccba60ccf6.xml"  #lescouillessurlatbale
 
 
 [Panneau: Médias Libre]
@@ -27,20 +36,25 @@
 "https://www.politis.fr/flux-rss/"
 "https://lesjours.fr/rss.xml"
 "https://portail.basta.media/spip.php?page=backend"
-"https://www.infolibertaire.net/feed"
 
 [Médias Libre: Divers]
+"https://positions-revue.fr/rss/"
 "https://histoirescrepues.fr/rss/"
 "https://ajis.asso.fr/feed"
 "https://urbania.ca/articles.rss"
 "https://contre-attaque.net/feed/"
 "https://agauche.org/feed/"
 "https://rezo.net/backend/"
-
+"https://www.infolibertaire.net/feed"
 
 
 [Panneau: International]
+[International: Presse]
+"https://theintercept.com/feeds/"
 "https://orientxxi.info/?page=backend&lang=fr"
+
+[International: Culture]
+"https://www.youtube.com/feeds/videos.xml?channel_id=UCgi2u-lGY-2i2ubLsUr6FbQ"  #FD signifier
 
 
 [Panneau: Technologie]
@@ -51,6 +65,7 @@
 [Technologie: Généraliste]
 "https://next.ink/feed/"
 "https://usbeketrica.com/fr/rss"
+"https://www.youtube.com/feeds/videos.xml?channel_id=UCFe-p93CVJ13v3GM0hIzYNg"  #canardpc
 
 [panneau: LGBT]
 
@@ -59,7 +74,7 @@
 "https://www.outrans.org/feed/"
 "https://revueladeferlante.fr/feed/"
 "https://www.inter-lgbt.org/feed/"
-
 [LGBT: EN]
 "https://thepinktimes.com/rss.xml"
 "https://www.thepinknews.com/feed/"
+"https://www.youtube.com/feeds/videos.xml?channel_id=UCAsbcajgc4tlzwInKWSdeyg"  #Matt
