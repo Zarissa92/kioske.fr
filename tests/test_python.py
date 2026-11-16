@@ -73,5 +73,30 @@ class GalerieDesBlocs(unittest.TestCase):
         self.assertEqual(render_galerie_bloc("Médias", sans_image, {}), "")
 
 
+class PageRemplaceeDe404(unittest.TestCase):
+    """static/404.html : publiée à la racine, sobre, sans ressource d'un autre site."""
+
+    PAGE = Path(__file__).resolve().parent.parent / "static" / "404.html"
+    NGINX = Path(__file__).resolve().parent.parent / "deploy" / "deployer_nginx.sh"
+
+    def test_page_en_francais_sans_indexation(self):
+        html = self.PAGE.read_text(encoding="utf-8")
+        self.assertIn('lang="fr"', html)
+        self.assertIn('content="noindex"', html)
+
+    def test_aucune_ressource_externe_ni_script(self):
+        html = self.PAGE.read_text(encoding="utf-8")
+        self.assertNotIn("<script", html)
+        for attribut in ('src="', 'href="', 'url("'):
+            for morceau in html.split(attribut)[1:]:
+                adresse = morceau.split('"')[0].split(")")[0]
+                self.assertFalse(adresse.startswith(("http://", "https://", "//")), adresse)
+
+    def test_nginx_sert_la_page_sur_404(self):
+        conf = self.NGINX.read_text(encoding="utf-8")
+        self.assertIn("error_page 404 /404.html;", conf)
+        self.assertIn("location = /404.html", conf)
+
+
 if __name__ == "__main__":
     unittest.main()

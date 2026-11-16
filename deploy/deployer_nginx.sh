@@ -101,6 +101,15 @@ EMPLACEMENTS="$(cat <<'NGINX'
     # fail2ban). En ajoutant un fichier ou un dossier à la racine du site, l'ajouter ici aussi.
     # ---------------------------------------------------------------------------------------------
 
+    # Page 404 du site (static/404.html, publiée à la racine). Le code reste 404 : le journal et fail2ban
+    # comptent toujours la requête comme une adresse inexistante. « internal » : la page n'est pas
+    # servie directement, seulement comme réponse à une 404.
+    error_page 404 /404.html;
+    location = /404.html {
+        internal;
+        try_files /404.html =404;
+    }
+
     # Accueil
     location = / {
         limit_req zone=kioske_pages burst=40 nodelay;
@@ -134,6 +143,14 @@ EMPLACEMENTS="$(cat <<'NGINX'
 
     # Scripts, icônes et image de partage à la racine
     location ~ ^/(theme\.js|sw\.js|favicon\.svg|preview\.png|apple-touch-icon\.png|icon-[0-9]+\.png)$ {
+        limit_req zone=kioske_fichiers burst=300 nodelay;
+        try_files $uri =404;
+    }
+
+    # Feuilles de style des thèmes (style_<thème>.css, chargées par theme.js à chaque page).
+    # Sans cette règle, elles tombent dans « location / » : 404 comptés par fail2ban (kioske-hors-site),
+    # et trois pages suffisent pour bannir le visiteur (page « Tu es banni » sur tout le site).
+    location ~ ^/style[A-Za-z0-9_-]*\.css$ {
         limit_req zone=kioske_fichiers burst=300 nodelay;
         try_files $uri =404;
     }

@@ -55,7 +55,7 @@ L'image est une capture figée : l'animation se voit dans la page.
 | `kioske.cfg` | **Tous les réglages** : domaine, thèmes, veille, serveur. Lu par Python et par les scripts bash. |
 | `sources/` | Ce que la veille suit : `RSS_feeds.txt`, `Twitch_feeds.txt`, `flux_corrige_main.txt`. Écrits à la main. |
 | `accueil/bloc_immuable.html` | Source du bloc immuable. |
-| `static/` | Fichiers publiés tels quels : `favicon.svg`, `apple-touch-icon.png`, `preview.png`, `fonts/`, `theme.js` (thème choisi par le visiteur et pluie matricielle, sur toutes les pages), `sw.js` et `manifest.json` (PWA), icônes `icon-*.png`. |
+| `static/` | Fichiers publiés tels quels : `404.html` (page d'erreur, servie par nginx pour toute adresse inexistante), `favicon.svg`, `apple-touch-icon.png`, `preview.png`, `fonts/`, `theme.js` (thème choisi par le visiteur et pluie matricielle, sur toutes les pages), `sw.js` et `manifest.json` (PWA), icônes `icon-*.png`. |
 | `kioske/` | Le code (paquet Python), la feuille de style `style.css`, les squelettes HTML des pages (`gabarits/`) et leur JavaScript (`js/`). Voir ci-dessous. |
 | `tests/` | Tests du site, lancés sur le PC par `bash tests/lancer.sh` (voir « Tests »). |
 | `bin/` | Points d'entrée : `build_site.py`, `publier_public.py`, `garde_immuable.py`. Quelques lignes chacun. |
@@ -359,8 +359,12 @@ kioske_update --dry-run    # ce qui serait envoyé
 kioske_update              # envoi vers <utilisateur>@<serveur>:/home/<utilisateur>/kioske.fr/
 ```
 
-Elle n'envoie ni `build/`, ni `data/historique.db`, ni `data/cache/`, ni les venvs, ni `old/`,
-`docs/`, `apercu/`, `.git/`, `CLAUDE.md`.
+Elle fonctionne par **liste blanche** : elle n'envoie que ce qui sert au déploiement, à savoir `bin/`,
+`kioske/`, `accueil/`, `sources/`, `static/`, `deploy/`, `data/immuable.json`, `kioske.cfg` et
+`requirements.txt`. Tout le reste est exclu, notamment `build/` (le site généré reste sur le serveur),
+`data/` hors `immuable.json` (historique, caches, verrou), `tests/`, `docs/`, les venvs, `README.md`,
+`TODO.md`, `.git/`, `CLAUDE.md`. Avec `--delete`, les fichiers exclus côté serveur ne sont pas retirés.
+Une copie de l'ancienne fonction reste dans `~/.config/fish/functions/kioske_update.fish.avant-liste-blanche`.
 
 **Sur le serveur**, en utilisateur normal (`meli`) :
 

@@ -90,6 +90,12 @@ button.fav-heart.active:hover {
   animation: reflet-favori 4s ease-in-out infinite;
 }
 
+/* L'image d'article de la carte ouverte est en « position: sticky; z-index: 5 » (style_default.css) :
+   elle passerait devant le reflet. Le reflet de la carte ouverte passe au-dessus de l'image. */
+.carte-ouverte .panel-article::before {
+  z-index: 6;
+}
+
 @keyframes bordure-favori {
   to { --bordure-angle: 360deg; }
 }

@@ -1,33 +1,59 @@
-# ---------- Secrets et configuration personnelle ----------
-.env
-*.env
-.directory
+# ---------- Liste blanche ----------
+# Seul ce qui est nommé ci-dessous est suivi par git ; tout le reste est ignoré par défaut (y compris
+# les nouveaux dossiers, build/, venv, .claude/…). Pour suivre un nouveau fichier, l'ajouter ici.
+# Même logique que la fonction fish kioske_update : ce qui sert au projet, et rien d'autre.
+/*
 
-# ---------- Données et caches générés (recréés par les scripts) ----------
-build/
-static/style*.css
-data/historique.db
-data/cache/
-data/build.lock
+# Racine
+!/.gitignore
+!/.rsync-filter
+!/LICENSE
+!/README.md
+!/TODO.md
+!/kioske.cfg
+!/requirements.txt
+
+# Dossiers suivis (le dossier, puis son contenu)
+!/accueil/
+!/accueil/**
+!/apercu/
+!/apercu/**
+!/bin/
+!/bin/**
+!/deploy/
+!/deploy/**
+!/docs/
+!/docs/**
+!/kioske/
+!/kioske/**
+!/sources/
+!/sources/**
+!/static/
+!/static/**
+!/tests/
+!/tests/**
+
+# Données : seul le bloc immuable est suivi (historique, caches et verrou restent locaux)
+!/data/
+/data/*
+!/data/immuable.json
+
+# ---------- Exclusions à l'intérieur des dossiers suivis ----------
+# (placées après les inclusions : elles l'emportent)
 __pycache__/
 *.pyc
-
-# ---------- Dépendances des tests (recréées avec « cd tests && npm install ») ----------
-tests/node_modules/
-
-# ---------- Environnements Python (recréés avec requirements.txt) ----------
-venv/
-venv_blog/
-.venv/
-
-# ---------- Sauvegardes et copies locales ----------
-export/
-*.bak
-index.avant_*.html
-occurence.txt
-
-# ---------- Éditeurs ----------
-.vscode/
-.idea/
 *.swp
+.DS_Store
+*.bak
+*.tmp
+index.avant_*.html
+# Copies des CSS de thème, générées au build depuis kioske/ (le build les recrée)
+/static/style*.css
+# Dépendances des tests (recréées avec « cd tests && npm install »)
+/tests/node_modules/
+# Secrets : jamais versionnés
+.env
+*.env
+
+# Éditeurs et notes personnelles
 CLAUDE.md

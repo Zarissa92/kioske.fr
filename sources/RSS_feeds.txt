@@ -50,7 +50,7 @@
 
 [Technologie: Généraliste]
 "https://next.ink/feed/"
-
+"https://usbeketrica.com/fr/rss"
 
 [panneau: LGBT]
 
@@ -58,6 +58,7 @@
 "https://www.problematik-media.com/feed.xml"
 "https://www.outrans.org/feed/"
 "https://revueladeferlante.fr/feed/"
+"https://www.inter-lgbt.org/feed/"
 
 [LGBT: EN]
 "https://thepinktimes.com/rss.xml"

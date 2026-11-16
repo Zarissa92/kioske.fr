@@ -7,8 +7,24 @@ function getCustomFluxSources() {
   return saved ? JSON.parse(saved) : {};
 }
 
+// Sources présentes au moment où le choix a été enregistré. Une source absente de cette liste est nouvelle :
+// elle reste visible, au lieu d'être masquée comme une source décochée. Null si rien n'a été enregistré.
+const SOURCES_CONNUES_KEY = 'kioske_flux_connus';
+
+function getSourcesConnues() {
+  const saved = localStorage.getItem(SOURCES_CONNUES_KEY);
+  return saved ? JSON.parse(saved) : null;
+}
+
+// Visible si la source est cochée, ou si elle est nouvelle (absente du choix enregistré).
+function sourceVisible(customSources, sourceKey, connues) {
+  return !!customSources[sourceKey] || (connues !== null && !connues.includes(sourceKey));
+}
+
 function saveCustomFluxSources(sources) {
   localStorage.setItem(CUSTOM_FLUX_KEY, JSON.stringify(sources));
+  const connues = [...new Set([...document.querySelectorAll('.nuage .tag')].map(t => t.getAttribute('data-source-key')))];
+  localStorage.setItem(SOURCES_CONNUES_KEY, JSON.stringify(connues));
   appliquerFiltreAccueil();
 }
 
@@ -35,10 +51,11 @@ function appliquerFiltreAccueil() {
     return;
   }
 
-  // Masquer/afficher les tags des sources
+  // Masquer/afficher les tags des sources (les sources nouvelles restent visibles)
+  const connues = getSourcesConnues();
   document.querySelectorAll('.nuage .tag').forEach(tag => {
     const sourceKey = tag.getAttribute('data-source-key');
-    tag.style.display = customSources[sourceKey] ? '' : 'none';
+    tag.style.display = sourceVisible(customSources, sourceKey, connues) ? '' : 'none';
   });
 
   // Pour chaque groupe (catégorie), vérifier si au moins une source est visible
@@ -46,7 +63,7 @@ function appliquerFiltreAccueil() {
     const tags = groupe.querySelectorAll('.tag');
     const hasVisibleTag = Array.from(tags).some(tag => {
       const sourceKey = tag.getAttribute('data-source-key');
-      return customSources[sourceKey];
+      return sourceVisible(customSources, sourceKey, connues);
     });
     groupe.style.display = hasVisibleTag ? '' : 'none';
   });
@@ -59,7 +76,7 @@ function appliquerFiltreAccueil() {
       const sourceKey = Object.keys(customSources).find(key => {
         return window.sourcesMetadata && window.sourcesMetadata[key] && window.sourcesMetadata[key].name === sourceName;
       });
-      carte.style.display = (sourceKey && customSources[sourceKey]) ? '' : 'none';
+      carte.style.display = (sourceKey && sourceVisible(customSources, sourceKey, connues)) ? '' : 'none';
     }
   });
 }
