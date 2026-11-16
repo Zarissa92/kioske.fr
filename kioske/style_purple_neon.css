@@ -496,7 +496,7 @@
  .article-nav { flex: 0 0 auto; display: flex; gap: 0.4rem; justify-content: center; padding: 0.8rem; border-top: 1px solid var(--violet-dim); }
 
  /* textes, marges et bouton des cartes : même format que les cartes ouvertes, miniaturisé.
-  A spect ratio 3/4, image 35%, contenu scrollable. */                                                *
+  A spect ratio 3/4, image 35%, contenu scrollable. */
   .carte {
     position: relative; display: flex; flex-direction: column;
     width: 100%; margin: 0;
@@ -505,7 +505,7 @@
     background: rgba(8, 0, 0, .92);
     border: 1px solid var(--violet-dim);
     border-radius: var(--rayon-carte);
-    transition: border-color .2s, box-shadow .2s, transform .2s;
+    transition: border-color 2s, box-shadow 2s, transform 2s;
   }
   .carte:hover, .carte:focus-visible { border-color: var(--violet); transform: translateY(-2px); outline: none; }
   /* Image en haut : 35% de la hauteur, comme les cartes ouvertes */
@@ -561,8 +561,8 @@
         .groupe h3.titre-panneau { color: #ffffff; font-weight: 700; display: block; border-color: rgba(138, 43, 226, 0.5); text-shadow: 0 0 8px #8a2be2, 0 0 16px #8a2be2; }
         .groupe h2.titre-panneau { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--violet); font-weight: 700; display: block; border-color: rgba(138, 43, 226, 0.5); text-shadow: 0 0 8px #8a2be2, 0 0 16px #8a2be2; }
         .titre-panneau:hover { background: rgba(255, 255, 255, 0.05); transform: translateY(-2px); }
-        .groupe h3.titre-panneau:hover { text-shadow: 0 0 12px #8a2be2, 0 0 24px #8a2be2, 0 0 18px rgba(255, 255, 255, 0.2) }
-.groupe h2.titre-panneau:hover { text-shadow: 0 0 12px #8a2be2, 0 0 24px #8a2be2, 0 0 18px rgba(255, 255, 255, 0.2); }
+        .groupe h3.titre-panneau:hover { text-shadow: 0 0 12px #8a2be2, 0 0 24px #8a2be2, 0 0 36px rgba(138, 43, 226, 0.5) }
+.groupe h2.titre-panneau:hover { text-shadow: 0 0 12px #8a2be2, 0 0 24px #8a2be2, 0 0 36px rgba(138, 43, 226, 0.5); }
         .groupe .nuage { margin: 0; padding: 0; border: 0; background: none; justify-content: flex-start; }
         /* marge à droite du titre : ancienne place de l'icône RSS, gardée pour ne pas changer la mise en page */
         .groupe { position: relative; }

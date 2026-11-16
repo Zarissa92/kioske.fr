@@ -1,9 +1,11 @@
-/* Effet « shiny » : halo et reflet qui balaie la carte en continu.
-   Appliqué aux cartes des favoris (.carte-favori) et aux vignettes de la grande galerie (.galerie-principale).
+/* Effet « shiny » : halo, bordure en dégradé qui tourne, et reflet qui balaie la carte en continu.
+   Appliqué aux cartes des favoris (.carte-favori), aux vignettes de la grande galerie (.galerie-principale)
+   et à la carte d'article ouverte par-dessus l'accueil (.carte-ouverte .panel-article).
    Fichier partagé : il est inséré dans la page d'accueil au build (kioske/rendu.py), quel que soit le thème.
    Les couleurs viennent des variables du thème (--neon-coeur, --neon-halo), donc chaque thème garde les siennes.
    Accessibilité : le reflet est léger et ne reste pas sur le texte ; « réduire les animations » coupe
-   le mouvement et retire le reflet ; contraste renforcé et couleurs forcées retirent halo et reflet. */
+   les mouvements (la bordure reste en dégradé fixe) ; contraste renforcé et couleurs forcées retirent
+   halo, dégradé et reflet. */
 
 /* Les grilles et la galerie défilent (overflow): sans marge, le halo qui déborde est coupé. */
 #fav-grille {
@@ -13,6 +15,24 @@
   padding: .6rem .5rem;
 }
 
+/* Bouton ♡ d'un article ajouté aux favoris : violet. Spécificité plus forte que les règles du thème
+   (chargées après), et la couleur du survol reste violette. Violet clair pour le contraste sur fond noir. */
+button.fav-heart.active {
+  color: var(--violet-light, #b57bff);
+  border-color: var(--violet-light, #b57bff);
+  background: rgba(138, 43, 226, .25);
+}
+button.fav-heart.active:hover {
+  color: var(--violet-light, #b57bff);
+}
+
+/* Angle du dégradé de bordure. Déclaré pour pouvoir l'animer ; sans @property, la bordure reste fixe. */
+@property --bordure-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
 /* Halo permanent, aux couleurs du thème. Vignettes de la galerie : halo plus petit. */
 .carte.carte-favori {
   box-shadow: 0 0 .6rem -.1rem var(--neon-coeur), 0 0 1.4rem -.4rem var(--neon-halo);
@@ -20,11 +40,46 @@
 .galerie-principale .galerie-carte {
   box-shadow: 0 0 .35rem -.05rem var(--neon-coeur), 0 0 .8rem -.25rem var(--neon-halo);
 }
+.carte-ouverte .panel-article {
+  box-shadow: 0 0 .8rem -.2rem var(--neon-coeur), 0 0 2rem -.5rem var(--neon-halo);
+}
+
+/* Bordure en dégradé des cartes et des vignettes : le fond du dessus couvre l'intérieur (padding-box),
+   le dégradé conique n'est visible que dans la bordure (border-box). L'angle tourne en continu. */
+.carte.carte-favori,
+.galerie-principale .galerie-carte {
+  border-color: transparent;
+  background-image:
+    linear-gradient(rgba(8, 0, 0, .92), rgba(8, 0, 0, .92)),
+    conic-gradient(from var(--bordure-angle), var(--neon-coeur), #fff, var(--neon-halo), #fff, var(--neon-coeur));
+  background-origin: padding-box, border-box;
+  background-clip: padding-box, border-box;
+  animation: bordure-favori 4s linear infinite;
+}
+
+/* La carte ouverte a une bordure en !important (style_default.css) : on ne la remplace pas. On pose
+   par-dessus un anneau de 2 px en dégradé, dans un masque qui ne garde que l'anneau, et placé sur la
+   bordure (inset négatif, car un élément absolu se place à l'intérieur de la bordure). */
+.carte-ouverte .panel-article::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(from var(--bordure-angle), var(--neon-coeur), #fff, var(--neon-halo), #fff, var(--neon-coeur));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: bordure-favori 4s linear infinite;
+}
 
 /* Reflet diagonal. Il est hors de la carte (la carte coupe les débordements), balaie la carte pendant
    la première partie du cycle, puis reste hors de la carte le reste du temps. Seul transform est animé. */
 .carte.carte-favori::before,
-.galerie-principale .galerie-carte::before {
+.galerie-principale .galerie-carte::before,
+.carte-ouverte .panel-article::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -35,14 +90,24 @@
   animation: reflet-favori 4s ease-in-out infinite;
 }
 
+@keyframes bordure-favori {
+  to { --bordure-angle: 360deg; }
+}
+
 @keyframes reflet-favori {
   0% { transform: translateX(-100%); }
   40%, 100% { transform: translateX(100%); }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .carte.carte-favori,
+  .galerie-principale .galerie-carte,
+  .carte-ouverte .panel-article::after {
+    animation: none;
+  }
   .carte.carte-favori::before,
-  .galerie-principale .galerie-carte::before {
+  .galerie-principale .galerie-carte::before,
+  .carte-ouverte .panel-article::before {
     animation: none;
     display: none;
   }
@@ -50,11 +115,22 @@
 
 @media (prefers-contrast: more), (forced-colors: active) {
   .carte.carte-favori,
-  .galerie-principale .galerie-carte {
+  .galerie-principale .galerie-carte,
+  .carte-ouverte .panel-article {
     box-shadow: none;
   }
+  .carte.carte-favori,
+  .galerie-principale .galerie-carte {
+    background-image: none;
+    border-color: var(--color-text-accent);
+    animation: none;
+  }
+  .carte-ouverte .panel-article::after {
+    display: none;
+  }
   .carte.carte-favori::before,
-  .galerie-principale .galerie-carte::before {
+  .galerie-principale .galerie-carte::before,
+  .carte-ouverte .panel-article::before {
     display: none;
   }
 }
