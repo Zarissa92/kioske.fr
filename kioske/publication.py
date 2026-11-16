@@ -7,7 +7,7 @@ Usage (voir bin/publier_public.py) :
     publier_public.py                 # construit puis copie
     publier_public.py --sans-build    # copie seulement ce qui est déjà dans build/
     publier_public.py --simple        # construit sans réseau (build_site.py --simple), puis copie
-    publier_public.py --public DOSSIER  # autre dossier de sortie (défaut : racine_web de kioske.cfg)
+    publier_public.py --public DOSSIER  # autre dossier de sortie (défaut : RACINE_WEB, sinon /srv/kioske.fr)
 """
 from __future__ import annotations
 
@@ -80,7 +80,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--sans-build", action="store_true", help="ne pas reconstruire : publier build/ tel quel")
     parser.add_argument("--simple", action="store_true", help="reconstruire sans réseau avant de publier")
     parser.add_argument("--public", type=Path, default=RACINE_WEB,
-                        help=f"dossier de sortie (défaut : {RACINE_WEB}, racine_web de kioske.cfg)")
+                        help=f"dossier de sortie (défaut : {RACINE_WEB})")
     args = parser.parse_args(argv)
 
     debut = datetime.now(timezone.utc)

@@ -9,7 +9,7 @@
 # Ce que fait l'installation :
 #   1. installe python3 et python3-venv (apt) si besoin ;
 #   2. crée le venv ./venv (à la racine) et y installe requirements.txt ;
-#   3. crée la racine servie par nginx (racine_web de kioske.cfg), data/ et build/ ;
+#   3. crée la racine servie par nginx (demandée au terminal, défaut /srv/kioske.fr), data/ et build/ ;
 #   4. installe kioske-veille.service et .timer (modèles de deploy/systemd/) dans /etc/systemd/system ;
 #   5. active le timer (intervalle_timer de kioske.cfg) et lance une première publication.
 #
@@ -18,7 +18,7 @@ set -euo pipefail
 
 DOSSIER="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$DOSSIER/deploy/lib_config.sh"  # cfg <section> <clé> : valeurs de kioske.cfg
-WEB_ROOT="$(demander_repertoire RACINE_WEB 'Répertoire public servi par nginx' "$DOSSIER/public")" || exit 1
+WEB_ROOT="$(demander_repertoire RACINE_WEB 'Répertoire public servi par nginx' "/srv/kioske.fr")" || exit 1
 INTERVALLE="$(cfg serveur intervalle_timer)"
 UTILISATEUR="${SUDO_USER:-$USER}"
 if [[ "$EUID" -eq 0 && -z "${SUDO_USER:-}" ]]; then

@@ -200,7 +200,7 @@ if (( SIMULATION == 1 )); then
 fi
 
 # Répertoire public (racine servie par nginx) : demandé au terminal, ou reçu de RACINE_WEB (timer systemd).
-RACINE_WEB="$(demander_repertoire RACINE_WEB 'Répertoire public servi par nginx' "$DOSSIER/public")" || exit 1
+RACINE_WEB="$(demander_repertoire RACINE_WEB 'Répertoire public servi par nginx' "/srv/kioske.fr")" || exit 1
 export RACINE_WEB  # transmis aux scripts lancés ensuite : ils ne redemandent pas le chemin
 
 # ---------- Exécution ----------

@@ -35,7 +35,7 @@ if [[ "$DOMAINE" != "kioske.fr" ]]; then
     erreur "ERREUR : Ce script est configuré pour kioske.fr, pas pour $DOMAINE. Arrêt pour éviter les mélanges de domaines."
 fi
 # Répertoire public : par variable d'environnement ou demander
-RACINE="$(demander_repertoire RACINE_WEB 'Répertoire public servi par nginx' "$DOSSIER/public")" || erreur "Répertoire public requis"
+RACINE="$(demander_repertoire RACINE_WEB 'Répertoire public servi par nginx' "/srv/kioske.fr")" || erreur "Répertoire public requis"
 DISPO="/etc/nginx/sites-available/$DOMAINE"
 ACTIF="/etc/nginx/sites-enabled/$DOMAINE"
 CERT_DIR="/etc/letsencrypt/live/$DOMAINE"

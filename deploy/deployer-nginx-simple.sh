@@ -17,7 +17,7 @@ fi
 
 DOSSIER="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$SCRIPT_DIR/lib_config.sh"
-RACINE_WEB="$(demander_repertoire RACINE_WEB 'Répertoire public servi par nginx' "$DOSSIER/public")" || exit 1
+RACINE_WEB="$(demander_repertoire RACINE_WEB 'Répertoire public servi par nginx' "/srv/kioske.fr")" || exit 1
 
 # ===== NGINX =====
 echo ""

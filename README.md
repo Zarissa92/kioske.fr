@@ -350,7 +350,7 @@ immuable est dans `accueil/bloc_immuable.html`.
 ## Déploiement sur le serveur
 
 Le site est construit et servi par le serveur (Debian 13, nginx). Le projet vit dans
-`/home/<utilisateur>/kioske.fr`, la racine servie est le dossier `public` (demandé au terminal à l'installation, défaut : `<projet>/public`). L'IP publique est demandée par `deploy/verifier_serveur.sh`.
+`/home/<utilisateur>/kioske.fr`, la racine servie est la racine `/srv/kioske.fr` (demandée au terminal à l'installation, défaut : `/srv/kioske.fr`). L'IP publique est demandée par `deploy/verifier_serveur.sh`.
 
 **Variable d'environnement `RACINE_WEB`** : chemin absolu du répertoire public où le site est publié
 (ex: `/home/<utilisateur>/kioske.fr/public`). Les scripts de déploiement (`deployer_nginx.sh`, `deployer_nginx_simple.sh`,

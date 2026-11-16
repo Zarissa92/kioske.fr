@@ -14,7 +14,7 @@ DOSSIER="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$DOSSIER/deploy/lib_config.sh"  # cfg <section> <clé> : valeurs de kioske.cfg
 DOMAINE="$(cfg site domaine)" || exit 1
 IP_PUBLIQUE="$(demander_ipv4 IP_PUBLIQUE "IP publique attendue pour $DOMAINE (celle de la box ou du serveur)")" || exit 1
-RACINE="$(demander_repertoire RACINE_WEB 'Répertoire public servi par nginx' "$DOSSIER/public")" || exit 1
+RACINE="$(demander_repertoire RACINE_WEB 'Répertoire public servi par nginx' "/srv/kioske.fr")" || exit 1
 CERT="/etc/letsencrypt/live/$DOMAINE/cert.pem"
 ALERTE_CERT_JOURS=21
 ALERTE_PUBLICATION_MIN=90
