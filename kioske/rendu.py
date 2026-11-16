@@ -13,7 +13,7 @@ from . import immuable
 from .config import DOMAINE, DOSSIER_RSS_CATEGORIES, GALERIE_PANNEAU, NOM_SITE, URL_SITE, CFG
 from .gabarits import remplir
 from .javascript import (JS_ACCUEIL, JS_CARTE_OUVERTE, JS_DONNEES_ACCUEIL, JS_FAVORIS, JS_FLUX_PERSONNALISE,
-                         JS_GALERIE, JS_INSTALLATION_PWA, JS_PAGE_RSS, JS_PARTAGE, JS_RETOUR_APP,
+                         JS_GALERIE, JS_INSTALLATION_PWA, JS_NOTIFICATIONS, JS_RAFRAICHISSEMENT, JS_PAGE_RSS, JS_PARTAGE, JS_RETOUR_APP,
                          JS_SERVICE_WORKER, json_pour_page)
 from .sources import AUTRES, ordre_des_categories
 from .texte import cle_alphabetique, esc, slugs_categories, truncate_label, article_id, slug_article
@@ -63,7 +63,7 @@ def render_galerie_bloc(categorie: str, items: list[dict], previews: dict[str, d
         source_name = item.get("source", "")
         cartes.append(
             f'<a href="{esc(article_url)}" class="galerie-carte" title="{esc(title)}" data-source="{esc(source_name)}">'
-            f'<img src="{esc(image)}" alt="{esc(title)}" loading="lazy" referrerpolicy="no-referrer"></a>'
+            f'<img src="{esc(image)}" alt="{esc(title)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest(&#39;.galerie-carte&#39;).remove()"></a>'
         )
     if not cartes:
         return ""
@@ -106,7 +106,7 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> str:
 
           media = (
               f'<img src="{esc(image)}" alt="{esc(title)}" '
-              'loading="lazy" referrerpolicy="no-referrer">'
+              'loading="lazy" referrerpolicy="no-referrer" onerror="(this.closest(&#39;.galerie-carte-wrapper&#39;)||this.closest(&#39;.galerie-carte&#39;)).remove()">'
           )
 
           # Lien vers la page d'article
@@ -407,6 +407,8 @@ def render_page(items: list[dict], previews: dict[str, dict],
         js_partage=JS_PARTAGE,
         js_accueil=JS_ACCUEIL,
         js_flux_personnalise=JS_FLUX_PERSONNALISE,
+        js_notifications=JS_NOTIFICATIONS,
+        js_rafraichissement=JS_RAFRAICHISSEMENT,
         js_carte_ouverte=JS_CARTE_OUVERTE,
         js_retour_app=JS_RETOUR_APP,
         js_installation_pwa=JS_INSTALLATION_PWA,

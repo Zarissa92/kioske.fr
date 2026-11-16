@@ -5,7 +5,7 @@
 #   rsync ... --filter='. .rsync-filter' ...
 # Ou passe manuellement : rsync -a --delete --filter='. .rsync-filter' ...
 
-# Fichiers avec chemin serveur /home/<utilisateur>/kioske.fr/public/ en dur
+# Fichiers avec chemin serveur en dur (racine web)
 - kioske.cfg
 - deploy/deployer-nginx-simple.sh
 - deploy/kioske-nginx-simple.conf

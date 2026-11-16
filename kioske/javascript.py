@@ -35,6 +35,8 @@ JS_DONNEES_ACCUEIL = lire("donnees_accueil.js")    # lit le JSON « kioske-donne
 JS_GALERIE = lire("galerie.js")                    # flèches des galeries : brancherGalerie()
 JS_ACCUEIL = lire("accueil.js")                    # panneaux, recherche, panneau « Mes favoris », menu
 JS_FLUX_PERSONNALISE = lire("flux_personnalise.js") # flux personnalisé : sélection des sources
+JS_NOTIFICATIONS = lire("notifications.js")        # cloche et notifications des flux personnalisés (off par défaut)
+JS_RAFRAICHISSEMENT = lire("rafraichissement.js")  # rechargement automatique quand une nouvelle version est publiée
 # Accueil et pages de catégorie
 JS_CARTE_OUVERTE = lire("carte_ouverte.js")        # carte d'article affichée par-dessus la page
 # Accueil, pages d'article et de catégorie

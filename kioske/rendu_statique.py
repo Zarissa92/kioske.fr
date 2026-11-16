@@ -18,6 +18,15 @@ from .themes import ATTRIBUTS_HTML, CSS, SCRIPT_THEME, VARIABLES_HTML
 # Les scripts (carte ouverte, bouton précédent de l'app installée, pages d'article et de catégorie)
 # sont dans kioske/js/ ; kioske/javascript.py les lit.
 
+# Image qui ne charge pas (site d'origine indisponible) : la lettre de repli, déjà présente, prend sa place.
+ONERROR_IMAGE = "this.onerror=null;this.hidden=true;this.nextElementSibling.hidden=false"
+
+
+def image_avec_repli(src: str, alt: str, lettre: str) -> str:
+    return (f'<img src="{esc(src)}" alt="{esc(alt)}" loading="lazy" referrerpolicy="no-referrer" '
+            f'onerror="{ONERROR_IMAGE}"><span class="lettre" hidden>{esc(lettre)}</span>')
+
+
 def render_article_page(item: dict, preview: dict, prev_article: dict | None = None, next_article: dict | None = None, previews: dict[str, dict] | None = None, preview_image: str = "") -> str:
     """Page HTML d'un article avec navigation Précédent/Suivant.
 
@@ -37,8 +46,8 @@ def render_article_page(item: dict, preview: dict, prev_article: dict | None = N
     media = ""
     if image:
         # Corriger le chemin relatif pour les images (2 niveaux de profondeur : /articles/id/index.html)
-        img_path = image.replace('img/veille/', '../../img/veille/')
-        media = f'<div class="article-image"><img src="{esc(img_path)}" alt="{esc(title)}" loading="lazy" referrerpolicy="no-referrer"></div>'
+        img_path = image if image.startswith('https://') else image.replace('img/veille/', '../../img/veille/')
+        media = f'<div class="article-image">{image_avec_repli(img_path, title, (source[:1] or "•").upper())}</div>'
     else:
         media = f'<div class="article-image"><span class="lettre">{esc((source[:1] or "•").upper())}</span></div>'
 
@@ -120,8 +129,8 @@ def render_category_page(category_name: str, articles: list[dict],
 
         if image:
             # Corriger le chemin relatif pour les images (2 niveaux de profondeur : /categories/slug/index.html)
-            img_path = image.replace('img/veille/', '../../img/veille/')
-            media = f'<img src="{esc(img_path)}" alt="{esc(title)}" loading="lazy" referrerpolicy="no-referrer">'
+            img_path = image if image.startswith('https://') else image.replace('img/veille/', '../../img/veille/')
+            media = image_avec_repli(img_path, title, (source_name[:1] or '•').upper())
         else:
             media = f'<span class="lettre">{esc((source_name[:1] or "•").upper())}</span>'
 

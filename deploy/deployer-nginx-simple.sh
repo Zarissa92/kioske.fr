@@ -15,12 +15,9 @@ if [ ! -f "$CONF_SRC" ]; then
     exit 1
 fi
 
-# Répertoire public : par variable d'environnement ou demander
-RACINE_WEB="${RACINE_WEB:-}"
-if [ -z "$RACINE_WEB" ]; then
-    read -p "Répertoire public pour servir le site (ex: /home/<utilisateur>/kioske.fr/public) : " RACINE_WEB
-fi
-[ -n "$RACINE_WEB" ] || { echo "[ERREUR] Répertoire public requis"; exit 1; }
+DOSSIER="$(cd "$SCRIPT_DIR/.." && pwd)"
+source "$SCRIPT_DIR/lib_config.sh"
+RACINE_WEB="$(demander_repertoire RACINE_WEB 'Répertoire public servi par nginx' "$DOSSIER/public")" || exit 1
 
 # ===== NGINX =====
 echo ""
@@ -28,7 +25,7 @@ echo "[info] Configuration nginx..."
 
 # Copie la config en remplaçant le chemin
 echo "[info] Copie de $CONF_SRC vers $CONF_DST avec racine=$RACINE_WEB..."
-sed "s|/home/<utilisateur>/kioske.fr/public|$RACINE_WEB|g" "$CONF_SRC" | sudo tee "$CONF_DST" > /dev/null
+sed "s|__RACINE_WEB__|$RACINE_WEB|g" "$CONF_SRC" | sudo tee "$CONF_DST" > /dev/null
 
 # Active le site s'il ne l'est pas
 if [ ! -L /etc/nginx/sites-enabled/kioske.fr ]; then
@@ -74,4 +71,4 @@ sudo systemctl restart fail2ban
 echo ""
 echo "[OK] ✅ nginx redeployé"
 echo "[OK] ✅ fail2ban configuré"
-echo "[OK] Root nginx : /home/<utilisateur>/kioske.fr/public/"
+echo "[OK] Root nginx : $RACINE_WEB/"

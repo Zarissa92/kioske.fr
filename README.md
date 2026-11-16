@@ -3,8 +3,8 @@
 Le **KiosKe** : une veille automatique des médias indépendants, des luttes et des voix LGBTQIA+.
 Pages HTML statiques (HTML5, CSS, JavaScript sans dépendance) générées toutes les 30 minutes sur le serveur
 à partir de flux RSS et de chaînes Twitch. Une page d'accueil + une page par catégorie + une page par article
-(plus de mille pages). Les images sont hébergées par le site : les pages ne chargent rien d'un autre site,
-sans publicité ni pistage. Le JavaScript sert à la navigation (panneaux, cartes, recherche, favoris) ; sans
+(plus de mille pages). Les images des articles sont chargées depuis le site d'origine de chaque source (l'adresse de l'image,
+sans copie chez nous) ; les cartes de partage sont composées et stockées sur le site. Pas de publicité. Le JavaScript sert à la navigation (panneaux, cartes, recherche, favoris) ; sans
 lui, les pages statiques d'articles et de catégories restent lisibles par leurs liens.
 
 **Langue** : le site et le projet sont en français — pages (`lang="fr"`), flux RSS, code, commentaires
@@ -55,9 +55,10 @@ L'image est une capture figée : l'animation se voit dans la page.
 | `kioske.cfg` | **Tous les réglages** : domaine, thèmes, veille, serveur. Lu par Python et par les scripts bash. |
 | `sources/` | Ce que la veille suit : `RSS_feeds.txt`, `Twitch_feeds.txt`, `flux_corrige_main.txt`. Écrits à la main. |
 | `accueil/bloc_immuable.html` | Source du bloc immuable. |
-| `static/` | Fichiers publiés tels quels : `404.html` (page d'erreur, servie par nginx pour toute adresse inexistante), `favicon.svg`, `apple-touch-icon.png`, `preview.png`, `fonts/`, `theme.js` (thème choisi par le visiteur et pluie matricielle, sur toutes les pages), `sw.js` et `manifest.json` (PWA), icônes `icon-*.png`. |
+| `static/` | Fichiers publiés tels quels : `404.html` (page d'erreur, servie par nginx pour toute adresse inexistante), `dispositions-legales.html` (mentions légales, liée en bas de l'accueil ; emplacements à compléter), `favicon.svg`, `apple-touch-icon.png`, `preview.png`, `fonts/`, `theme.js` (thème choisi par le visiteur et pluie matricielle, sur toutes les pages), `sw.js` et `manifest.json` (PWA), icônes `icon-*.png`. |
 | `kioske/` | Le code (paquet Python), la feuille de style `style.css`, les squelettes HTML des pages (`gabarits/`) et leur JavaScript (`js/`). Voir ci-dessous. |
 | `tests/` | Tests du site, lancés sur le PC par `bash tests/lancer.sh` (voir « Tests »). |
+| `outils/` | Outils locaux, jamais envoyés au serveur. `parametres_gui.py` : fenêtre pour régler `kioske.cfg` (tkinter, bibliothèque standard). Lancement : `venv_blog/bin/python outils/parametres_gui.py`. Commentaires du fichier conservés, copie `kioske.cfg.bak` avant chaque enregistrement. `cfg_editeur.py` : la logique (lecture, validation, écriture), testée par `tests/test_python.py`. |
 | `bin/` | Points d'entrée : `build_site.py`, `publier_public.py`, `garde_immuable.py`. Quelques lignes chacun. |
 | `deploy/` | Scripts du serveur : `kioske.sh` (point d'entrée), `installer_serveur.sh`, `deployer_nginx.sh`, `verifier_serveur.sh`, `lib_config.sh`, `systemd/`, `fail2ban/`. |
 | `data/` | `immuable.json` (empreinte du bloc, suivie par git) ; `historique.db`, `cache/`, `build.lock` (locaux, jamais publiés). |
@@ -73,14 +74,14 @@ Le paquet `kioske/` :
 | `config.py` | Chemins du projet et valeurs de `kioske.cfg`. Aucun autre module n'écrit de chemin en dur. |
 | `sources.py` | Lecture des fichiers de `sources/` (flux, chaînes, réglages locaux, catégories). |
 | `flux.py`, `twitch.py`, `apercus.py`, `reseau.py` | Récupération : flux RSS, vidéos Twitch (yt-dlp), aperçus Open Graph. |
-| `images.py` | Téléchargement des images dans `build/img/veille/`, et purge de celles qui ne servent plus. |
+| `images.py` | Adresses des images (https, telles quelles), et téléchargement en mémoire pour composer les cartes de partage. |
 | `historique.py` | Base SQLite de tout ce qui a été récupéré. |
 | `themes.py`, `style.css`, `style_red_neon.css`, `oldstyle.css` | Thèmes et CSS. `themes.py` lit les thèmes de `kioske.cfg` et prépare ce que chaque page reprend (attributs de `<html>`, liste des thèmes pour `static/theme.js`, boutons de choix). Chaque thème peut avoir un CSS distinct (clé `css`). Le CSS du thème par défaut est injecté dans la page ; les CSS des autres thèmes sont servis depuis `static/` et chargés dynamiquement. |
 | `style_favoris.css` | Halo et reflet des cartes de favoris (classe `carte-favori`) des vignettes de la grande galerie (section `galerie-principale`) et de la carte d'article ouverte (`.carte-ouverte .panel-article`). Fichier partagé : `rendu.py` l'ajoute à la page d'accueil seule, tous thèmes confondus. Couleurs prises dans les variables du thème ; animation coupée pour « réduire les animations », effets retirés en contraste renforcé. |
 | `rendu.py`, `rss.py`, `texte.py` | Contenu de la page d'accueil et de `rss.html` (étiquettes, galeries, données ; le squelette est dans `gabarits/`), flux RSS produits, outils de texte (slugs, IDs, échappement HTML). |
 | `rendu_statique.py` | Contenu des pages statiques d'articles et de catégories (image, navigation, cartes ; le squelette est dans `gabarits/`). Aucun CSS (il est dans `style.css`) ni JavaScript (il est dans `js/`). |
 | `gabarits.py`, `gabarits/` | Squelettes HTML des pages : `accueil.html`, `article.html`, `categorie.html`, `rss.html`. `${nom}` marque l'endroit d'une valeur ; ni boucle ni condition dans un gabarit. `gabarits.py` fournit `remplir("page.html", nom=valeur, …)` : une valeur manquante arrête le build, et le texte est échappé par Python (`esc()`) avant d'être passé. Un vrai signe dollar s'écrit `$$`. Pour modifier le HTML fixe d'une page, éditer son gabarit ; pour y ajouter une valeur, écrire `${nom}` dans le gabarit et passer `nom=…` dans l'appel `remplir()` de `rendu.py` ou `rendu_statique.py`. |
-| `javascript.py`, `js/` | Tout le JavaScript écrit dans les pages. `js/` : un fichier par rôle — `accueil.js` (panneaux, cartes, recherche, panneau « Mes favoris », menu), `favoris.js` (♡ et favoris enregistrés dans le navigateur, sur toutes les pages qui montrent un article), `partage.js` (bouton 📤), `galerie.js` (flèches des galeries), `carte_ouverte.js` (carte d'article par-dessus la page), `retour_app.js` (bouton précédent dans l'app installée), `installation_pwa.js`, `donnees_accueil.js` (lit le JSON des articles), `service_worker.js`, `page_article.js`, `page_categorie.js`, `page_rss.js`. `javascript.py` les lit (constantes `JS_…`) et fournit `json_pour_page()` pour les données. Pour ajouter un script : créer le fichier dans `js/`, ajouter sa constante dans `javascript.py`, l'insérer dans la page voulue. |
+| `javascript.py`, `js/` | Tout le JavaScript écrit dans les pages. `js/` : un fichier par rôle — `accueil.js` (panneaux, cartes, recherche, panneau « Mes favoris », menu), `notifications.js` (cloche et notifications des flux personnalisés, désactivées par défaut ; elles arrivent pendant que le site est ouvert), `rafraichissement.js` (l'accueil se recharge seul quand une nouvelle version est publiée, sauf si un panneau est ouvert), `favoris.js` (♡ et favoris enregistrés dans le navigateur, sur toutes les pages qui montrent un article), `partage.js` (bouton 📤), `galerie.js` (flèches des galeries), `carte_ouverte.js` (carte d'article par-dessus la page), `retour_app.js` (bouton précédent dans l'app installée), `installation_pwa.js`, `donnees_accueil.js` (lit le JSON des articles), `service_worker.js`, `page_article.js`, `page_categorie.js`, `page_rss.js`. `javascript.py` les lit (constantes `JS_…`) et fournit `json_pour_page()` pour les données. Pour ajouter un script : créer le fichier dans `js/`, ajouter sa constante dans `javascript.py`, l'insérer dans la page voulue. |
 | `immuable.py` | Garde du bloc immuable. |
 | `verrou.py` | Un seul build ou une seule publication à la fois. |
 | `construction.py`, `publication.py` | Le build (`build/`) et la copie vers la racine web. |
@@ -93,7 +94,7 @@ Format INI, commenté dans le fichier. Une valeur manquante ou invalide arrête 
 | --- | --- |
 | `[site]` | `domaine`, `nom`, `theme` (thème par défaut), `taille_defaut` (zoom de l'accueil en %, min 75, max 125, défaut 90 ; réglage du site, pas des visiteurs), `largeur_carte_ouverte` (largeur max du panneau article, ex: `min(600px, 85vw)`), `hauteur_carte_ouverte` (zoom de la hauteur des cartes, min 75, max 125, défaut 115), `bordure_panneau_epaisseur` (défaut 8), `espacement_panneau_vertical` (défaut `2.4rem`), `espacement_panneau_horizontal` (marge intérieure gauche et droite des panneaux, défaut `0.5rem`), `galerie_principale` (1 = afficher la grande galerie, 0 = masquer, défaut 1), `galerie_panneau` (1 = afficher galeries des blocs et panneaux, 0 = masquer, défaut 1). |
 | `[veille]` | `articles_flux_rss` (100), `videos_par_chaine` (15), `articles_par_source` (0 = tous), `delai_nouvel_essai_heures` (24). |
-| `[serveur]` | `racine_web` (`/var/www/kioske.fr`), `ip_jamais_bannies` (adresses que fail2ban ne bannit jamais : serveur et réseau local), `ip_publique`, `intervalle_timer` (`30min`). |
+| `[serveur]` | `ip_jamais_bannies` (adresses que fail2ban ne bannit jamais : serveur et réseau local), `intervalle_timer` (`30min`). La racine web et l'IP publique ne sont plus dans ce fichier : elles sont demandées au terminal par les scripts de `deploy/`. |
 | `[reseaux]` | `discord` (URL du serveur Discord), `mastodon` (profil Mastodon), `rss` (chemin vers la page RSS, défaut `rss.html`). Laissez vide pour désactiver un lien. |
 | `[theme.<nom>]` | `nom`, `fond` (`etoiles` ou `noir`), `pluie` (`oui` ou `non`), `opacite_panneau` (0 à 100, en %), `css` (fichier CSS optionnel, défaut `style.css`). |
 
@@ -336,16 +337,20 @@ immuable est dans `accueil/bloc_immuable.html`.
   toucher à la base. Un flux injoignable ne fait rien disparaître.
 - **`data/cache/`** : `previews_cache.json` (aperçus), `twitch_cache.json`, `images_echecs.json`. Une
   page ou une image en échec est réessayée après `delai_nouvel_essai_heures`.
-- **Images** : téléchargées dans `build/img/veille/` sous un nom dérivé de leur adresse. JPEG, PNG,
-  WebP, GIF et AVIF seulement (pas de SVG), 5 Mo au maximum. Les images qu'aucun article affiché
-  n'utilise plus sont supprimées à chaque build.
+- **Images des articles** : jamais copiées. Le navigateur les charge depuis le site d'origine (chaque
+  visite envoie donc l'adresse du visiteur à ce site). Une image qui ne charge pas laisse la lettre de
+  repli (cartes, pages d'article) ou disparaît de la galerie. Seules les adresses https sont gardées.
+- **Cartes de partage** (`build/img/previews/`) : composées au build à partir de l'image d'origine, lue
+  en mémoire et jamais écrite ; seule la carte, petite, est stockée. Une carte est recomposée seulement
+  si elle n'existe pas encore.
+- L'ancien dossier `build/img/veille/` est vidé à chaque build (`purger_images`).
 - **Flux RSS produits** : `build/rss.xml` (les 100 articles les plus récents) et un flux par catégorie
   dans `build/rss/`, avec le texte complet de chaque article.
 
 ## Déploiement sur le serveur
 
 Le site est construit et servi par le serveur (Debian 13, nginx). Le projet vit dans
-`/home/<utilisateur>/kioske.fr`, la racine servie est `racine_web` (défaut : `/home/<utilisateur>/kioske.fr/public/`).
+`/home/<utilisateur>/kioske.fr`, la racine servie est le dossier `public` (demandé au terminal à l'installation, défaut : `<projet>/public`). L'IP publique est demandée par `deploy/verifier_serveur.sh`.
 
 **Variable d'environnement `RACINE_WEB`** : chemin absolu du répertoire public où le site est publié
 (ex: `/home/<utilisateur>/kioske.fr/public`). Les scripts de déploiement (`deployer_nginx.sh`, `deployer_nginx_simple.sh`,
@@ -419,7 +424,7 @@ sudo systemctl start kioske-veille.service   # publier tout de suite
 |---|---|
 | `/`, `/index.html`, `/rss.html`, `/rss.xml`, `/sitemap.xml`, `/robots.txt`, `/articles-index.json` | servie (débit « pages ») |
 | `/articles/<id>-<titre>/`, `/categories/<nom>/`, `/rss/<nom>.xml` | servie, ou 404 ordinaire si la page a disparu |
-| `/manifest.json`, `/theme.js`, `/sw.js`, `/favicon.svg`, `/preview.png`, `/apple-touch-icon.png`, `/icon-<taille>.png`, `/img/veille/<fichier>`, `/fonts/<fichier>` | servie (débit « fichiers ») |
+| `/manifest.json`, `/theme.js`, `/sw.js`, `/favicon.svg`, `/preview.png`, `/apple-touch-icon.png`, `/icon-<taille>.png`, `/img/previews/<fichier>`, `/fonts/<fichier>` | servie (débit « fichiers ») |
 | `/favicon.ico`, `/apple-touch-icon-….png`, `/browserconfig.xml`, `/ads.txt`, `/humans.txt`, `/security.txt`, `/.well-known/…` | 404 ordinaire : navigateurs et robots les demandent d'eux-mêmes |
 | fichier ou dossier caché (`/.env`, `/.git/…`) | 404 (et ban immédiat par `kioske-scan`) |
 | tout le reste | 404 et une ligne dans le journal hors-site |
@@ -497,7 +502,7 @@ application native, et fonctionne partiellement hors ligne.
 - Service worker (`sw.js`) : `no-cache, max-age=0` (toujours vérifier les mises à jour).
 - Manifest (`manifest.json`) : `max-age=86400` (1 jour).
 - Icônes PWA, polices, `favicon.svg` : `max-age=31536000, immutable` (1 an).
-- Images de la veille (`/img/`) : `max-age=2592000` (30 jours).
+- Cartes de partage (`/img/`) : `max-age=2592000` (30 jours).
 - Flux RSS/XML : `no-cache, max-age=0` (pas de cache, rafraîchir régulièrement).
 - Tout le reste (pages, `articles-index.json`) : `max-age=1800` (30 min, durée du timer).
 - Les réponses d'erreur n'ont pas de `Cache-Control`.

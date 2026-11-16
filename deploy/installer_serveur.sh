@@ -18,7 +18,7 @@ set -euo pipefail
 
 DOSSIER="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$DOSSIER/deploy/lib_config.sh"  # cfg <section> <clé> : valeurs de kioske.cfg
-WEB_ROOT="${RACINE_WEB:-/home/<utilisateur>/kioske.fr/public}"
+WEB_ROOT="$(demander_repertoire RACINE_WEB 'Répertoire public servi par nginx' "$DOSSIER/public")" || exit 1
 INTERVALLE="$(cfg serveur intervalle_timer)"
 UTILISATEUR="${SUDO_USER:-$USER}"
 if [[ "$EUID" -eq 0 && -z "${SUDO_USER:-}" ]]; then

@@ -26,6 +26,7 @@ function saveCustomFluxSources(sources) {
   const connues = [...new Set([...document.querySelectorAll('.nuage .tag')].map(t => t.getAttribute('data-source-key')))];
   localStorage.setItem(SOURCES_CONNUES_KEY, JSON.stringify(connues));
   appliquerFiltreAccueil();
+  if (typeof majCloche === 'function') majCloche();   // cloche des notifications (notifications.js)
 }
 
 function isFluxPersonnalise() {

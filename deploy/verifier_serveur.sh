@@ -13,8 +13,8 @@ set -uo pipefail
 DOSSIER="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$DOSSIER/deploy/lib_config.sh"  # cfg <section> <clé> : valeurs de kioske.cfg
 DOMAINE="$(cfg site domaine)" || exit 1
-IP_PUBLIQUE="$(cfg serveur ip_publique)" || exit 1
-RACINE="${RACINE_WEB:-/home/<utilisateur>/kioske.fr/public}"
+IP_PUBLIQUE="$(demander_ipv4 IP_PUBLIQUE "IP publique attendue pour $DOMAINE (celle de la box ou du serveur)")" || exit 1
+RACINE="$(demander_repertoire RACINE_WEB 'Répertoire public servi par nginx' "$DOSSIER/public")" || exit 1
 CERT="/etc/letsencrypt/live/$DOMAINE/cert.pem"
 ALERTE_CERT_JOURS=21
 ALERTE_PUBLICATION_MIN=90
@@ -31,7 +31,7 @@ attention() { printf '\033[1;33m[ ?? ]\033[0m %s\n' "$*"; }
 ip_dns="$(getent ahostsv4 "$DOMAINE" 2>/dev/null | awk 'NR==1{print $1}')"
 if [[ -n "$ip_dns" ]]; then
     bon "DNS $DOMAINE -> $ip_dns"
-    [[ "$ip_dns" == "$IP_PUBLIQUE" ]] || attention "Attendu $IP_PUBLIQUE (ta box). Si ton DNS a changé, mets ip_publique à jour dans kioske.cfg."
+    [[ "$ip_dns" == "$IP_PUBLIQUE" ]] || attention "Attendu $IP_PUBLIQUE (ta box). Si ton IP a changé, relance le contrôle et donne la nouvelle."
 else
     mauvais "DNS $DOMAINE ne répond pas"
 fi

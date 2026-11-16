@@ -1,4 +1,7 @@
-"""Images des articles : téléchargées dans build/img/veille, jamais chargées depuis un autre site."""
+"""Images des articles : chargées depuis le site d'origine (plus de copie locale).
+
+Le téléchargement en mémoire (telecharger_en_memoire) ne sert qu'à composer les cartes de partage, qui sont
+stockées dans build/img/previews. Les types et la taille restent contrôlés."""
 from __future__ import annotations
 
 import concurrent.futures as cf
@@ -53,31 +56,24 @@ def telecharger_image(url: str) -> str:
     return f"{DOSSIER_IMAGES}/{dest.name}"
 
 
+def telecharger_en_memoire(url: str) -> bytes:
+    """Contenu d'une image, en mémoire (jamais écrit dans build/). Lève une erreur si le type ou la taille est refusé."""
+    req = urllib.request.Request(url, headers={"User-Agent": UA})
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        if resp.headers.get_content_type() not in IMAGE_TYPES:
+            raise ValueError("type d'image non accepté")
+        data = resp.read(IMAGE_MAX + 1)
+    if len(data) > IMAGE_MAX:
+        raise ValueError("image trop grosse")
+    return data
+
+
 def telecharger_images(urls: list[str | None], telecharger: bool = True) -> dict[str, str]:
-    """Associe chaque URL d'image à son chemin local (chaîne vide si indisponible).
-    Sans `telecharger` : seulement les images déjà présentes, aucun appel réseau."""
-    uniques = sorted({u for u in urls if u and u.startswith(("http://", "https://"))})
-    echecs = json.loads(ECHECS_IMAGES.read_text(encoding="utf-8")) if ECHECS_IMAGES.exists() else {}
-    maintenant = datetime.now(timezone.utc).timestamp()
-    resultat = {u: image_locale(u, telecharger=False) for u in uniques}
-    a_telecharger = [u for u in uniques if telecharger and not resultat[u]
-                     and maintenant - echecs.get(u, 0) > DELAI_ECHEC]
-    if a_telecharger:
-        print(f"[images] {len(a_telecharger)} image(s) à télécharger", flush=True)
-    with cf.ThreadPoolExecutor(max_workers=8) as pool:
-        futures = {pool.submit(telecharger_image, u): u for u in a_telecharger}
-        for f in cf.as_completed(futures):
-            u = futures[f]
-            try:
-                resultat[u] = f.result()
-                echecs.pop(u, None)
-            except Exception as exc:  # une image en erreur ne bloque pas la page
-                print(f"[image] {u} ignorée : {exc}", flush=True)
-                echecs[u] = maintenant
-    if telecharger:
-        CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        ECHECS_IMAGES.write_text(json.dumps(echecs, indent=1), encoding="utf-8")
-    return resultat
+    """Adresse affichée de chaque image : l'adresse d'origine, telle quelle. Plus de copie dans build/.
+
+    Seules les adresses https sont gardées (une image http est bloquée par le navigateur sur un site https).
+    Le paramètre « telecharger » n'a plus d'effet : aucun téléchargement pour l'affichage."""
+    return {u: u for u in dict.fromkeys(urls) if u and u.startswith("https://")}
 
 
 def appliquer_images(items: list[dict], previews: dict[str, dict], correspondance: dict[str, str]) -> None:

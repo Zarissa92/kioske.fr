@@ -26,6 +26,8 @@
 !/docs/**
 !/kioske/
 !/kioske/**
+!/outils/
+!/outils/**
 !/sources/
 !/sources/**
 !/static/

@@ -98,5 +98,110 @@ class PageRemplaceeDe404(unittest.TestCase):
         self.assertIn("location = /404.html", conf)
 
 
+class EditeurCfg(unittest.TestCase):
+    """outils/cfg_editeur.py : modifier kioske.cfg sans perdre ses commentaires, et valider les valeurs."""
+
+    CFG = Path(__file__).resolve().parent.parent / "kioske.cfg"
+
+    def setUp(self):
+        from outils import cfg_editeur
+        self.ce = cfg_editeur
+        self.texte = self.CFG.read_text(encoding="utf-8")
+
+    def test_relecture_sans_modification_identique(self):
+        self.assertEqual(self.ce.lire(self.texte).texte(), self.texte)
+
+    def test_modification_ne_change_que_la_valeur(self):
+        doc = self.ce.lire(self.texte)
+        doc.modifier("veille", "articles_flux_rss", "150")
+        nouveau = doc.texte()
+        self.assertIn("articles_flux_rss = 150\n", nouveau)
+        self.assertEqual(nouveau.count("#"), self.texte.count("#"), "les commentaires doivent rester")
+        self.assertEqual(len(nouveau.splitlines()), len(self.texte.splitlines()))
+
+    def test_modification_relue_par_configparser(self):
+        import configparser
+        doc = self.ce.lire(self.texte)
+        doc.modifier("site", "galerie_panneau", "1")
+        cfg = configparser.ConfigParser()
+        cfg.read_string(doc.texte())
+        self.assertEqual(cfg["site"]["galerie_panneau"], "1")
+
+    def test_cle_absente_refusee(self):
+        with self.assertRaises(KeyError):
+            self.ce.lire(self.texte).modifier("site", "inexistant", "x")
+
+    def test_validation(self):
+        doc = self.ce.lire(self.texte)
+        themes = self.ce.noms_themes(doc)
+        self.assertIsNone(self.ce.valider("veille", "articles_flux_rss", "100"))
+        self.assertIsNotNone(self.ce.valider("veille", "articles_flux_rss", "abc"))
+        self.assertIsNotNone(self.ce.valider("veille", "articles_flux_rss", "5000"))
+        self.assertIsNone(self.ce.valider("site", "theme", "default", themes=themes))
+        self.assertIsNotNone(self.ce.valider("site", "theme", "inconnu", themes=themes))
+        self.assertIsNotNone(self.ce.valider("theme.red_neon", "opacite_panneau", "101"))
+        self.assertIsNotNone(self.ce.valider("theme.red_neon", "pluie_tete", "rouge"))
+        self.assertIsNone(self.ce.valider("theme.red_neon", "pluie_tete", "#ff0000"))
+        self.assertIsNotNone(self.ce.valider("theme.red_neon", "fond", "bleu"))
+
+    def test_aide_tiree_du_commentaire(self):
+        doc = self.ce.lire(self.texte)
+        self.assertIn("Nombre d'articles dans chaque flux RSS", doc.aides[("veille", "articles_flux_rss")])
+
+
+class DispositionsLegales(unittest.TestCase):
+    """Page « Dispositions légales » : publiée, liée sous GitHub en bas de l'accueil, servie par nginx."""
+
+    RACINE = Path(__file__).resolve().parent.parent
+
+    def test_page_publiee_sans_script(self):
+        html = (self.RACINE / "static" / "dispositions-legales.html").read_text(encoding="utf-8")
+        self.assertIn('lang="fr"', html)
+        self.assertNotIn("<script", html)
+
+    def test_lien_sous_github(self):
+        gabarit = (self.RACINE / "kioske" / "gabarits" / "accueil.html").read_text(encoding="utf-8")
+        self.assertIn('href="/dispositions-legales.html"', gabarit)
+        self.assertLess(gabarit.index("GitHub du projet"), gabarit.index("/dispositions-legales.html"))
+
+    def test_nginx_laisse_passer_la_page(self):
+        conf = (self.RACINE / "deploy" / "deployer_nginx.sh").read_text(encoding="utf-8")
+        self.assertIn("dispositions-legales\\.html", conf)
+
+
+class CheminsSansPersonne(unittest.TestCase):
+    """Aucun chemin personnel écrit en dur dans le code ou les scripts : les répertoires sont demandés."""
+
+    RACINE = Path(__file__).resolve().parent.parent
+    FICHIERS = ["kioske/config.py", "kioske.cfg", "deploy/kioske.sh", "deploy/lib_config.sh",
+                "deploy/installer_serveur.sh", "deploy/verifier_serveur.sh", "deploy/deployer_nginx.sh",
+                "deploy/deployer-nginx-simple.sh", "deploy/kioske-nginx-simple.conf",
+                "deploy/systemd/kioske-veille.service"]
+
+    def test_pas_de_chemin_personnel(self):
+        for nom in self.FICHIERS:
+            texte = (self.RACINE / nom).read_text(encoding="utf-8")
+            for motif in ("/home/<utilisateur>", "/home/<utilisateur>"):
+                self.assertNotIn(motif, texte, f"{nom} contient {motif}")
+
+    def test_ip_publique_absente_de_la_configuration(self):
+        self.assertNotIn("ip_publique", (self.RACINE / "kioske.cfg").read_text(encoding="utf-8"))
+
+
+class ImagesDesSources(unittest.TestCase):
+    """Les images des articles gardent leur adresse d'origine : rien n'est copié dans build/."""
+
+    def test_adresses_https_gardees_telles_quelles(self):
+        from kioske import images
+        urls = ["https://exemple.test/a.jpg", "http://exemple.test/b.jpg", None, "", "https://exemple.test/a.jpg"]
+        self.assertEqual(images.telecharger_images(urls), {"https://exemple.test/a.jpg": "https://exemple.test/a.jpg"})
+
+    def test_repli_sur_la_lettre(self):
+        from kioske.rendu_statique import image_avec_repli
+        html = image_avec_repli("https://exemple.test/a.jpg", "Titre", "A")
+        self.assertIn('onerror="this.onerror=null;this.hidden=true;this.nextElementSibling.hidden=false"', html)
+        self.assertIn('<span class="lettre" hidden>A</span>', html)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -10,6 +10,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 from .config import BUILD, CACHE_DIR, DELAI_ECHEC, DOSSIER_IMAGES
+from .images import telecharger_en_memoire
 
 ECHECS_PREVIEWS = CACHE_DIR / "previews_echecs.json"
 DOSSIER_PREVIEWS = "img/previews"
@@ -63,9 +64,10 @@ def generer_preview(image_path: str | None, titre: str, meta: str, link: str) ->
 
     # Charger et redimensionner l'image de l'article
     image_loaded = False
-    if image_path and Path(image_path).exists():
+    if image_path and (image_path.startswith("https://") or Path(image_path).exists()):
         try:
-            article_img = Image.open(image_path).convert("RGB")
+            source = BytesIO(telecharger_en_memoire(image_path)) if image_path.startswith("https://") else image_path
+            article_img = Image.open(source).convert("RGB")
             # Redimensionner l'image pour remplir la zone complètement (crop si nécessaire)
             img_ratio = article_img.width / article_img.height
             zone_ratio = PREVIEW_WIDTH / image_height
@@ -199,7 +201,7 @@ def generer_previews(articles: list[dict], images: dict[str, str], telecharger: 
         # Générer le preview
         image_path = images.get(link)
         # Corriger le chemin de l'image (BUILD/ / dossier)
-        if image_path:
+        if image_path and not image_path.startswith("https://"):
             image_path = str(BUILD / image_path)
 
         date_str = ""

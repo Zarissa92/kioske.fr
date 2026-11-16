@@ -28,16 +28,19 @@ function charger(fichier, chemin, options = {}) {
         const p = new URL(adresse, SITE + chemin).pathname;
         let f = path.join(BUILD, decodeURIComponent(p));
         if (fs.existsSync(f) && fs.statSync(f).isDirectory()) f = path.join(f, 'index.html');
-        if (!fs.existsSync(f)) return Promise.resolve({ ok: false, status: 404, text: async () => '' });
+        if (!fs.existsSync(f)) return Promise.resolve({ ok: false, status: 404, headers: { get: () => null }, text: async () => '' });
         const texte = fs.readFileSync(f, 'utf8');
         return Promise.resolve({
-          ok: true, status: 200, text: async () => texte,
+          ok: true, status: 200, headers: { get: () => null }, text: async () => texte,
           json: async () => {
             const donnees = JSON.parse(texte);
             return (p === '/articles-index.json' && options.index) ? options.index(donnees) : donnees;
           }
         });
       };
+      // Minuteries de la page (vérification périodique) : rendues « unref » pour que les tests se terminent.
+      w.setInterval = (fn, ms, ...args) => { const t = setInterval(fn, ms, ...args); t.unref(); return t; };
+      w.clearInterval = (t) => clearInterval(t);
       w.matchMedia = w.matchMedia || (() => ({ matches: false, addEventListener() {}, addListener() {} }));
       w.scrollTo = () => {};
       w.alert = (texte) => { w.alertes = (w.alertes || []).concat(String(texte)); };

@@ -27,7 +27,6 @@ set -Eeuo pipefail
 DOSSIER="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$DOSSIER/deploy/lib_config.sh"  # cfg <section> <clé> : valeurs de kioske.cfg
 DOMAINE="$(cfg site domaine)"
-RACINE_WEB="${RACINE_WEB:-/home/<utilisateur>/kioske.fr/public}"
 SITE_NGINX="/etc/nginx/sites-available/$DOMAINE"
 CERT_DIR="/etc/letsencrypt/live/$DOMAINE"
 LOG_NGINX="/var/log/nginx/$DOMAINE.access.log"
@@ -199,6 +198,10 @@ fi
 if (( SIMULATION == 1 )); then
     avert "Simulation : aucune commande ne sera lancée."
 fi
+
+# Répertoire public (racine servie par nginx) : demandé au terminal, ou reçu de RACINE_WEB (timer systemd).
+RACINE_WEB="$(demander_repertoire RACINE_WEB 'Répertoire public servi par nginx' "$DOSSIER/public")" || exit 1
+export RACINE_WEB  # transmis aux scripts lancés ensuite : ils ne redemandent pas le chemin
 
 # ---------- Exécution ----------
 

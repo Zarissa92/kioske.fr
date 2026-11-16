@@ -70,9 +70,9 @@ window.addEventListener('popstate', (e) => {
 // Menus : fermer l'autre quand on ouvre un
 // aria-expanded suit la classe « open », quel que soit le code qui la change.
 const menuNavbar = document.getElementById('navbar-menu');
-const btnMenuNavbar = document.querySelector('.btn-menu');
+const btnMenuNavbar = document.getElementById('btn-menu');
 const settingsMenu = document.getElementById('navbar-settings');
-const btnSettingsNavbar = document.querySelector('.btn-settings');
+const btnSettingsNavbar = document.getElementById('btn-settings');
 
 if (menuNavbar && btnMenuNavbar) {
   new MutationObserver(() => {
@@ -197,6 +197,8 @@ function creerCarte({ adresse, image, source, meta, titre, extrait, favori = fal
     img.alt = '';
     img.loading = 'lazy';
     img.referrerPolicy = 'no-referrer';
+    // Image qui ne charge pas : la lettre de repli prend sa place
+    img.addEventListener('error', () => cadre.replaceChildren(span('lettre', (source || '').charAt(0).toUpperCase() || '•')), { once: true });
     cadre.appendChild(img);
   } else {
     cadre.appendChild(span('lettre', (source || '').charAt(0).toUpperCase() || '•'));
@@ -310,6 +312,7 @@ function creerPanneauArticles({ id, titre: texteTitre, cle, articles, ancre, gal
       img.alt = article.title;
       img.loading = 'lazy';
       img.referrerPolicy = 'no-referrer';
+      img.addEventListener('error', () => lien.remove(), { once: true });
       lien.appendChild(img);
       galerie.appendChild(lien);
     });

@@ -35,11 +35,7 @@ if [[ "$DOMAINE" != "kioske.fr" ]]; then
     erreur "ERREUR : Ce script est configuré pour kioske.fr, pas pour $DOMAINE. Arrêt pour éviter les mélanges de domaines."
 fi
 # Répertoire public : par variable d'environnement ou demander
-RACINE="${RACINE_WEB:-}"
-if [[ -z "$RACINE" ]]; then
-    read -rp "Répertoire public pour servir le site (ex: /home/<utilisateur>/kioske.fr/public) : " RACINE
-fi
-[[ -n "$RACINE" ]] || erreur "Répertoire public requis (passe RACINE_WEB=... ou réponds à la question)"
+RACINE="$(demander_repertoire RACINE_WEB 'Répertoire public servi par nginx' "$DOSSIER/public")" || erreur "Répertoire public requis"
 DISPO="/etc/nginx/sites-available/$DOMAINE"
 ACTIF="/etc/nginx/sites-enabled/$DOMAINE"
 CERT_DIR="/etc/letsencrypt/live/$DOMAINE"
@@ -52,7 +48,7 @@ SANS_CERT=0
 # qui sont téléchargées par le build et servies depuis img/veille/ dans la racine web).
 # Scripts : ceux écrits dans les pages et /theme.js ; connect-src pour fetch (recherche, carte ouverte,
 # favoris) ; manifest-src et worker-src pour la PWA (manifest.json, sw.js).
-CSP="default-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+CSP="default-src 'none'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
 
 # Tables et zones du niveau « http », écrites en tête du fichier généré.
 CARTE_CACHE="$(cat <<'NGINX'
@@ -72,6 +68,9 @@ map $uri $kioske_cache_control {
     ~\.(css|woff2|woff|ttf|svg)$      "public, max-age=31536000, immutable";
     # Flux RSS/XML : toujours revérifiés
     ~\.xml$                           "no-cache, must-revalidate, max-age=0";
+    # Page d'accueil : revérifiée à chaque visite (304 si elle n'a pas changé, donc léger)
+    /                                 "no-cache, must-revalidate, max-age=0";
+    /index.html                       "no-cache, must-revalidate, max-age=0";
     # Pages, theme.js, index des articles : 30 min (durée du timer de mise à jour)
     default                           "public, max-age=1800, must-revalidate";
 }
@@ -117,7 +116,7 @@ EMPLACEMENTS="$(cat <<'NGINX'
     }
 
     # Pages et données à la racine : accueil, page des flux, flux RSS, plan du site, index de recherche
-    location ~ ^/(index\.html|rss\.html|rss\.xml|sitemap\.xml|robots\.txt|articles-index\.json)$ {
+    location ~ ^/(index\.html|rss\.html|dispositions-legales\.html|rss\.xml|sitemap\.xml|robots\.txt|articles-index\.json)$ {
         limit_req zone=kioske_pages burst=40 nodelay;
         try_files $uri =404;
     }
@@ -156,7 +155,7 @@ EMPLACEMENTS="$(cat <<'NGINX'
     }
 
     # Images de la veille et polices
-    location ~ ^/(img/veille|fonts)/[A-Za-z0-9._-]+$ {
+    location ~ ^/(img/veille|img/previews|fonts)/[A-Za-z0-9._-]+$ {
         limit_req zone=kioske_fichiers burst=300 nodelay;
         try_files $uri =404;
     }
@@ -188,6 +187,26 @@ EMPLACEMENTS="${EMPLACEMENTS//__DOMAINE__/$DOMAINE}"
 info()    { printf '\033[1;34m[info]\033[0m %s\n' "$*"; }
 avert()   { printf '\033[1;33m[attention]\033[0m %s\n' "$*"; }
 erreur()  { printf '\033[1;31m[erreur]\033[0m %s\n' "$*" >&2; exit 1; }
+
+# Saisie manuelle de l'adresse pour Let's Encrypt : redemandée tant que le format n'est pas bon.
+demander_email() {
+    local saisie=""
+    while true; do
+        read -r -p "Adresse e-mail (nom@domaine.tld) : " saisie
+        if [[ "$saisie" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$ ]]; then
+            printf '%s' "$saisie"
+            return 0
+        fi
+        echo "  Format invalide. Exemple : alias@domaine.tld" >&2
+    done
+}
+
+# Acceptation explicite des conditions de Let's Encrypt (remplace l'acceptation implicite).
+confirmer_conditions_letsencrypt() {
+    local reponse=""
+    read -r -p "Acceptes-tu les conditions d'utilisation de Let's Encrypt ? (o/N) " reponse
+    [[ "$reponse" =~ ^[oOyY]$ ]]
+}
 
 if [[ "$EUID" -eq 0 && -z "${SUDO_USER:-}" ]]; then
     erreur "Lance ce script en utilisateur normal (meli), pas en root : il utilise sudo."
@@ -328,14 +347,24 @@ if [[ -d "$CERT_DIR" ]]; then
     info "Certificat déjà présent dans $CERT_DIR"
 elif (( SANS_CERT == 1 )); then
     info "Option --sans-certificat : pas de HTTPS pour l'instant"
-elif [[ -z "$EMAIL" ]]; then
-    avert "Pas d'adresse e-mail (--email) : pas de certificat. Relance avec --email pour activer le HTTPS."
+elif [[ -z "$EMAIL" && ! -t 0 ]]; then
+    avert "Pas d'adresse e-mail (--email) et pas de terminal pour la demander : pas de certificat. Relance le script depuis un terminal, ou avec --email."
 elif [[ -z "$IP_DNS" ]]; then
     avert "Le DNS de $DOMAINE ne répond pas : certificat non demandé. Relance le script quand il est en place."
 else
     # Derrière une box, le DNS donne l'IP publique et le serveur n'en connaît que l'IP locale :
     # on ne compare pas. On tente directement, et certbot dira si le domaine atteint le serveur.
     info "DNS de $DOMAINE : $IP_DNS (IP locale du serveur : $IP_SERVEUR, normal derrière une box)"
+    if [[ -z "$EMAIL" ]]; then
+        # Saisie manuelle. Un pseudo ne suffit pas : Let's Encrypt envoie ses alertes d'expiration à cette adresse.
+        info "Let's Encrypt demande une adresse e-mail qui reçoit du courrier (elle n'est pas publiée sur le site)."
+        info "Un alias dédié convient ; un pseudo seul n'est pas accepté."
+        EMAIL="$(demander_email)"
+        confirmer_conditions_letsencrypt || { avert "Certificat non demandé : conditions refusées."; EMAIL=""; }
+    fi
+    if [[ -z "$EMAIL" ]]; then
+        avert "Pas de certificat demandé. Le site reste en HTTP."
+    else
     info "Demande du certificat Let's Encrypt"
     if sudo certbot certonly --webroot -w "$WEBROOT_ACME" \
         -d "$DOMAINE" \
@@ -344,6 +373,7 @@ else
         info "Certificat obtenu"
     else
         avert "Échec de certbot : le site reste en HTTP. Voir /var/log/letsencrypt/letsencrypt.log"
+    fi
     fi
 fi
 

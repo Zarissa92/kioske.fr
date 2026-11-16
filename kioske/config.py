@@ -70,7 +70,7 @@ def entier_opt(section: str, cle: str, defaut: int) -> int:
 DOMAINE = valeur("site", "domaine")
 URL_SITE = f"https://{DOMAINE}"
 NOM_SITE = valeur("site", "nom")
-RACINE_WEB = Path(os.environ.get("RACINE_WEB", "/home/<utilisateur>/kioske.fr/public"))
+RACINE_WEB = Path(os.environ.get("RACINE_WEB") or (ROOT / "public"))  # défaut : <projet>/public
 
 RSS_MAX = entier("veille", "articles_flux_rss")
 TWITCH_SCAN = entier("veille", "videos_par_chaine")

@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'kioske-v70';
+const CACHE_VERSION = 'kioske-v120';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -51,6 +51,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Fichiers d'autres sites (images des sources) : le navigateur les gère, pas le service worker
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
   // Pages HTML et articles : network-first (chercher le frais en priorité)
   if (url.pathname.endsWith('.html') ||
       url.pathname.endsWith('/') ||
@@ -58,8 +63,10 @@ self.addEventListener('fetch', (event) => {
       url.pathname.includes('/rss.xml') ||
       url.pathname.includes('/rss/') ||
       url.pathname.endsWith('.xml')) {
+    // cache: 'no-cache' : le navigateur revérifie auprès du serveur au lieu de répondre avec sa copie HTTP
+    // (sinon une page peut rester ancienne jusqu'à 30 min, et ses nouvelles tuiles n'apparaissent pas).
     event.respondWith(
-      fetch(event.request)
+      fetch(event.request, { cache: 'no-cache' })
         .then((response) => {
           if (response && response.status === 200) {
             const responseClone = response.clone();

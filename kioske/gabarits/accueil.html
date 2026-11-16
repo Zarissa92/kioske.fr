@@ -53,9 +53,10 @@ ${js_donnees_accueil}${js_service_worker}</script>
 
   <div class="navbar-controls">
     <button type="button" class="btn-favs" title="Mes favoris">♡</button>
+    <button type="button" class="btn-settings btn-notifications" id="btn-notifications" title="Notifications des flux personnalisés" aria-label="Notifications des flux personnalisés" aria-haspopup="dialog" hidden>🔔</button>
 
     <div class="navbar-button-group">
-      <button type="button" class="btn-settings" title="Paramètres" aria-label="Paramètres" aria-controls="navbar-settings" aria-expanded="false">⚙️</button>
+      <button type="button" class="btn-settings" id="btn-settings" title="Paramètres" aria-label="Paramètres" aria-controls="navbar-settings" aria-expanded="false">⚙️</button>
       <div class="navbar-menu" id="navbar-settings" style="display: none;">
         <div class="navbar-menu-group">
           <button type="button" class="navbar-menu-title submenu-toggle" data-submenu="themes" aria-expanded="false">🎨 Thèmes ▼</button>
@@ -72,7 +73,7 @@ ${js_donnees_accueil}${js_service_worker}</script>
     </div>
 
     <div class="navbar-button-group">
-      <button type="button" class="btn-menu" title="Menu" aria-label="Menu" aria-controls="navbar-menu" aria-expanded="false">≡</button>
+      <button type="button" class="btn-menu" id="btn-menu" title="Menu" aria-label="Menu" aria-controls="navbar-menu" aria-expanded="false">≡</button>
       <div class="navbar-menu" id="navbar-menu">
         <div class="navbar-menu-group">
           ${boutons_reseaux}<button type="button" class="menu-button" id="btn-open-conduite">📖 Code de conduite</button>
@@ -125,7 +126,8 @@ ${js_donnees_accueil}${js_service_worker}</script>
 </section>
 <p class="mentions">Chaque article renvoie vers sa source d'origine. Textes, images et vidéos : leurs auteur.ice.s et sites respectifs.</p>
 <p class="mentions"><a href="https://github.com/Zarissa92/kioske.fr" target="_blank" rel="noopener noreferrer">GitHub du projet (GPL v3)</a></p>
+  <p class="mentions"><a href="/dispositions-legales.html">Dispositions légales</a></p>
 <script>
-${js_favoris}${js_partage}${js_accueil}${js_flux_personnalise}${js_carte_ouverte}${js_retour_app}${js_installation_pwa}</script>
+${js_favoris}${js_partage}${js_accueil}${js_flux_personnalise}${js_notifications}${js_rafraichissement}${js_carte_ouverte}${js_retour_app}${js_installation_pwa}</script>
 </body>
 </html>

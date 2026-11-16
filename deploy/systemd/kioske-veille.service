@@ -12,6 +12,8 @@ Group=__GROUPE__
 # Écriture dans la racine web (groupe www-data).
 SupplementaryGroups=www-data
 WorkingDirectory=__DOSSIER__
+# Répertoire public : rempli par deploy/installer_serveur.sh (réponse à sa question).
+Environment=RACINE_WEB=__RACINE_WEB__
 ExecStart=/bin/bash __DOSSIER__/deploy/kioske.sh veille
 # Les fichiers publiés (dossier servi par nginx) prennent les rôles www-data:www-data.
 # Le « + » fait lancer cette commande en root, quel que soit User= ci-dessus.
