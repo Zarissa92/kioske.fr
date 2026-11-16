@@ -24,6 +24,14 @@ carte ouvre l'article par-dessus la page, au format « carte à jouer » (texte 
 
 <p align="center"><img src="docs/img/kioske-cartes.png" width="640" alt="Fenêtre d'une source : une carte par article, avec image, date, titre et extrait"></p>
 
+### Aperçu : effet shiny
+
+Les cartes des favoris, les vignettes de la grande galerie et la carte ouverte ont un **effet shiny** : un halo aux couleurs du thème, une bordure en dégradé qui tourne et un reflet qui balaie la carte en continu (4 s). Il est défini dans `kioske/style_favoris.css`, et il se coupe avec « réduire les animations ».
+
+<p align="center"><img src="docs/img/kioske-shiny.svg" width="640" alt="Deux cartes au halo bleu et rose, avec une bordure en dégradé et un reflet diagonal : une carte de favori et une vignette de galerie"></p>
+
+L'image est une capture figée : l'animation se voit dans la page.
+
 ## Sommaire
 
 1. [Structure](#structure)

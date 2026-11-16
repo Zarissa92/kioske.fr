@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" width="640" height="400" role="img" aria-labelledby="titre desc">
+  <title id="titre">Aperçu de l'effet shiny</title>
+  <desc id="desc">Deux cartes sombres au halo bleu et rose, avec une bordure en dégradé et un reflet diagonal qui les traverse.</desc>
+  <defs>
+    <linearGradient id="bordure" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7FE5FF"/>
+      <stop offset=".3" stop-color="#ffffff"/>
+      <stop offset=".5" stop-color="#FFD0DD"/>
+      <stop offset=".7" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#7FE5FF"/>
+    </linearGradient>
+    <linearGradient id="reflet" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#ffffff" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="image" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3a0d2e"/>
+      <stop offset="1" stop-color="#06202a"/>
+    </linearGradient>
+    <filter id="halo" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="9" result="flou"/>
+      <feMerge>
+        <feMergeNode in="flou"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <clipPath id="clip-grande"><rect x="60" y="50" width="240" height="320" rx="20"/></clipPath>
+    <clipPath id="clip-petite"><rect x="360" y="110" width="200" height="200" rx="16"/></clipPath>
+  </defs>
+
+  <rect width="640" height="400" fill="#000"/>
+
+  <!-- Carte favori : halo, bordure en dégradé, reflet -->
+  <g filter="url(#halo)">
+    <rect x="60" y="50" width="240" height="320" rx="20" fill="#080000" stroke="url(#bordure)" stroke-width="6"/>
+  </g>
+  <g clip-path="url(#clip-grande)">
+    <rect x="60" y="50" width="240" height="115" fill="url(#image)"/>
+    <rect x="60" y="50" width="240" height="320" fill="#080000" opacity="0"/>
+    <rect x="130" y="60" width="100" height="100" fill="#FFD0DD" opacity=".15"/>
+    <rect x="80" y="190" width="150" height="16" rx="4" fill="#ffffff"/>
+    <rect x="80" y="214" width="190" height="8" rx="3" fill="#f0f4f6" opacity=".7"/>
+    <rect x="80" y="230" width="170" height="8" rx="3" fill="#f0f4f6" opacity=".7"/>
+    <rect x="80" y="246" width="120" height="8" rx="3" fill="#f0f4f6" opacity=".7"/>
+    <rect x="50" y="50" width="90" height="320" fill="url(#reflet)" transform="translate(120 0) skewX(-20)"/>
+  </g>
+  <text x="180" y="390" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#f0f4f6">Carte d'un favori</text>
+
+  <!-- Vignette de la grande galerie : halo plus petit, bordure en dégradé, reflet -->
+  <g filter="url(#halo)">
+    <rect x="360" y="110" width="200" height="200" rx="16" fill="#0a0000" stroke="url(#bordure)" stroke-width="4"/>
+  </g>
+  <g clip-path="url(#clip-petite)">
+    <rect x="360" y="110" width="200" height="200" fill="url(#image)"/>
+    <rect x="400" y="170" width="120" height="8" rx="3" fill="#ffffff"/>
+    <rect x="400" y="186" width="90" height="8" rx="3" fill="#f0f4f6" opacity=".7"/>
+    <rect x="330" y="110" width="70" height="200" fill="url(#reflet)" transform="translate(120 0) skewX(-20)"/>
+  </g>
+  <text x="460" y="350" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#f0f4f6">Vignette de la galerie</text>
+</svg>
