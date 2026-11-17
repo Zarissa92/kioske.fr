@@ -400,7 +400,7 @@ Contrôle HTTPS et sa redirection, les anciens flux RSS redirigés vers `rss.xml
 
 
 Le site est construit et servi par le serveur (Debian 13, nginx). Le projet vit dans
-`/home/<utilisateur>/kioske.fr`, la racine servie est la racine `/srv/kioske.fr` (demandée au terminal à l'installation, défaut : `/srv/kioske.fr`). L'IP publique est demandée par `deploy/verifier_serveur.sh`.
+`~/kioske.fr`, la racine servie est la racine `/srv/kioske.fr` (demandée au terminal à l'installation, défaut : `/srv/kioske.fr`). L'IP publique est demandée par `deploy/verifier_serveur.sh`.
 
 **Variable d'environnement `RACINE_WEB`** : chemin absolu du répertoire public où le site est publié
 (défaut : `/srv/kioske.fr`). `deploy/kioske.sh` la demande une seule fois et la transmet aux scripts qu'il lance ;
@@ -411,7 +411,7 @@ Elle n'est pas dans `kioske.cfg`.
 
 ```bash
 kioske_update --dry-run    # ce qui serait envoyé
-kioske_update              # envoi vers <utilisateur>@<serveur>:/home/<utilisateur>/kioske.fr/
+kioske_update              # envoi vers <utilisateur>@<serveur>:~/kioske.fr/
 ```
 
 Elle fonctionne par **liste blanche** : elle n'envoie que ce qui sert au déploiement, à savoir `bin/`,
@@ -426,7 +426,7 @@ Une copie de l'ancienne fonction reste dans `~/.config/fish/functions/kioske_upd
 ### Déploiement simple (nginx + fail2ban, certificats existants)
 
 ```bash
-cd /home/<utilisateur>/kioske.fr
+cd ~/kioske.fr
 bash deploy/deployer-nginx-simple.sh
 ```
 
@@ -435,7 +435,7 @@ bash deploy/deployer-nginx-simple.sh
 ### Déploiement complet (veille + nginx + fail2ban + statut)
 
 ```bash
-cd /home/<utilisateur>/kioske.fr
+cd ~/kioske.fr
 deploy/kioske.sh                          # tout, dans l'ordre
 deploy/kioske.sh                          # tout, et demande l'adresse e-mail du certificat (Let's Encrypt)
 deploy/kioske.sh veille                   # seulement la mise à jour (ce que lance le timer)
@@ -507,9 +507,6 @@ Pour assouplir une jail : augmenter `maxretry` ou réduire `bantime` dans `deplo
 
 **Mettre en ligne cette configuration** (certificats déjà en place) : envoyer le projet, puis sur le serveur `bash deploy/kioske.sh --certificat-ok nginx fail2ban`. L'étape nginx doit passer avant fail2ban : c'est elle qui crée le journal hors-site.
 
-**Domaines alternatifs** : `gauchiasse.org` et `gauchiasses.org` redirigent vers `kioske.fr` (301).
-Le script est dans `~/Lenovo_scripts/redirections_gauchiasses.sh`, à lancer en root sur le serveur.
-
 ### Après la réorganisation du 2026-11-11
 
 1. `kioske_update --dry-run`, puis `kioske_update`.
@@ -572,8 +569,6 @@ Le cache est versionné par empreinte (voir « Service Worker »). Un changement
 - Twitch passe par yt-dlp. Une vidéo réservée aux abonnés ou supprimée est ignorée avec un message.
 - Les aperçus viennent de la page de l'article ; certains sites ne fournissent pas d'image.
 - La base n'est jamais purgée : sans `articles_par_source`, la page grossit avec le temps.
-- Ne pas mettre dans la veille une ressource dont le nom se résout en adresse privée
-  (ex. `blog.zarisse.fr` depuis le réseau local) : Chrome demande alors l'accès au réseau local.
 
 - **Pages Ressources et code de conduite : règles nginx dans `deploy/kioske-nginx.conf` et `deploy/deployer_nginx.sh` (les deux ensemble).** Elles se déploient avec `deploy/kioske.sh nginx` sur le serveur, à refaire après chaque modification de ces fichiers.
 
