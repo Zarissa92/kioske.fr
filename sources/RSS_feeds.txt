@@ -8,7 +8,7 @@
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCbbmy1wFvL1Xq0G9I-mLtQg"  #paduteam
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCNq4kPggEIA_ZCNXhnbIXGg"  #book margorito
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCJd1AFjN9vIgVDDB6UE2UQg" #Marouchka
-
+"https://www.youtube.com/feeds/videos.xml?channel_id=UC2qGaiV1-sohDXI7bJwefFQ" #paint-media
 
 [Vidéo et radio: Economie]
 "https://www.youtube.com/feeds/videos.xml?channel_id=UC7sXGI8p8PvKosLWagkK9wQ"  #heureka

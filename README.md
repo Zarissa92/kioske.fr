@@ -73,14 +73,14 @@ Le paquet `kioske/` :
 | `flux.py`, `twitch.py`, `apercus.py`, `reseau.py` | Récupération : flux RSS, vidéos Twitch (yt-dlp), aperçus Open Graph. |
 | `images.py` | Adresses des images (https, telles quelles), et téléchargement en mémoire pour composer les cartes de partage. |
 | `historique.py` | Base SQLite de tout ce qui a été récupéré. |
-| `themes.py`, `style_<thème>.css` | Thèmes et CSS. `themes.py` lit les thèmes de `kioske.cfg` et prépare ce que chaque page reprend (attributs de `<html>`, liste des thèmes pour `static/theme.js`, boutons de choix). Chaque thème a son CSS (clé `css`, source dans `kioske/`). Le CSS du thème par défaut est injecté dans la page ; le build copie les autres dans `build/` (rien dans `static/`), où ils sont chargés dynamiquement. |
+| `themes.py`, `style_default.css`, `style_<thème>.css` | Thèmes et CSS. `themes.py` lit les thèmes de `kioske.cfg` et prépare ce que chaque page reprend (attributs de `<html>`, liste des thèmes pour `static/theme.js`, boutons de choix). `style_default.css` est la base de tout le CSS du site, inséré dans chaque page. Chaque autre thème est une surcouche (`style_<thème>.css`) : des variables (couleurs, bordures, halos…) et quelques exceptions, chargées après la base. Les variables de thème sont définies en tête de `style_default.css`. Le build copie les surcouches dans `build/`.|
 | `style_favoris.css` | Halo et reflet des cartes de favoris (classe `carte-favori`) des vignettes de la grande galerie (section `galerie-principale`) et de la carte d'article ouverte (`.carte-ouverte .panel-article`). Fichier partagé : `rendu.py` l'ajoute à la page d'accueil seule, tous thèmes confondus. Couleurs prises dans les variables du thème ; animation coupée pour « réduire les animations », effets retirés en contraste renforcé. |
 | `rendu.py`, `rss.py`, `texte.py` | Contenu de la page d'accueil et de `rss.html` (étiquettes, galeries, données ; le squelette est dans `gabarits/`), flux RSS produits, outils de texte (slugs, IDs, échappement HTML). |
 | `ressources.py` | Page Ressources : lit `ressources/`, rend le Markdown (bibliothèque `markdown`), écrit `build/ressources/` : `index.html` (liste et sommaire) et une page par document. Le sommaire est du HTML rendu au build (`sommaire_html()`). |
 | `rendu_statique.py` | Contenu des pages statiques d'articles et de catégories (image, navigation, cartes ; le squelette est dans `gabarits/`). Aucun CSS (il est dans `style.css`) ni JavaScript (il est dans `js/`). |
 | `gabarits.py`, `gabarits/` | Squelettes HTML des pages : `accueil.html`, `article.html`, `categorie.html`, `rss.html`. `${nom}` marque l'endroit d'une valeur ; ni boucle ni condition dans un gabarit. `gabarits.py` fournit `remplir("page.html", nom=valeur, …)` : une valeur manquante arrête le build, et le texte est échappé par Python (`esc()`) avant d'être passé. Un vrai signe dollar s'écrit `$$`. Pour modifier le HTML fixe d'une page, éditer son gabarit ; pour y ajouter une valeur, écrire `${nom}` dans le gabarit et passer `nom=…` dans l'appel `remplir()` de `rendu.py` ou `rendu_statique.py`. |
 | `gabarits/ressources.html`, `gabarits/texte.html`, `gabarits/partiels/`, `style_ressources.css` | Pages statiques : `ressources.html` (index et documents, un seul gabarit), `texte.html` (code de conduite). `partiels/` : en-tête commun (`tete_page.html`), barre du haut et panneaux communs (`barre_haut.html`, `panneaux_communs.html`), remplis par `barre_et_panneaux()` et `valeurs_barre()` (`rendu.py`). `style_ressources.css` : sommaire, document, menu ≡ sur petit écran. |
-| `javascript.py`, `js/` | Tout le JavaScript écrit dans les pages. `js/` : un fichier par rôle — `accueil.js` (panneaux, cartes, recherche, panneau « Mes favoris », menu), `notifications.js` (cloche et notifications des flux personnalisés, désactivées par défaut ; elles arrivent pendant que le site est ouvert), `rafraichissement.js` (l'accueil se recharge seul quand une nouvelle version est publiée, sauf si un panneau est ouvert), `favoris.js` (♡ et favoris enregistrés dans le navigateur, sur toutes les pages qui montrent un article), `partage.js` (bouton 📤), `galerie.js` (flèches des galeries), `carte_ouverte.js` (carte d'article par-dessus la page), `retour_app.js` (bouton précédent dans l'app installée), `installation_pwa.js`, `donnees_accueil.js` (lit le JSON des articles), `service_worker.js`, `page_article.js`, `page_categorie.js`, `page_rss.js`. `javascript.py` les lit (constantes `JS_…`) et fournit `json_pour_page()` pour les données. Pour ajouter un script : créer le fichier dans `js/`, ajouter sa constante dans `javascript.py`, l'insérer dans la page voulue. |
+| `javascript.py`, `js/` | Tout le JavaScript écrit dans les pages. `js/` : un fichier par rôle — `accueil_*.js` (l'accueil, découpé en neuf fichiers concaténés dans cet ordre : `accueil_historique` panneaux et adresse, `accueil_menu`, `accueil_clavier`, `accueil_cartes`, `accueil_panneaux`, `accueil_recherche`, `accueil_adresse`, `accueil_favoris`, `accueil_sous_menus` ; la liste est dans `javascript.py`), `notifications.js` (cloche et notifications des flux personnalisés, désactivées par défaut ; elles arrivent pendant que le site est ouvert), `rafraichissement.js` (l'accueil se recharge seul quand une nouvelle version est publiée, sauf si un panneau est ouvert), `favoris.js` (♡ et favoris enregistrés dans le navigateur, sur toutes les pages qui montrent un article), `partage.js` (bouton 📤), `galerie.js` (flèches des galeries), `carte_ouverte.js` (carte d'article par-dessus la page), `retour_app.js` (bouton précédent dans l'app installée), `installation_pwa.js`, `donnees_accueil.js` (lit le JSON des articles), `service_worker.js`, `page_article.js`, `page_categorie.js`, `page_rss.js`. `javascript.py` les lit (constantes `JS_…`) et fournit `json_pour_page()` pour les données. Pour ajouter un script : créer le fichier dans `js/`, ajouter sa constante dans `javascript.py`, l'insérer dans la page voulue. |
 | `verrou.py` | Un seul build ou une seule publication à la fois. |
 | `construction.py`, `publication.py` | Le build (`build/`) et la copie vers la racine web. |
 
@@ -113,6 +113,17 @@ bash tests/lancer.sh         # depuis la racine du projet : tout
 bash tests/lancer.sh --sans-build   # garde le build/ déjà là
 ```
 
+**Captures d'écran (Playwright)**, à lancer à la main, pas par `lancer.sh` : elles ouvrent un vrai navigateur.
+
+```bash
+python3 -m http.server 8000 -d build     # dans un terminal, depuis la racine
+cd tests && npx playwright install chromium   # une seule fois
+npm run visuel:maj                       # première fois : écrit les captures de référence dans tests/captures/
+npm run visuel                           # ensuite : compare à la référence, écart = échec
+```
+
+`visuel.spec.js` : 5 pages × 7 thèmes × 3 largeurs (320, 768, 1100 px). La pluie est masquée (aléatoire).
+
 `lancer.sh` vérifie la syntaxe des fichiers JavaScript, lance les tests Python (`tests/test_python.py`,
 `unittest`, sans dépendance), reconstruit le site sans réseau (`bin/build_site.py --simple`), puis joue les
 parcours des visiteurs dans jsdom, sans navigateur, sur les pages de `build/` :
@@ -120,6 +131,7 @@ parcours des visiteurs dans jsdom, sans navigateur, sur les pages de `build/` :
 | Fichier | Ce qu'il vérifie |
 |---|---|
 | `test_python.py` | Gabarits (valeur manquante, valeur insérée telle quelle), JSON des données, galerie des blocs, chaque fichier de `js/` utilisé, Ressources (front matter, arborescence, sommaire, pages statiques), code de conduite, ordre du menu (`[menu] ordre`). |
+| `test_styles.js` | Non-régression des styles : style calculé de chaque élément de l'accueil et d'un article, dans les 7 thèmes, comparé à `tests/reference/styles.json`. Après une modification voulue : `node tests/test_styles.js --mettre-a-jour`. Ne voit ni les cartes créées par JavaScript, ni `:hover`, ni les largeurs d'écran. |
 | `test_menu.js` | Menu ≡ : ouverture, fermeture au clic dehors et à Échap, liens du menu (Ressources, code de conduite, réseaux). |
 | `test_sobre.js` | Mode sobre : activation, mémorisation, feuille de style, pluie retirée. |
 | `test_ressources.js` | Pages statiques : index et document des Ressources (sommaire, document actif, retour), code de conduite, barre du haut identique à l'accueil. |
@@ -219,15 +231,14 @@ jusqu'à la ligne `[…]` suivante. Une source sans catégorie tombe dans le blo
   dans `localStorage` (clé `kioske-theme`, aucun cookie) et s'applique à toutes les pages. Le build pose le
   thème par défaut sur `<html>` (`data-fond`, `data-pluie`, `--panneau-opacite`) : sans JavaScript, c'est
   lui qui s'affiche, sans pluie. Les règles sont dans la section « Thèmes » de `kioske/style.css`.
-- **Pluie matricielle** : colonnes créées par `static/theme.js`, signes affichés par CSS depuis un attribut.
+- **Pluie matricielle** : colonnes créées par `static/pluie.js`, chargé par `theme.js` seulement pour un thème avec `pluie = oui` (et hors mode sobre). Signes affichés par CSS depuis un attribut ; les règles CSS restent dans les feuilles de thème.
   La page ne contient aucun texte japonais (les navigateurs ne proposent plus de la traduire).
 - **Mode sobre** (menu ≡, bouton `#btn-sobre`, clé `localStorage` `kioske-sobre` : `1` activé, `0` coupé) :
   pas de pluie, pas de halo (`text-shadow`, `box-shadow`), pas d'animation, pas de reflet des favoris. `theme.js`
   pose `data-sobre` sur `<html>` dès le `<head>` et ajoute la feuille `static/style_sobre.css` (désactivable,
   `!important` pour passer par-dessus les feuilles de thème). Le bouton n'existe que sur l'accueil ; l'effet
   vaut sur toutes les pages. Pas encore de réglage par défaut dans `kioske.cfg`. Test : `tests/test_sobre.js`.
-- **`theme.js` est mis en cache** par le service worker : après l'avoir modifié, changer `CACHE_VERSION`
-  dans `static/sw.js`.
+- **`theme.js` est mis en cache** par le service worker : sa version change toute seule au build (voir ci-dessous).
 - **Recherche** : taper puis Entrée. Le script charge `/articles-index.json` et cherche dans les titres,
   les résumés et les noms de sources ; les résultats s'affichent en cartes dans un panneau. Depuis une page
   d'article ou de catégorie, la recherche renvoie vers l'accueil (`/?q=…`), qui l'exécute.
@@ -371,6 +382,15 @@ Le CSS est dans `kioske/style.css`, inséré dans la page au build.
 
 ## Déploiement sur le serveur
 
+**Vérifier le site après une mise en ligne** (depuis le PC, lecture seule) :
+
+```bash
+bash deploy/verifier_production.sh
+```
+
+Contrôle HTTPS et sa redirection, les anciens flux RSS redirigés vers `rss.xml`, l'icône, la version du service worker (comparée à `build/sw.js`) et quelques fichiers clés. Code de sortie 1 en cas d'écart.
+
+
 Le site est construit et servi par le serveur (Debian 13, nginx). Le projet vit dans
 `/home/<utilisateur>/kioske.fr`, la racine servie est la racine `/srv/kioske.fr` (demandée au terminal à l'installation, défaut : `/srv/kioske.fr`). L'IP publique est demandée par `deploy/verifier_serveur.sh`.
 
@@ -445,7 +465,7 @@ sudo systemctl start kioske-veille.service   # publier tout de suite
 |---|---|
 | `/`, `/index.html`, `/rss.html`, `/rss.xml`, `/sitemap.xml`, `/robots.txt`, `/articles-index.json` | servie (débit « pages ») |
 | `/articles/<id>-<titre>/`, `/categories/<nom>/` | servie, ou 404 ordinaire si la page a disparu |
-| `/manifest.json`, `/theme.js`, `/sw.js`, `/favicon.svg`, `/preview.png`, `/apple-touch-icon.png`, `/icon-<taille>.png`, `/img/previews/<fichier>`, `/fonts/<fichier>` | servie (débit « fichiers ») |
+| `/manifest.json`, `/theme.js`, `/pluie.js`, `/sw.js`, `/favicon.svg`, `/preview.png`, `/apple-touch-icon.png`, `/icon-<taille>.png`, `/img/previews/<fichier>`, `/fonts/<fichier>` | servie (débit « fichiers ») |
 | `/favicon.ico`, `/apple-touch-icon-….png`, `/browserconfig.xml`, `/ads.txt`, `/humans.txt`, `/security.txt`, `/.well-known/…` | 404 ordinaire : navigateurs et robots les demandent d'eux-mêmes |
 | fichier ou dossier caché (`/.env`, `/.git/…`) | 404 (et ban immédiat par `kioske-scan`) |
 | tout le reste | 404 et une ligne dans le journal hors-site |
@@ -505,9 +525,9 @@ application native, et fonctionne partiellement hors ligne.
 **Fichiers PWA** :
 - `static/manifest.json` : métadonnées de l'application (nom, description, icônes en 5 tailles, screenshots, theme colors).
 - `static/sw.js` : service worker pour le caching des assets statiques et la résilience hors ligne.
-- `static/icon-96.png`, `icon-128.png`, `icon-192.png`, `icon-256.png`, `icon-512.png` : icônes en 5 résolutions (générées depuis `apercu/preview.svg` avec `rsvg-convert`).
+- `static/icon-96.png` … `icon-512.png`, `apple-touch-icon.png` (180 px), `favicon.svg` : icône de l'application, une pluie matricielle aux couleurs du thème trans. Source : `apercu/icone.svg` (tirage fixe, graine 92). Régénérer avec `rsvg-convert -w N -h N apercu/icone.svg -o static/icon-N.png`.
 
-**Service Worker** (`static/sw.js`, version `CACHE_VERSION` à incrémenter à la main après chaque modification ; le build ne la change plus) :
+**Service Worker** (`static/sw.js`). Sa version (`CACHE_VERSION`) est calculée au build : empreinte SHA-256 des fichiers de `static/` (sauf `sw.js`), des feuilles `kioske/style_*.css` et du texte de `sw.js`. Elle ne change que si l'un d'eux change ; `build/sw.js` reçoit `kioske-<12 caractères>`. Rien à faire à la main :
 - **Cache-first** : assets statiques (CSS, JS, fonts, icônes). Se chargent depuis le cache si disponibles.
 - **Network-first** : toutes les pages (accueil, `/articles/…/`, `/categories/…/`, `.html`), flux RSS, images. Vérifient le réseau d'abord, cache en fallback si hors ligne.
 - **Fallback hors ligne** : page d'accueil cachée si le réseau est indisponible et la page ne l'est pas.
@@ -529,9 +549,7 @@ application native, et fonctionne partiellement hors ligne.
 - Les réponses d'erreur n'ont pas de `Cache-Control`.
 
 **Mise à jour du cache** :
-Le cache est versionné (`CACHE_VERSION` dans `static/sw.js`). Pour forcer une mise à jour après un déploiement :
-modifier la version (ex: de `kioske-v1` à `kioske-v2`). Les anciens caches seront supprimés automatiquement
-au prochain chargement.
+Le cache est versionné par empreinte (voir « Service Worker »). Un changement dans `static/` ou dans une feuille de thème donne une nouvelle version ; les anciens caches sont supprimés au chargement suivant.
 
 ## Limites
 

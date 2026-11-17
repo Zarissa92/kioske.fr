@@ -12,6 +12,8 @@ from __future__ import annotations
 import argparse
 import concurrent.futures as cf
 import filecmp
+import hashlib
+import re
 import json
 import shutil
 from datetime import datetime, timezone
@@ -112,6 +114,30 @@ def copier_statiques() -> None:
                      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
                      f"<url><loc>{URL_SITE}/</loc><changefreq>hourly</changefreq></url>\n"
                      "</urlset>\n")
+
+
+# Version du cache du service worker : empreinte des fichiers qu'il met en cache (static/ et les feuilles
+# de thème). Elle change seulement si l'un d'eux change, donc un build sans changement ne vide pas le cache.
+MOTIF_VERSION_SW = re.compile(r"const CACHE_VERSION = '[^']*';")
+
+
+def version_service_worker() -> str:
+    """Calcule l'empreinte et l'écrit dans build/sw.js (CACHE_VERSION). Renvoie la version."""
+    sources = sorted(f for f in STATIC.rglob("*") if f.is_file() and f.name != "sw.js")
+    sources += sorted(PAQUET.glob("style_*.css"))
+    sources.append(STATIC / "sw.js")  # le texte du service worker compte aussi (liste des fichiers en cache)
+    h = hashlib.sha256()
+    for f in sources:
+        nom = f.relative_to(STATIC) if f.is_relative_to(STATIC) else f.name
+        h.update(str(nom).encode("utf-8") + b"\0" + f.read_bytes() + b"\0")
+    version = f"kioske-{h.hexdigest()[:12]}"
+    cible = BUILD / "sw.js"
+    texte = cible.read_text(encoding="utf-8")
+    nouveau, n = MOTIF_VERSION_SW.subn(f"const CACHE_VERSION = '{version}';", texte)
+    if n != 1:
+        raise SystemExit("build/sw.js : ligne CACHE_VERSION introuvable")
+    ecrire_si_change(cible, nouveau)
+    return version
 
 
 def ecrire_page(items: list[dict], previews: dict[str, dict], categories: dict[str, str], panneaux: dict[str, str] | None = None) -> None:
@@ -418,6 +444,7 @@ def construire(args: argparse.Namespace) -> None:
         print("9. COPIE DES FICHIERS STATIQUES")
         copier_css_themes()
         copier_statiques()
+        print(f"   → Service worker : {version_service_worker()}")
         print(f"   → Fichiers statiques copiés\n")
 
         print("="*60)

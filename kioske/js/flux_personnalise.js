@@ -331,7 +331,7 @@ if (document.readyState === 'loading') {
 }
 
 // Lien « Personnaliser flux » venu d'une autre page : /?flux=personnaliser ouvre le panneau de l'accueil.
-// En bas du fichier : le panneau a besoin de toutes les fonctions de ce script, et accueil.js a déjà posé son bouton.
+// En bas du fichier : le panneau a besoin de toutes les fonctions de ce script, et les fichiers accueil_*.js ont déjà posé son bouton.
 if (new URLSearchParams(location.search).get('flux') === 'personnaliser') {
   const bouton = document.getElementById('btn-custom-flux-navbar');
   if (bouton) {

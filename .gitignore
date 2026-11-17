@@ -50,6 +50,9 @@ index.avant_*.html
 /static/style*.css
 # Dépendances des tests (recréées avec « cd tests && npm install »)
 /tests/node_modules/
+# Sorties de Playwright (les captures de référence, tests/captures/, restent suivies)
+/tests/test-results/
+/tests/playwright-report/
 # Secrets : jamais versionnés
 .env
 *.env

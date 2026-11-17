@@ -1,7 +1,7 @@
 """Thèmes du site, décrits dans kioske.cfg (sections [theme.<nom>]).
 
 Le build pose le thème par défaut sur <html> (attributs data-…) et donne la liste des thèmes à
-static/theme.js, qui applique le choix du visiteur et fabrique la pluie. Le CSS peut être différent
+static/theme.js, qui applique le choix du visiteur ; la pluie est dans static/pluie.js (chargé pour les thèmes qui en ont une). Le CSS peut être différent
 selon le thème (clé `css` optionnelle, défaut : style.css).
 """
 from __future__ import annotations

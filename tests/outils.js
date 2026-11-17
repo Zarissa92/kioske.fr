@@ -46,6 +46,8 @@ function charger(fichier, chemin, options = {}) {
       w.alert = (texte) => { w.alertes = (w.alertes || []).concat(String(texte)); };
       w.Element.prototype.scrollBy = function (o) { this.scrollLeft += o.left; };
       w.addEventListener('error', e => erreurs.push(e.message));
+      // pluie.js : chargé par theme.js à la demande (script externe, jsdom ne le charge pas) : on le met en place ici
+      if (fs.existsSync(path.join(BUILD, 'pluie.js'))) w.eval(fs.readFileSync(path.join(BUILD, 'pluie.js'), 'utf8'));
       if (options.avant) options.avant(w);
     },
   });

@@ -139,10 +139,10 @@ EMPLACEMENTS="$(cat <<'NGINX'
         try_files $uri $uri/index.html =404;
     }
 
-    # Flux RSS par catégorie : /rss/<nom>.xml
+    # Anciens flux RSS par catégorie (/rss/<nom>.xml, supprimés) : redirection vers le flux unique
     location ~ ^/rss/[a-z0-9-]+\.xml$ {
         limit_req zone=kioske_pages burst=40 nodelay;
-        try_files $uri =404;
+        return 301 /rss.xml;
     }
 
     # Manifest PWA : type MIME des manifestes
@@ -153,7 +153,7 @@ EMPLACEMENTS="$(cat <<'NGINX'
     }
 
     # Scripts, icônes et image de partage à la racine
-    location ~ ^/(theme\.js|sw\.js|favicon\.svg|preview\.png|apple-touch-icon\.png|icon-[0-9]+\.png)$ {
+    location ~ ^/(theme\.js|pluie\.js|sw\.js|favicon\.svg|preview\.png|apple-touch-icon\.png|icon-[0-9]+\.png)$ {
         limit_req zone=kioske_fichiers burst=300 nodelay;
         try_files $uri =404;
     }
@@ -355,7 +355,7 @@ info "Site HTTP en ligne"
 # 4. Certificat
 IP_SERVEUR="$(hostname -I 2>/dev/null | awk '{print $1}')"  # IP locale, indicative seulement
 IP_DNS="$(getent ahostsv4 "$DOMAINE" 2>/dev/null | awk 'NR==1{print $1}' || true)"  # vide si le DNS ne répond pas
-if [[ -d "$CERT_DIR" ]]; then
+if sudo test -d "$CERT_DIR"; then
     info "Certificat déjà présent dans $CERT_DIR"
 elif (( SANS_CERT == 1 )); then
     info "Option --sans-certificat : pas de HTTPS pour l'instant"
@@ -390,7 +390,7 @@ else
 fi
 
 # 5. Configuration HTTPS, si le certificat existe
-if [[ -d "$CERT_DIR" ]]; then
+if sudo test -d "$CERT_DIR"; then
     info "Configuration HTTPS"
     appliquer_config <<EOF
 # Généré par deploy/deployer_nginx.sh : ne pas éditer à la main (relancer le script).

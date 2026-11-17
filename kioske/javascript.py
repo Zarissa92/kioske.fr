@@ -33,7 +33,14 @@ JS_SERVICE_WORKER = lire("service_worker.js")      # enregistrement de /sw.js
 # Accueil
 JS_DONNEES_ACCUEIL = lire("donnees_accueil.js")    # lit le JSON « kioske-donnees » de la page
 JS_GALERIE = lire("galerie.js")                    # flèches des galeries : brancherGalerie()
-JS_ACCUEIL = lire("accueil.js")                    # panneaux, recherche, panneau « Mes favoris », menu
+# Accueil : découpé en fichiers par rôle. L'ORDRE COMPTE : les fichiers sont concaténés dans une seule balise
+# <script>, comme autrefois accueil.js ; un fichier peut utiliser ce que les précédents ont déclaré.
+FICHIERS_ACCUEIL = [
+    "accueil_historique.js", "accueil_menu.js", "accueil_clavier.js", "accueil_cartes.js",
+    "accueil_panneaux.js", "accueil_recherche.js", "accueil_adresse.js", "accueil_favoris.js",
+    "accueil_sous_menus.js",
+]
+JS_ACCUEIL = "".join(lire(nom) for nom in FICHIERS_ACCUEIL)
 JS_FLUX_PERSONNALISE = lire("flux_personnalise.js") # flux personnalisé : sélection des sources
 JS_NOTIFICATIONS = lire("notifications.js")        # cloche et notifications des flux personnalisés (off par défaut)
 JS_RAFRAICHISSEMENT = lire("rafraichissement.js")  # rechargement automatique quand une nouvelle version est publiée

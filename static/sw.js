@@ -1,9 +1,10 @@
-const CACHE_VERSION = 'kioske-v181';
+const CACHE_VERSION = 'kioske-dev'; // remplacé au build par une empreinte du contenu (kioske/construction.py)
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/rss.html',
   '/theme.js',
+  '/pluie.js',
   '/favicon.svg',
   '/apple-touch-icon.png',
   '/preview.png',
@@ -61,7 +62,6 @@ self.addEventListener('fetch', (event) => {
       url.pathname.endsWith('/') ||
       url.pathname.includes('/img/') ||
       url.pathname.includes('/rss.xml') ||
-      url.pathname.includes('/rss/') ||
       url.pathname.endsWith('.xml')) {
     // cache: 'no-cache' : le navigateur revérifie auprès du serveur au lieu de répondre avec sa copie HTTP
     // (sinon une page peut rester ancienne jusqu'à 30 min, et ses nouvelles tuiles n'apparaissent pas).

@@ -21,6 +21,7 @@ button, input, select, textarea { font-family: inherit; }
 h1, h2, h3, .navbar-brand, .btn-favs, .btn-menu, .btn-settings, .menu-button, .navbar-menu-title, .titre-panneau {
   font-family: "Russo One", "Courier New", monospace;
 }
+
 :root {
   --color-text-main: #f0f4f6;
   --color-text-accent: #080002;
@@ -40,11 +41,49 @@ h1, h2, h3, .navbar-brand, .btn-favs, .btn-menu, .btn-settings, .menu-button, .n
   /* Néons réduits pour thème défaut */
   --neon-coeur: #7FE5FF;   /* bleu trans */
   --neon-halo: #FFD0DD;    /* rose trans */
+  /* Variables des thèmes : chaque style_<thème>.css les redéfinit. Le nom vient de la première règle qui les utilise. */
+  --border-article-lien: 1px solid var(--color-text-accent);
+  --border-color-btn-retour-hover-btn-retour: var(--color-text-main);
+  --border-carte: 3px solid var(--color-text-accent);
+  --transition-carte: border-color 2s, box-shadow 2s, transform 2s;
+  --border-carte-lien: 2px solid var(--color-text-main);
+  --border-carte-plus: 1px solid var(--color-text-main);
+  --align-items-categorie-container: stretch;
+  --z-index-categorie-container: 500;
+  --border-bottom-categorie-panneau: var(--bordure-panneau-epaisseur, 8px) solid var(--color-text-main);
+  --border-radius-categorie-panneau: var(--rayon-panneau);
+  --color-categorie-panneau-h2: #fff;
+  --border-fav-heart: 2px solid #ffffff;
+  --border-radius-fav-heart: 0.8rem;
+  --color-fav-heart: var(--neon-coeur);
+  --border-color-fav-heart-active: #ffffff;
+  --overflow-y-galerie: visible;
+  --scrollbar-color-galerie: var(--color-text-accent) transparent;
+  --border-radius-galerie-bloc-galerie-carte: .8rem;
+  --border-galerie-carte: 3px solid var(--color-text-accent);
+  --border-radius-galerie-carte-wrapper: 0.8rem;
+  --margin-bottom-galerie-panneau: 0.6rem;
+  --border-color-groupe-h2-titre-panneau: #FF0054;
+  --color-groupe-h2-titre-panneau: #FFF;
+  --text-shadow-groupe-h2-titre-panneau: 0 0 8px #FF0054, 0 0 16px #ff6666;
+  --text-shadow-groupe-h2-titre-panneau-hove: 0 0 12px #FF0054, 0 0 24px #ff6666, 0 0 36px rgba(255, 0, 84, 0.5);
+  --border-color-groupe-h3-titre-panneau: #FFF;
+  --color-groupe-h3-titre-panneau: #FFF;
+  --text-shadow-groupe-h3-titre-panneau: 0 0 8px #7FE5FF, 0 0 16px #FFD0DD;
+  --text-shadow-groupe-h3-titre-panneau-hove: 0 0 12px #7FE5FF, 0 0 24px #FFD0DD, 0 0 36px rgba(127, 229, 255, 0.5);
+  --border-nuage-tag: 1px solid rgba(255, 255, 255, 0.6);
+  --width-panel: 100%;
+  --border-panel-article: 2px solid var(--color-text-main) !important;
+  --outline-theme-bouton-focus-visible: 2px solid #fff;
+  --outline-offset-theme-bouton-focus-visibl: 2px;
+  --border-radius-titre-panneau: 1rem;
+  --background-html-body: linear-gradient(135deg, #000 0%, #342424 50%, #000 100%);
+  --background-html-data-theme-white-neon-pl: linear-gradient(to top, var(--r-tete) 0%, var(--r-haut) 10%, var(--r-moyen) 40%, var(--r-bas) 70%, rgba(153, 153, 153, 0.3) 100%) !important;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body {
-  background: linear-gradient(135deg, #000 0%, #342424 50%, #000 100%);
+  background: var(--background-html-body);
   background-attachment: fixed;
   color: var(--color-text-main);
   font-family: "Inter", system-ui, sans-serif;
@@ -309,22 +348,22 @@ html, body {
   position: relative;
   z-index: 1;
   max-width: 560px;
-  width: 100%;
+  width: var(--width-panel);
   margin: 1rem auto 1rem;
   padding: 1.2rem 1.5rem;
   background: var(--panneau-fond);  /* grand panneau : défini par le thème coché */
-  border: 1px solid var(--color-text-accent);
-  border-radius: var(--rayon-panneau);
+  border: var(--border-article-lien);
+  border-radius: var(--border-radius-categorie-panneau);
   text-align: center;
 }
 .kicker { font-size: 0.85rem; color: var(--color-light); opacity: 0.8; margin-bottom: 0.5rem; letter-spacing: 0.1em; }
 .choix-theme { display: flex; justify-content: center; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; margin-top: -3rem; }
-.choix-theme .theme-bouton { padding: .3rem .7rem; border: 1px solid var(--color-text-accent); color: var(--color-light); background: transparent; font: inherit; font-size: .8rem; cursor: pointer; }
+.choix-theme .theme-bouton { padding: .3rem .7rem; border: var(--border-article-lien); color: var(--color-light); background: transparent; font: inherit; font-size: .8rem; cursor: pointer; }
 .choix-theme .theme-bouton:hover { background: var(--color-text-main); color: #000; }
 .choix-theme .theme-bouton[aria-pressed="true"] { background: var(--color-text-main); color: #000; }
-.theme-bouton:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-.recherche { display: block; width: 100%; max-width: 400px; margin: 0 auto 0.8rem; padding: .6rem .8rem; font-family: inherit; font-size: .9rem; color: #fff; background: #0a0000; border: 1px solid var(--color-text-accent); box-sizing: border-box; transition: all .2s; }
-.recherche:focus { outline: none; border-color: var(--color-text-main); }
+.theme-bouton:focus-visible { outline: var(--outline-theme-bouton-focus-visible); outline-offset: var(--outline-offset-theme-bouton-focus-visibl); }
+.recherche { display: block; width: 100%; max-width: 400px; margin: 0 auto 0.8rem; padding: .6rem .8rem; font-family: inherit; font-size: .9rem; color: #fff; background: #0a0000; border: var(--border-article-lien); box-sizing: border-box; transition: all .2s; }
+.recherche:focus { outline: none; border-color: var(--border-color-btn-retour-hover-btn-retour); }
 .recherche::placeholder { color: var(--color-light); opacity: .6; }
 h1 { font-size: clamp(1.8rem, 6vw, 2.8rem); line-height: 1.2; margin-bottom: 0.6rem; text-transform: uppercase; }
 .cursor { font-size: 1.8rem; line-height: 1; animation: blink 1s steps(1) infinite; }
@@ -394,8 +433,8 @@ h1 { font-size: clamp(1.8rem, 6vw, 2.8rem); line-height: 1.2; margin-bottom: 0.6
 .grille { --colonnes: 8; display: grid; grid-template-columns: repeat(var(--colonnes), minmax(0, 1fr)); gap: 1rem; }
 @media (max-width: 960px) { .grille { --colonnes: 4; } }
 @media (max-width: 640px) { .grille { --colonnes: 2; gap: .6rem; } }
-.categorie-panneau h2 { font-size: clamp(1.1rem, 2.6vw, 1.5rem); text-transform: uppercase; color: #fff; margin: 0 2.4rem 1rem 0; }
-.categorie-fermer { position: absolute; z-index: 300; top: .5rem; right: .5rem; width: 2rem; height: 2rem; border: 1px solid var(--color-text-accent); background: #000; color: var(--color-text-main); font: inherit; font-size: 1.2rem; cursor: pointer; }
+.categorie-panneau h2 { font-size: clamp(1.1rem, 2.6vw, 1.5rem); text-transform: uppercase; color: var(--color-categorie-panneau-h2); margin: 0 2.4rem 1rem 0; }
+.categorie-fermer { position: absolute; z-index: 300; top: .5rem; right: .5rem; width: 2rem; height: 2rem; border: var(--border-article-lien); background: #000; color: var(--color-text-main); font: inherit; font-size: 1.2rem; cursor: pointer; }
 .categorie-fermer:hover, .categorie-fermer:focus-visible { background: var(--color-text-main); color: #000; }
 .compte { font-weight: 400; opacity: .7; font-size: .8rem; }
 /* panneau d'un article : s'ouvre au clic sur la carte, dans la page, sans aller sur le site */
@@ -415,12 +454,12 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
     box-sizing: border-box;
     background: #0a0000;
     color: var(--color-light);
-    border: 2px solid var(--color-text-main);
-    border-left: var(--bordure-panneau-epaisseur, 8px) solid var(--color-text-main);
-    border-radius: var(--rayon-panneau);
-    border-right: var(--bordure-panneau-epaisseur, 8px) solid var(--color-text-main);
-    border-top: var(--bordure-panneau-epaisseur, 8px) solid var(--color-text-main);
-    border-bottom: var(--bordure-panneau-epaisseur, 8px) solid var(--color-text-main);
+    border: var(--border-carte-lien);
+    border-left: var(--border-bottom-categorie-panneau);
+    border-radius: var(--border-radius-categorie-panneau);
+    border-right: var(--border-bottom-categorie-panneau);
+    border-top: var(--border-bottom-categorie-panneau);
+    border-bottom: var(--border-bottom-categorie-panneau);
     font-size: .95rem;
     line-height: 1.5;
     text-align: left;
@@ -445,7 +484,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   .pagination-btn { font-size: 0.65rem !important; padding: 0.2rem 0.4rem !important; }
 }
 .article-texte { flex: 1; margin: 0 0.99rem; overflow-wrap: anywhere; color: var(--color-light); overflow-y: auto; }
-.article-lien { display: block; padding: 0.4rem 0.8rem; color: var(--color-light); border: 1px solid var(--color-text-accent); text-decoration: none; overflow-wrap: anywhere; text-align: center; font-size: 0.8rem; }
+.article-lien { display: block; padding: 0.4rem 0.8rem; color: var(--color-light); border: var(--border-article-lien); text-decoration: none; overflow-wrap: anywhere; text-align: center; font-size: 0.8rem; }
 .article-lien:hover, .article-lien:focus-visible { background: var(--color-text-main); color: #000; outline: none; }
 .article-nav { flex: 0 0 auto; display: flex; gap: 0.4rem; justify-content: center; padding: 0.8rem; border-top: 1px solid var(--color-text-accent); }
 /* textes, marges et bouton des cartes : même format que les cartes ouvertes, miniaturisé.
@@ -462,15 +501,15 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   color: inherit;
   text-decoration: none;
   background: rgba(8, 0, 0, .92);
-  border: 3px solid var(--color-text-accent);
+  border: var(--border-carte);
   border-radius: var(--rayon-carte);
-  transition: border-color 2s, box-shadow 2s, transform 2s;
+  transition: var(--transition-carte);
 }
-.carte:hover, .carte:focus-visible { border-color: var(--color-text-main); transform: translateY(-2px); outline: none; }
+.carte:hover, .carte:focus-visible { border-color: var(--border-color-btn-retour-hover-btn-retour); transform: translateY(-2px); outline: none; }
 /* Image en haut : 35% de la hauteur, comme les cartes ouvertes */
 .carte-image {
   flex: 0 0 35%; display: flex; align-items: center; justify-content: center; overflow: hidden;
-  border-bottom: 1px solid var(--color-text-accent); background: #140000;
+  border-bottom: var(--border-article-lien); background: #140000;
 }
 .carte-image img { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; display: block; }
 .carte-image .lettre {
@@ -486,7 +525,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .carte-plus {
   position: absolute; right: .3rem; bottom: .3rem; width: 1rem; height: 1rem;
   display: flex; align-items: center; justify-content: center;
-  border: 1px solid var(--color-text-main); background: #000; color: var(--color-text-main); font-size: .6rem; transition: all .2s;
+  border: var(--border-carte-plus); background: #000; color: var(--color-text-main); font-size: .6rem; transition: all .2s;
 }
 .carte:hover .carte-plus, .carte:focus-visible .carte-plus { background: var(--color-text-main); color: #000; }
 .mentions { position: relative; z-index: 0; max-width: 1200px; width: calc(100% - 32px); margin: 0 auto; font-size: .8rem; opacity: .85; text-align: center; pointer-events: auto; }
@@ -494,15 +533,15 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .mentions a:hover, .mentions a:focus-visible { color: var(--color-text-main); text-decoration: underline; opacity: 1; outline: none; }
 /* ----- nuage des sources (même principe que la page principale) ----- */
 .nuage { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem; margin: 0.5rem 0 0; padding: .7rem;
-  background: #0a0000; border: 1px solid var(--color-text-main); }
-.nuage .tag { display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .55rem; border: 1px solid rgba(255, 255, 255, 0.6);
+  background: #0a0000; border: var(--border-carte-plus); }
+.nuage .tag { display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .55rem; border: var(--border-nuage-tag);
   border-radius: .3rem; background: #faf7f7; color: #000; font: inherit; font-size: .8rem; line-height: 1.4; white-space: normal; max-width: 100%; overflow-wrap: anywhere; cursor: pointer; transition: all 0.2s; }
 .nuage button.tag { margin: 0; }
 .nuage .tag .nb { font-size: .72rem; opacity: .75; white-space: nowrap; }
 .nuage .tag:hover, .nuage .tag:focus-visible { color: #fff; background: var(--color-text-main); outline: none; }
 /* catégories : un bloc par catégorie des fichiers de sources/, son nuage à l'intérieur */
 .groupes { margin: 0.6rem 0 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: .8rem; }
-.groupe { align-self: start; min-width: 0; padding: .6rem .7rem .7rem; background: #0a0000; border: 1px solid var(--color-text-main); border-radius: var(--rayon-panneau); }
+.groupe { align-self: start; min-width: 0; padding: .6rem .7rem .7rem; background: #0a0000; border: var(--border-carte-plus); border-radius: var(--border-radius-categorie-panneau); }
 /* téléphone : les étiquettes passent à la ligne au lieu de dépasser du panneau */
 @media (max-width: 640px) {
   .nuage { min-width: 0; }
@@ -514,12 +553,12 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   .carte .carte-titre { font-size: .4rem; margin: 0; line-height: 1; }
   .carte-plus { width: 0.6rem; height: 0.6rem; font-size: 0.4rem; right: 0.15rem; bottom: 0.15rem; }
 }
-.titre-panneau { padding: 0.8rem; margin-top: 0.5rem; border-radius: 1rem; margin-bottom: 0.5rem; transition: all 0.2s; border: 2px solid transparent; }
-.groupe h3.titre-panneau { color: #FFF; font-weight: 700; display: block; border-color: #FFF; text-shadow: 0 0 8px #7FE5FF, 0 0 16px #FFD0DD; }
-.groupe h2.titre-panneau { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color:#FFF; font-weight: 700; display: block; border-color: #FF0054; text-shadow: 0 0 8px #FF0054, 0 0 16px #ff6666; }
+.titre-panneau { padding: 0.8rem; margin-top: 0.5rem; border-radius: var(--border-radius-titre-panneau); margin-bottom: 0.5rem; transition: all 0.2s; border: 2px solid transparent; }
+.groupe h3.titre-panneau { color: var(--color-groupe-h3-titre-panneau); font-weight: 700; display: block; border-color: var(--border-color-groupe-h3-titre-panneau); text-shadow: var(--text-shadow-groupe-h3-titre-panneau); }
+.groupe h2.titre-panneau { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--color-groupe-h2-titre-panneau); font-weight: 700; display: block; border-color: var(--border-color-groupe-h2-titre-panneau); text-shadow: var(--text-shadow-groupe-h2-titre-panneau); }
 .titre-panneau:hover { background: rgba(255, 255, 255, 0.05); transform: translateY(-2px); }
-.groupe h3.titre-panneau:hover { text-shadow: 0 0 12px #7FE5FF, 0 0 24px #FFD0DD, 0 0 36px rgba(127, 229, 255, 0.5); }
-.groupe h2.titre-panneau:hover { text-shadow: 0 0 12px #FF0054, 0 0 24px #ff6666, 0 0 36px rgba(255, 0, 84, 0.5); }
+.groupe h3.titre-panneau:hover { text-shadow: var(--text-shadow-groupe-h3-titre-panneau-hove); }
+.groupe h2.titre-panneau:hover { text-shadow: var(--text-shadow-groupe-h2-titre-panneau-hove); }
 .groupe .nuage { margin: 0; padding: 0; border: 0; background: none; justify-content: flex-start; }
 /* deux blocs qui se suivent dans un panneau (sous-catégorie puis source directe) : un espace entre eux */
 .groupe .sous-categorie + .sous-categorie, .groupe .sous-categorie + .nuage, .groupe .nuage + .nuage { margin-top: .6rem; }
@@ -537,46 +576,46 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   .groupes > .groupe { break-inside: avoid; margin: 0 0 1rem; }
 }
 /* Boutons de navigation au sein d'une source */
-.article-nav { display: flex; gap: .8rem; justify-content: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--color-text-accent); }
-.nav-btn { padding: .5rem .8rem; border: 1px solid var(--color-text-accent); background: #000; color: var(--color-light); font: inherit; font-size: .9rem; cursor: pointer; transition: all .2s; }
-.nav-btn:hover, .nav-btn:focus-visible { background: var(--color-text-main); color: #000; border-color: var(--color-text-main); outline: none; }
+.article-nav { display: flex; gap: .8rem; justify-content: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: var(--border-article-lien); }
+.nav-btn { padding: .5rem .8rem; border: var(--border-article-lien); background: #000; color: var(--color-light); font: inherit; font-size: .9rem; cursor: pointer; transition: all .2s; }
+.nav-btn:hover, .nav-btn:focus-visible { background: var(--color-text-main); color: #000; border-color: var(--border-color-btn-retour-hover-btn-retour); outline: none; }
 .nav-btn:disabled { opacity: .5; cursor: not-allowed; }
 /* Galerie horizontale des 10 derniers articles */
-.galerie { display: flex;  overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; scrollbar-width: thin; scrollbar-color: var(--color-text-accent) transparent; justify-content: flex-start; width: 100%; }
+.galerie { display: flex;  overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; scrollbar-width: thin; scrollbar-color: var(--scrollbar-color-galerie); justify-content: flex-start; width: 100%; }
 .galerie::-webkit-scrollbar { height: 6px; }
 .galerie::-webkit-scrollbar-track { background: transparent; }
 .galerie::-webkit-scrollbar-thumb { background: var(--color-text-accent); border-radius: 3px; }
-.galerie-carte { position: relative; flex: 0 0 80px; aspect-ratio: 1; padding: 0; border: 3px solid var(--color-text-accent); background: #0a0000; cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.galerie-carte { position: relative; flex: 0 0 80px; aspect-ratio: 1; padding: 0; border: var(--border-galerie-carte); background: #0a0000; cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
 .galerie-carte img { width: 100%; height: 100%; object-fit: cover; }
 .galerie-carte .lettre { font: 700 2rem "Courier New", monospace; color: #fff; }
-.galerie-carte:hover, .galerie-carte:focus-visible { border-color: var(--color-text-main); outline: none; }
+.galerie-carte:hover, .galerie-carte:focus-visible { border-color: var(--border-color-btn-retour-hover-btn-retour); outline: none; }
 @media (min-width: 1100px) {
   .panel { width: min(1100px, calc((100vw - 2rem) / 1.25)); max-width: none; }
 }
 /* Bouton favori (cœur) dans la barre de navigation */
-.fav-heart { padding: 0.5rem 0.8rem; margin: 0 0.8rem; font-size: 1.4rem; line-height: 1; cursor: pointer; transition: all 0.2s; color: var(--neon-coeur); user-select: none; border: 2px solid #ffffff; background: #000; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; border-radius: 0.8rem; }
-.fav-heart:hover { transform: scale(1.15); color: var(--neon-coeur); border-color: #ffffff; outline: none; }
-.fav-heart:focus-visible { outline: 2px solid var(--color-text-main); outline-offset: 2px; }
-.fav-heart.active { color: var(--neon-coeur); background: rgba(255, 255, 255, 0.15); border-color: #ffffff; }
-.share-btn { padding: 0.5rem 0.8rem; margin: 0 0.8rem; font-size: 1.4rem; line-height: 1; cursor: pointer; transition: all 0.2s; color: var(--neon-coeur); user-select: none; border: 2px solid #ffffff; background: #000; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; border-radius: 0.8rem; }
-.share-btn:hover { transform: scale(1.15); color: var(--color-text-main); border-color: var(--color-text-main); outline: none; }
-.share-btn:focus-visible { outline: 2px solid var(--color-text-main); outline-offset: 2px; }
+.fav-heart { padding: 0.5rem 0.8rem; margin: 0 0.8rem; font-size: 1.4rem; line-height: 1; cursor: pointer; transition: all 0.2s; color: var(--color-fav-heart); user-select: none; border: var(--border-fav-heart); background: #000; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--border-radius-fav-heart); }
+.fav-heart:hover { transform: scale(1.15); color: var(--color-fav-heart); border-color: var(--border-color-fav-heart-active); outline: none; }
+.fav-heart:focus-visible { outline: var(--border-carte-lien); outline-offset: 2px; }
+.fav-heart.active { color: var(--color-fav-heart); background: rgba(255, 255, 255, 0.15); border-color: var(--border-color-fav-heart-active); }
+.share-btn { padding: 0.5rem 0.8rem; margin: 0 0.8rem; font-size: 1.4rem; line-height: 1; cursor: pointer; transition: all 0.2s; color: var(--color-fav-heart); user-select: none; border: var(--border-fav-heart); background: #000; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--border-radius-fav-heart); }
+.share-btn:hover { transform: scale(1.15); color: var(--color-text-main); border-color: var(--border-color-btn-retour-hover-btn-retour); outline: none; }
+.share-btn:focus-visible { outline: var(--border-carte-lien); outline-offset: 2px; }
 /* Boutons de contrôle des favoris dans le panneau */
-.fav-controls { flex: 0 0 auto; padding: 1rem 0; border-top: 1px solid var(--color-text-accent); text-align: center; gap: 0.5rem; display: flex; flex-direction: column; }
+.fav-controls { flex: 0 0 auto; padding: 1rem 0; border-top: var(--border-article-lien); text-align: center; gap: 0.5rem; display: flex; flex-direction: column; }
 /* Favoris et résultats de recherche : la grille est directement dans le panneau, qui a une hauteur
    maximale. Elle défile au lieu de déborder ; le titre et les boutons restent en place. */
 /* Panneaux (source, catégorie, recherche, favoris, code de conduite) : plein écran, au-dessus de la
    barre du haut. Dimensions en % du conteneur (fixe, plein écran) et non en vw/vh : elles restent
    justes quand la page est agrandie (réglage « taille du site »). Placé après les règles
    @media ci-dessus, qui ne fixent plus que les marges intérieures. */
-.categorie-container { z-index: 500; align-items: stretch; }
+.categorie-container { z-index: var(--z-index-categorie-container); align-items: var(--align-items-categorie-container); }
 .categorie-panneau { flex: 1 1 auto; width: 100%; height: 100%; max-width: none; max-height: none; }
 /* grid-auto-rows: max-content : la grille a ici une hauteur limitée (elle défile). Sans cela, ses lignes
    « auto » se tassent sous la hauteur des cartes (les cartes ont overflow: hidden, donc une hauteur
    minimale nulle) et les cartes se superposent. */
 .categorie-panneau > .grille { flex: 1 1 auto; min-height: 0; overflow-y: auto; align-content: start; grid-auto-rows: max-content; overscroll-behavior: contain; }
-.fav-export, .fav-import { display: block; padding: 0.6rem; border: 1px solid var(--color-text-accent); background: #000; color: var(--color-light); font: inherit; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; text-align: center; }
-.fav-export:hover, .fav-import:hover { background: var(--color-text-main); color: #000; border-color: var(--color-text-main); }
+.fav-export, .fav-import { display: block; padding: 0.6rem; border: var(--border-article-lien); background: #000; color: var(--color-light); font: inherit; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; text-align: center; }
+.fav-export:hover, .fav-import:hover { background: var(--color-text-main); color: #000; border-color: var(--border-color-btn-retour-hover-btn-retour); }
 #fav-file-input { display: none; }
 /* Conteneur défilant */
 
@@ -592,7 +631,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
     flex: 1;
     gap: 0.5rem;
     overflow-x: auto;
-    overflow-y: visible;
+    overflow-y: var(--overflow-y-galerie);
     scroll-behavior: smooth;
     scrollbar-width: none;
     overscroll-behavior-x: contain;
@@ -648,7 +687,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
     margin: 0;
     padding: 0;
     flex: 0 0 auto;
-    border-radius: 0.8rem;
+    border-radius: var(--border-radius-galerie-carte-wrapper);
 }
 .galerie-carte-titre {
     position: absolute;
@@ -731,19 +770,19 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   font-size: 0.9rem;
 }
 .galerie-bloc { flex: 1 1 auto; min-width: 0; gap: 0.3rem; margin: 0; padding: 0 0 .35rem; scrollbar-width: thin;
-  scrollbar-color: var(--color-text-accent) transparent; }
+  scrollbar-color: var(--scrollbar-color-galerie); }
 .galerie-bloc::-webkit-scrollbar { display: block; height: 6px; }
-.galerie-bloc .galerie-carte { flex: 0 0 5.5rem; height: 4rem; border: 1px solid var(--color-text-main); border-radius: .8rem;
+.galerie-bloc .galerie-carte { flex: 0 0 5.5rem; height: 4rem; border: var(--border-carte-plus); border-radius: var(--border-radius-galerie-bloc-galerie-carte);
   background: #0a0000; -webkit-mask-image: none; }
 .galerie-bloc .galerie-carte:hover, .galerie-bloc .galerie-carte:focus-visible { transform: none; filter: brightness(1.2); }
-.galerie-bloc .galerie-carte:focus-visible { outline: 2px solid var(--color-text-main); outline-offset: -2px; }
+.galerie-bloc .galerie-carte:focus-visible { outline: var(--border-carte-lien); outline-offset: -2px; }
 .galerie-bloc .galerie-carte:hover img { transform: none; }
 @media (max-width: 600px) {
   .galerie-bloc .galerie-carte { flex-basis: 4.6rem; height: 3.4rem; }
 }
 /* Galerie d'un panneau de catégorie : au-dessus de la grille, défile avec elle. Plus petite que la
    galerie de l'accueil (cartes 165 × 220 px) pour laisser la place aux cartes du panneau. */
-.galerie-panneau { margin-bottom: 0.6rem; }
+.galerie-panneau { margin-bottom: var(--margin-bottom-galerie-panneau); }
 .galerie-panneau .galerie { padding: 1rem; gap: 0.5rem; }
 .galerie-panneau .galerie-carte { flex-basis: 100px; height: 133px; }
 .galerie-panneau .galerie-carte:hover { transform: translateY(-3px) scale(1.04); }
@@ -752,20 +791,20 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
     .galerie-panneau .galerie-carte { flex-basis: 80px; height: 107px; }
 }
 .pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; }
-.pagination-btn { background: #0a0000; border: 1px solid var(--color-text-accent); color: var(--color-text-main); cursor: pointer; font: inherit; }
+.pagination-btn { background: #0a0000; border: var(--border-article-lien); color: var(--color-text-main); cursor: pointer; font: inherit; }
 .pagination-btn:disabled { opacity: 0.5; }
 .pagination-info { min-width: 80px; text-align: center; color: var(--color-text-main); }
-.panneau-actions { display: flex; gap: 0.6rem; margin-top: 0.3rem; border-top: 1px solid var(--color-text-accent); padding-top: 0.3rem; justify-content: center; flex-wrap: wrap; }
-.panneau-bouton { padding: 0.4rem 0.8rem; background: #0a0000; border: 1px solid var(--color-text-accent); color: var(--color-text-main); cursor: pointer; font: inherit; transition: all 0.2s ease; font-size: 0.85rem; }
+.panneau-actions { display: flex; gap: 0.6rem; margin-top: 0.3rem; border-top: var(--border-article-lien); padding-top: 0.3rem; justify-content: center; flex-wrap: wrap; }
+.panneau-bouton { padding: 0.4rem 0.8rem; background: #0a0000; border: var(--border-article-lien); color: var(--color-text-main); cursor: pointer; font: inherit; transition: all 0.2s ease; font-size: 0.85rem; }
 .panneau-bouton:hover { background: var(--color-text-main); color: #000; }
 /* « ✓ Copié ! » : bouton de copie du code de conduite, bouton de partage d'un article */
-.panneau-bouton.est-copie, .share-btn.est-copie { color: var(--neon-coeur); }
-.grille-vide { grid-column: 1 / -1; color: var(--neon-coeur); padding: 2rem; text-align: center; }
+.panneau-bouton.est-copie, .share-btn.est-copie { color: var(--color-fav-heart); }
+.grille-vide { grid-column: 1 / -1; color: var(--color-fav-heart); padding: 2rem; text-align: center; }
 /* --- Flux personnalisé --- */
 .custom-flux-toggle-all {
   margin-bottom: 1rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid var(--color-text-accent);
+  border-bottom: var(--border-article-lien);
   text-align: center;
 }
 .custom-flux-toggle-all .panneau-bouton {
@@ -774,7 +813,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .custom-flux-category {
   margin-bottom: 1.2rem;
   padding: 0.8rem;
-  border: 1px solid var(--color-text-accent);
+  border: var(--border-article-lien);
   border-radius: 0.4rem;
   background: rgba(255, 255, 255, 0.02);
 }
@@ -789,7 +828,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   margin: 0 0 0.6rem 0;
   font-weight: bold;
   padding-bottom: 0.4rem;
-  border-bottom: 1px solid var(--color-text-accent);
+  border-bottom: var(--border-article-lien);
 }
 .custom-flux-checkboxes-group {
   display: grid;
@@ -842,7 +881,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   text-decoration: none;
   color: inherit;
   aspect-ratio: 3 / 4;
-  border: 2px solid var(--color-text-main);
+  border: var(--border-carte-lien);
   border-radius: 0.5rem;
   overflow: hidden;
   transition: transform 0.2s, box-shadow 0.2s;
@@ -878,10 +917,10 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .rss-page { max-width: 560px; margin: 2rem auto; padding: 2rem; }
 .rss-page h2 { font-size: 1.8rem; margin-bottom: 1.5rem; }
 .rss-page h3 { font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
-.rss-lien { display: block; padding: 0.8rem 1rem; margin-bottom: 0.5rem; border: 1px solid var(--color-text-accent); color: var(--color-light); text-decoration: none; transition: all 0.2s; }
+.rss-lien { display: block; padding: 0.8rem 1rem; margin-bottom: 0.5rem; border: var(--border-article-lien); color: var(--color-light); text-decoration: none; transition: all 0.2s; }
 .rss-lien:hover { background: var(--color-text-main); color: #000; }
 .rss-lien svg { display: inline-block; width: 1.2rem; height: 1.2rem; margin-right: 0.5rem; vertical-align: middle; }
-.rss-principal { border: 2px solid var(--color-text-main); font-weight: bold; }
+.rss-principal { border: var(--border-carte-lien); font-weight: bold; }
 /* --- Carte d'article ouverte : page d'article, et carte affichée par-dessus l'accueil ou une page de
    catégorie. Les règles internes sont limitées à .panel-article par :where(), qui n'ajoute aucune
    priorité : le rendu est le même des deux côtés. --- */
@@ -892,7 +931,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   left: 1rem;
   padding: 0.6rem 1.2rem;
   background: #0a0000;
-  border: 1px solid var(--color-text-accent);
+  border: var(--border-article-lien);
   color: var(--color-text-main);
   font-family: inherit;
   font-size: 0.9rem;
@@ -904,7 +943,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .btn-retour:hover, .btn-retour:focus-visible {
   background: var(--color-text-main);
   color: #000;
-  border-color: var(--color-text-main);
+  border-color: var(--border-color-btn-retour-hover-btn-retour);
   outline: none;
 }
 /* Carte d'article ouverte : format responsive */
@@ -916,7 +955,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   aspect-ratio: 3 / 4;
   display: flex;
   flex-direction: column;
-  border: 2px solid var(--color-text-main) !important;
+  border: var(--border-panel-article);
   border-radius: 0.8rem !important;
   padding: 0 !important;
   margin: 1rem auto !important;
@@ -948,7 +987,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   flex: 0 0 35%;
   overflow: hidden;
   background: #0a0000;
-  border-bottom: 1px solid var(--color-text-accent);
+  border-bottom: var(--border-article-lien);
   position: sticky;
   top: 0;
   z-index: 5;
@@ -994,7 +1033,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   display: flex;
   gap: 0.5rem;
   padding: 0.5rem;
-  border-top: 1px solid var(--color-text-accent);
+  border-top: var(--border-article-lien);
   justify-content: space-around;
   position: sticky;
   bottom: 0;
@@ -1058,7 +1097,7 @@ html[data-fond="pluie"] {
   --r-bas: #999999;
 }
 html[data-theme="white_neon"] #pluie i::before {
-  background: linear-gradient(to top, var(--r-tete) 0%, var(--r-haut) 10%, var(--r-moyen) 40%, var(--r-bas) 70%, rgba(153, 153, 153, 0.3) 100%) !important;
+  background: var(--background-html-data-theme-white-neon-pl);
   -webkit-background-clip: text !important;
   background-clip: text !important;
 }

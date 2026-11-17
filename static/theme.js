@@ -1,12 +1,10 @@
 // Thème du site : fond, opacité du grand panneau, pluie matricielle.
 // Les thèmes viennent de kioske.cfg ; le build les écrit dans la page (<script id="kioske-themes">) et
 // pose le thème par défaut sur <html>. Ce script applique le thème choisi par le visiteur (gardé dans
-// localStorage) et fabrique la pluie. Chargé dans <head>, avant l'affichage : pas de changement visible
-// de thème au chargement. Le CSS de chaque thème est dans kioske/style_<thème>.css.
-//
-// La pluie n'est jamais écrite dans le HTML : ses caractères sont dans un attribut (data-g) et affichés
-// par CSS (::before). Les navigateurs n'y voient donc pas de texte, et ne prennent plus la page pour du
-// japonais.
+// localStorage). Chargé dans <head>, avant l'affichage : pas de changement visible de thème au chargement.
+// Le CSS du thème par défaut est dans la page ; chaque autre thème est une surcouche (kioske/style_<thème>.css,
+// variables et exceptions) chargée par-dessus. La pluie (thèmes avec pluie = oui) est dans
+// static/pluie.js, chargé seulement pour ces thèmes.
 (function () {
   const CLE = 'kioske-theme';
   const CLE_SOBRE = 'kioske-sobre';
@@ -42,32 +40,23 @@
     }
     if (lien) lien.disabled = !actif;
     const pluie = document.getElementById('pluie');
-    if (actif && pluie) pluie.remove();
+    if (actif && pluie) pluie.remove();  // mode sobre : pas de pluie
   }
 
-  function fabriquerPluie() {
-    if (document.getElementById('pluie') || !document.body) return;
-    const signes = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789ABCDEFXYZ*+-=<>';
-    const hasard = (min, max) => min + Math.random() * (max - min);
-    const colonnes = 40;
-    const pluie = document.createElement('div');
-    pluie.id = 'pluie';
-    pluie.setAttribute('aria-hidden', 'true');
-    pluie.setAttribute('translate', 'no');
-    for (let k = 0; k < colonnes; k++) {
-      const colonne = document.createElement('i');
-      const longueur = Math.round(hasard(14, 30));
-      let texte = '';
-      for (let n = 0; n < longueur; n++) {
-        texte += (n ? '\n' : '') + signes[Math.floor(Math.random() * signes.length)];
-      }
-      colonne.dataset.g = texte;
-      colonne.style.left = (k * 100 / colonnes + hasard(-0.8, 0.8)).toFixed(2) + '%';
-      colonne.style.animationDuration = hasard(3.6, 9.6).toFixed(1) + 's';
-      colonne.style.animationDelay = (-hasard(0, 16)).toFixed(1) + 's';
-      pluie.appendChild(colonne);
+  // Pluie : pluie.js n'est chargé qu'au premier besoin, puis ses fonctions sont appelées
+  let pluieChargee = null;
+  function avecPluie(quand) {
+    if (window.KioskePluie) return quand();
+    if (!pluieChargee) {
+      pluieChargee = new Promise((ok, ko) => {
+        const script = document.createElement('script');
+        script.src = '/pluie.js';
+        script.onload = ok;
+        script.onerror = ko;
+        document.head.appendChild(script);
+      });
     }
-    document.body.prepend(pluie);
+    pluieChargee.then(quand, () => {});
   }
 
   function marquerBoutons(id) {
@@ -103,13 +92,7 @@
     racine.dataset.pluie = theme.pluie ? 'oui' : 'non';
     racine.style.setProperty('--panneau-opacite', theme.opacite / 100);
 
-    // Appliquer les couleurs de pluie depuis la config du thème
-    if (theme.pluie_tete) racine.style.setProperty('--r-tete', theme.pluie_tete);
-    if (theme.pluie_haut) racine.style.setProperty('--r-haut', theme.pluie_haut);
-    if (theme.pluie_moyen) racine.style.setProperty('--r-moyen', theme.pluie_moyen);
-    if (theme.pluie_bas) racine.style.setProperty('--r-bas', theme.pluie_bas);
-
-    if (theme.pluie && racine.dataset.sobre !== 'oui') fabriquerPluie();
+    if (theme.pluie && racine.dataset.sobre !== 'oui') avecPluie(() => window.KioskePluie.appliquer(theme));
     chargerCss(theme.id);
     marquerBoutons(theme.id);
   }

@@ -1,8 +1,13 @@
 {
   "name": "kioske-tests",
   "private": true,
-  "description": "Tests du JavaScript du KiosKe dans jsdom (sans navigateur). Voir tests/lancer.sh.",
+  "description": "Tests du KiosKe : JavaScript dans jsdom (sans navigateur, voir lancer.sh) et captures d'écran avec Playwright (visuel.spec.js, à lancer à la main).",
   "devDependencies": {
+    "@playwright/test": "^1.49.1",
     "jsdom": "^26.0.0"
+  },
+  "scripts": {
+    "visuel": "playwright test -c playwright.config.js",
+    "visuel:maj": "playwright test -c playwright.config.js --update-snapshots"
   }
 }

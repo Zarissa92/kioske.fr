@@ -10,13 +10,13 @@ from pathlib import Path
 from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
-from .config import DOMAINE, DOSSIER_RSS_CATEGORIES, GALERIE_PANNEAU, NOM_SITE, ORDRE_MENU, ORDRE_PANNEAUX, URL_SITE, CFG
+from .config import DOMAINE, GALERIE_PANNEAU, NOM_SITE, ORDRE_MENU, ORDRE_PANNEAUX, URL_SITE, CFG
 from .gabarits import remplir
 from .javascript import (JS_ACCUEIL, JS_CARTE_OUVERTE, JS_DONNEES_ACCUEIL, JS_FAVORIS, JS_FLUX_PERSONNALISE,
                          JS_GALERIE, JS_INSTALLATION_PWA, JS_NOTIFICATIONS, JS_RAFRAICHISSEMENT, JS_PAGE_RSS, JS_PARTAGE, JS_RETOUR_APP,
                          JS_SERVICE_WORKER, json_pour_page)
 from .sources import AUTRES, ordre_des_categories
-from .texte import cle_alphabetique, esc, slugs_categories, truncate_label, article_id, slug_article
+from .texte import cle_alphabetique, esc, truncate_label, article_id, slug_article
 from .themes import ATTRIBUTS_HTML, CHOIX_THEME, CSS, CSS_FAVORIS, CSS_RESSOURCES, SCRIPT_THEME, VARIABLES_HTML
 
 # Chemin vers le code de conduite
@@ -279,7 +279,6 @@ def render_page(items: list[dict], previews: dict[str, dict],
             par_panneau[""].setdefault(categorie, []).append(cle)
 
     ordre_categories = ordre_des_categories(items, categories)
-    slugs = slugs_categories(ordre_categories)
 
     # Créer les blocs : pour chaque panneau, afficher ses catégories (ordre : [panneaux] ordre de kioske.cfg)
     par_panneau = {nom: par_panneau[nom] for nom in ordre_des_panneaux(list(par_panneau), ORDRE_PANNEAUX)}
@@ -350,18 +349,15 @@ def render_page(items: list[dict], previews: dict[str, dict],
                     f'{galerie_bloc}'
                     f'<div class="nuage" aria-label="{esc(categorie)}">{"".join(tags)}</div></section>'
                 )
-    liens_rss = "".join(
-        f'<link rel="alternate" type="application/rss+xml" title="{DOMAINE} : {esc(c)} (flux RSS)" '
-        f'href="{DOSSIER_RSS_CATEGORIES}/{slugs[c]}.xml">'
-        for c in ordre_categories if c in slugs
-    )
     nuage = f'<div class="groupes">{blocs}</div>'
 
     galerie_html = render_galerie(items, previews)
     # Référencement : le titre et la description décrivent le contenu réel (sources et catégories du jour).
     titre_page = NOM_SITE
     description = "Le KiosKe : une veille automatique des médias indépendants, des luttes et des voix LGBTQIA+. Une seule page statique (HTML5, CSS et JavaScript minimal), reconstruite toutes les 30 minutes sur le serveur à partir de flux RSS et de chaînes Twitch. Les images sont hébergées par le site : la page ne charge rien d'un autre site, sans publicité ni pistage."
-    keywords = "kioske, veille, médias indépendants, LGBTQIA+, Mélenchon, RSS, Twitch, informatique libre"
+    keywords = ("kioske, veille, médias indépendants, LGBTQIA+, Mélenchon, RSS, Twitch, informatique libre, "
+                "gauchiasses, gauche, 2027, votez, La France insoumise, Rima Hassan, élections, "
+                "Melenchon2027, gauchiasse, fuck le rn")
 
     # Préparer les données des groupes pour le JavaScript
     groupes_json = {}
@@ -463,7 +459,6 @@ def render_page(items: list[dict], previews: dict[str, dict],
         nom_site=esc(NOM_SITE),
         domaine=DOMAINE,
         date_maj=datetime.now(ZoneInfo("Europe/Paris")).strftime("%d/%m/%Y"),
-        liens_rss=liens_rss,
         css=CSS + "\n" + CSS_FAVORIS + "\n" + CSS_RESSOURCES,
         script_theme=SCRIPT_THEME,
         donnees_json=donnees_json,

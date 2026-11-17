@@ -44,7 +44,8 @@ class Javascript(unittest.TestCase):
     def test_chaque_fichier_js_est_utilise(self):
         code = (Path(javascript.__file__)).read_text(encoding="utf-8")
         for fichier in javascript.DOSSIER_JS.glob("*.js"):
-            self.assertIn(f'lire("{fichier.name}")', code, f"{fichier.name} n'est lu par aucune constante")
+            self.assertTrue(f'lire("{fichier.name}")' in code or f'"{fichier.name}"' in code,
+                            f"{fichier.name} n'est lu par aucune constante")
 
 
 class GalerieDesBlocs(unittest.TestCase):
