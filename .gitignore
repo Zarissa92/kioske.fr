@@ -28,6 +28,8 @@
 !/kioske/**
 !/outils/
 !/outils/**
+!/ressources/
+!/ressources/**
 !/sources/
 !/sources/**
 !/static/

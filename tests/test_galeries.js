@@ -3,53 +3,23 @@
 const { attendre, charger, clic, panneauOuvert, poserHistorique, surAccueil, suite } = require('./outils');
 
 (async () => {
-  // ---------- galerie du panneau de catégorie
-  let t = suite('Galerie du panneau de catégorie');
-  // kioske.cfg désactive les galeries de panneau (galerie_panneau = 0) : le test les force à 1 dans la
-  // page chargée, pour vérifier le comportement JavaScript sans changer le réglage du site.
-  let { w, d, erreurs } = charger('index.html', '/', {
-    html: (h) => h.replace('"galerie_panneau": 0', '"galerie_panneau": 1'),
-  });
-  await attendre(300);
-  poserHistorique(w);
-  const cats = Object.keys(w.categoriesData);
-  w.categoriesData[cats[0]].forEach(a => { a.image = ''; });
-  w.categoriesData[cats[0]].slice(2, 17).forEach((a, i) => { a.image = '/img/veille/factice' + i + '.jpg'; });
-  w.categoriesData[cats[0]][2].title = 'Titre "piégé" <b>x</b>';
-  w.categoriesData[cats[1]].forEach(a => { a.image = ''; });
-  const bouton = (nom) => [...d.querySelectorAll('.titre-panneau[data-category-name]')].find(b => b.getAttribute('data-category-name') === nom);
-
-  clic(w, bouton(cats[0])); await attendre();
-  const cont = panneauOuvert(d);
-  const slider = cont.querySelector('.galerie-slider.galerie-panneau');
-  t.verif('la galerie est dans le panneau', !!slider);
-  const vignettes = [...slider.querySelectorAll('a.galerie-carte')];
-  t.verif('12 images au plus', vignettes.length === 12, '(' + vignettes.length + ')');
-  t.verif('placée avant la grille, dans la zone qui défile',
-    slider.parentElement.classList.contains('panneau-defilant') && slider.nextElementSibling.classList.contains('grille'));
-  t.verif('un titre contenant du HTML reste du texte', vignettes[0].title === 'Titre "piégé" <b>x</b>' && !vignettes[0].querySelector('b'));
-  const retour1 = encodeURIComponent('/#cat=' + encodeURIComponent(cats[0]) + '&p=1');
-  t.verif('le lien porte le retour vers la page 1', vignettes[0].getAttribute('href') === w.categoriesData[cats[0]][2].url + '?from=' + retour1);
-  const g = slider.querySelector('.galerie');
-  clic(w, slider.querySelector('.galerie-arrow-right'));
-  t.verif('la flèche > fait défiler', g.scrollLeft === 250, '(' + g.scrollLeft + ')');
-  clic(w, [...cont.querySelectorAll('.pagination-btn')][1]); await attendre();
-  t.verif('le retour suit la page 2', vignettes[0].getAttribute('href').endsWith(encodeURIComponent('&p=2')));
-  clic(w, vignettes[1]); await attendre(300);
-  const carte = d.querySelector('.carte-ouverte');
-  t.verif('un clic sur une image ouvre l\'article', carte && !carte.hidden && w.history.state.carte);
-  clic(w, carte.querySelector('.btn-retour')); await attendre();
-  t.verif('« ← Retour » ramène au panneau, page 2', carte.hidden && !cont.hidden && w.location.hash.endsWith('p=2'));
-  clic(w, cont.querySelector('.categorie-fermer')); await attendre();
-  t.verif('× ramène à l\'accueil', cont.hidden && surAccueil(w));
-  clic(w, bouton(cats[1])); await attendre();
-  t.verif('catégorie sans image : pas de galerie, mais des cartes',
-    !panneauOuvert(d).querySelector('.galerie-slider') && panneauOuvert(d).querySelectorAll('a.carte').length > 0);
-  clic(w, panneauOuvert(d).querySelector('.categorie-fermer')); await attendre();
-  clic(w, d.querySelector('.nuage .tag')); await attendre();
-  t.verif('panneau de source : pas de galerie', !panneauOuvert(d).querySelector('.galerie-slider'));
-  t.verif('aucune erreur JavaScript', erreurs.length === 0, erreurs.join(' | '));
-  t.fin();
+  // ---------- panneaux ouverts (tuiles, tags, titres) : jamais de galerie ; les galeries restent sur l'accueil
+  {
+    const t = suite('Panneaux ouverts sans galerie');
+    const { w, d, erreurs } = charger('index.html', '/');
+    await attendre(300);
+    poserHistorique(w);
+    const cats = Object.keys(w.categoriesData);
+    w.categoriesData[cats[0]].forEach((a, i) => { a.image = '/img/veille/factice' + i + '.jpg'; });
+    const bouton = (nom) => [...d.querySelectorAll('.titre-panneau[data-category-name]')].find(b => b.getAttribute('data-category-name') === nom);
+    clic(w, bouton(cats[0])); await attendre();
+    const cont = panneauOuvert(d);
+    t.verif('le panneau de catégorie s’ouvre', !!cont);
+    t.verif('aucune galerie dans un panneau ouvert', !!cont && !cont.querySelector('.galerie-slider'));
+    t.verif('aucune erreur JavaScript', erreurs.length === 0, erreurs.join(' | '));
+    w.close();
+    t.fin();
+  }
 
   // ---------- galerie d'un bloc de catégorie de l'accueil (écrite par Python : render_galerie_bloc)
   t = suite('Galerie des blocs de catégorie de l\'accueil');
@@ -85,5 +55,21 @@ const { attendre, charger, clic, panneauOuvert, poserHistorique, surAccueil, sui
   clic(w, d.querySelector('.groupe .titre-panneau[data-category-name]')); await attendre();
   t.verif('le bouton + du bloc ouvre toujours le panneau', !!w.history.state.panneau);
   t.verif('aucune erreur JavaScript', erreurs.length === 0, erreurs.join(' | '));
+  // ---------- image qui ne charge pas : la carte garde le titre à la place de l'image
+  {
+    const { w, d } = charger('index.html', '/');
+    await attendre(60);
+    d.body.insertAdjacentHTML('beforeend',
+      '<section class="galerie-slider galerie-slider-bloc" id="essai-galerie">' +
+      '<button class="galerie-arrow-left">&lt;</button><div class="galerie">' +
+      '<a class="galerie-carte" id="essai-carte"><img id="essai-img" src="x"></a>' +
+      '</div><button class="galerie-arrow-right">&gt;</button></section>');
+    w.retirerCarte(d.getElementById('essai-img'));
+    const carte = d.getElementById('essai-carte');
+    t.verif('galerie : la carte reste', !!carte);
+    t.verif('galerie : l’image est remplacée par le titre de l’article', carte && !carte.querySelector('img') && carte.querySelector('.galerie-carte-texte') && carte.classList.contains('galerie-carte-sans-image'));
+    w.close();
+  }
+
   t.fin();
 })();

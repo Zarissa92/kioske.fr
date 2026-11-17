@@ -394,90 +394,6 @@ function createSearchResultsPanel() {
   fermer.addEventListener('click', () => closePopover());
 }
 
-// Crée un panneau pour afficher le code de conduite
-function createConductPanel() {
-  if (document.getElementById('container-conduct')) return;
-  const container = document.createElement('div');
-  container.id = 'container-conduct';
-  container.className = 'categorie-container';
-  container.hidden = true;
-
-  const backdrop = document.createElement('div');
-  backdrop.className = 'categorie-backdrop';
-  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closePopover(); });
-
-  const panneau = document.createElement('div');
-  panneau.id = 'conduct-panneau';
-  panneau.className = 'categorie-panneau conduct-panneau';
-
-  const header = document.createElement('div');
-  header.className = 'panneau-entete panneau-entete-ligne';
-
-  const titre = document.createElement('h2');
-  titre.textContent = 'Code de conduite du Discord';
-
-  const fermer = document.createElement('button');
-  fermer.type = 'button';
-  fermer.className = 'categorie-fermer';
-  fermer.setAttribute('aria-label', 'Fermer');
-  fermer.textContent = '×';
-  fermer.classList.add('fermer-entete');
-  fermer.addEventListener('click', () => closePopover());
-
-  header.appendChild(titre);
-  header.appendChild(fermer);
-  panneau.appendChild(header);
-
-  const contenuContainer = document.createElement('div');
-  contenuContainer.className = 'panneau-defilant';
-  contenuContainer.innerHTML = window.conductCode || '<p>Contenu non disponible</p>';
-  panneau.appendChild(contenuContainer);
-
-  // Ajouter les boutons de partage
-  const buttonsContainer = document.createElement('div');
-  buttonsContainer.className = 'panneau-actions';
-
-  const btnShare = document.createElement('button');
-  btnShare.type = 'button';
-  btnShare.textContent = '📤 Partager';
-  btnShare.className = 'panneau-bouton';
-  btnShare.addEventListener('click', () => {
-    if (navigator.share) {
-      navigator.share({
-        title: 'Code de conduite du Discord',
-        url: window.location.href
-      }).catch(err => console.log('Partage annulé'));
-    } else {
-      alert('Le partage n\'est pas disponible sur ce navigateur');
-    }
-  });
-
-  const btnCopy = document.createElement('button');
-  btnCopy.type = 'button';
-  btnCopy.textContent = '🔗 Copier le lien';
-  btnCopy.className = 'panneau-bouton';
-  btnCopy.addEventListener('click', () => {
-    navigator.clipboard.writeText(window.location.href).then(() => {
-      const originalText = btnCopy.textContent;
-      btnCopy.textContent = '✓ Copié !';
-      btnCopy.classList.add('est-copie');
-      setTimeout(() => {
-        btnCopy.textContent = originalText;
-        btnCopy.classList.remove('est-copie');
-      }, 2000);
-    }).catch(() => {
-      alert('Erreur lors de la copie du lien');
-    });
-  });
-
-  buttonsContainer.appendChild(btnShare);
-  buttonsContainer.appendChild(btnCopy);
-  panneau.appendChild(buttonsContainer);
-
-  container.appendChild(backdrop);
-  container.appendChild(panneau);
-  document.body.appendChild(container);
-}
 // Gestion des tags cliquables (sources)
 document.querySelectorAll('.nuage .tag').forEach(tag => {
   tag.addEventListener('click', (e) => {
@@ -732,21 +648,13 @@ document.getElementById('fav-export-btn')?.addEventListener('click', exportFavor
 document.getElementById('fav-file-input')?.addEventListener('change', importFavorites);
 // Boutons de la page : ♡ de la barre et « Mes favoris » ouvrent le panneau, « Charger des favoris »
 // ouvre le choix de fichier
-document.querySelectorAll('.btn-favs, .btn-mes-favoris').forEach(b => b.addEventListener('click', () => openFavoritesPanel()));
+// button.btn-favs : les liens qui ont la même classe (📚 Ressources) ne sont pas des boutons de favoris
+document.querySelectorAll('button.btn-favs, .btn-mes-favoris').forEach(b => b.addEventListener('click', () => openFavoritesPanel()));
 document.getElementById('fav-import-btn')?.addEventListener('click', () => document.getElementById('fav-file-input').click());
 document.getElementById('fav-clear-btn')?.addEventListener('click', clearFavorites);
 
 
 // Gestionnaire pour le bouton "Code de conduite"
-const btnOpenConduct = document.getElementById('btn-open-conduite');
-if (btnOpenConduct) {
-  btnOpenConduct.addEventListener('click', () => {
-    createConductPanel();
-    showPopover('conduct');
-    // Fermer le menu
-    fermerMenuNavbar();
-  });
-}
 
 // Gestionnaire pour les sous-menus déroulants : fermer les autres quand on en ouvre un
 document.querySelectorAll('.submenu-toggle').forEach(btn => {

@@ -39,82 +39,12 @@ ${script_theme}
 ${js_donnees_accueil}${js_service_worker}</script>
 </head>
 <body>
-<nav class="kioske-navbar">
-  <a href="/" class="navbar-brand">
-    <span class="flag">🏳️‍⚧️</span>
-    <span>${domaine}</span>
-    <span class="navbar-stats">${nb_articles} articles · ${nb_sources} sources</span>
-  </a>
-
-  <form id="form-recherche" class="navbar-search">
-    <input type="text" id="recherche" placeholder="Chercher..." aria-label="Barre de recherche" autocomplete="off">
-    <button type="submit" class="navbar-search-btn" aria-label="Rechercher"><span class="loupe"></span></button>
-  </form>
-
-  <div class="navbar-controls">
-    <button type="button" class="btn-favs" title="Mes favoris">♡</button>
-    <button type="button" class="btn-settings btn-notifications" id="btn-notifications" title="Notifications des flux personnalisés" aria-label="Notifications des flux personnalisés" aria-haspopup="dialog" hidden>🔔</button>
-
-    <div class="navbar-button-group">
-      <button type="button" class="btn-menu" id="btn-menu" title="Menu" aria-controls="navbar-menu" aria-expanded="false"><span class="icone-menu" aria-hidden="true">≡</span> Menu</button>
-      <div class="navbar-menu" id="navbar-menu" style="display: none;">
-        <div class="navbar-menu-group">
-          <button type="button" class="navbar-menu-title submenu-toggle" data-submenu="themes" aria-expanded="false">🎨 Thèmes ▼</button>
-          <div class="theme-options submenu" id="submenu-themes" style="display: none;">
-            ${choix_theme}
-          </div>
-          <button type="button" class="menu-button" id="btn-sobre" aria-pressed="false">✨ Mode sobre : désactivé</button>
-        </div>
-
-        <div class="navbar-menu-group">
-          <button type="button" class="menu-button" id="btn-custom-flux-navbar">⚙️ Personnaliser flux</button>
-          <button type="button" class="menu-button" id="btn-install-pwa-settings">⬇ Installer l'app</button>
-        </div>
-
-        <div class="navbar-menu-group">
-          ${boutons_reseaux}<button type="button" class="menu-button" id="btn-open-conduite">📖 Code de conduite</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</nav>
+${barre_haut}
 <main class="panel">
   ${galerie}
   ${nuage}
 </main>
-<div id="bloc-infos-container" class="infos-container" hidden>
-  <div class="infos-backdrop" data-close-infos="bloc-infos"></div>
-  <div id="bloc-infos" class="popover-infos">
-    <button type="button" class="infos-fermer" data-close-infos="bloc-infos" aria-label="Fermer">×</button>
-    <div class="popover-contenu">
-    <div class="popover-section">
-      ${choix_theme}
-    </div>
-    <div class="popover-section">
-      <button type="button" class="btn-mes-favoris">♡ Mes favoris</button>
-    </div>
-    <div class="popover-section">
-      <button type="button" class="btn-install-pwa" id="btn-install-pwa">⬇ Installer l'app</button>
-    </div>
-    <div class="popover-section">
-    </div>
-  </div>
-  </div>
-</div>
-<div class="categorie-container" id="container-favoris" hidden>
-  <div class="categorie-backdrop" data-close-source="favoris"></div>
-  <div id="favoris" class="categorie-panneau">
-    <button type="button" class="categorie-fermer" data-article-id="favoris" aria-label="Fermer">×</button>
-    <h2>Mes favoris</h2>
-    <div class="grille" id="fav-grille"></div>
-    <div class="fav-controls">
-      <button type="button" class="fav-export" id="fav-export-btn">Télécharger mes favoris</button>
-      <button type="button" class="fav-import" id="fav-import-btn">Charger des favoris</button>
-      <button type="button" class="fav-export" id="fav-clear-btn">Effacer tous les favoris</button>
-    </div>
-  </div>
-</div>
-<input type="file" id="fav-file-input" accept=".json" aria-label="Charger un fichier de favoris">
+${panneaux_communs}
 
 <section class="cartes" aria-label="Conteneur des panneaux">
 </section>

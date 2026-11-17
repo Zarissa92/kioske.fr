@@ -51,3 +51,9 @@ Le site est déjà 90% compatible. Travail estimé :
 
 - Mettre à jour README.md avec un schéma du nouveau layout (menu "+", popover d'infos).
 - Ajouter un guide d'utilisation du menu "+" pour les contributeurs.
+
+## Flux RSS par catégorie : adresse instable
+
+- **Problème constaté** : les flux par catégorie étaient écrits à `rss/<slug>.xml`, où le slug vient du nom de la catégorie. Renommer ou réorganiser une catégorie changeait l'adresse, et un flux créé par un abonné pour suivre le site disparaissait. Les flux par catégorie ont été retirés (2026-11-17) : seul le flux général `rss.xml` est proposé, et son adresse ne change pas.
+- **À décider si on les remet** : une adresse qui ne dépend pas du nom affiché. Pistes : un identifiant stable par catégorie, stocké dans `sources/` ou `kioske.cfg` et jamais recalculé à partir du nom ; ou garder l'ancienne adresse en redirection quand une catégorie est renommée.
+- **Au passage** : la règle nginx `^/rss/[a-z0-9-]+\.xml$` (`deploy/`) et la purge de `rss/` (`kioske/publication.py`, `DOSSIERS_PURGES`) ne servent plus qu'à retirer les anciens fichiers. À retirer quand plus aucun abonné n'a d'ancienne adresse.

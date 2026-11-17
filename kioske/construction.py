@@ -26,6 +26,7 @@ from .flux import load_feed
 from .historique import Historique
 from .images import appliquer_images, purger_images, telecharger_images
 from .previews import generer_previews
+from .ressources import ecrire_ressources
 from .rendu import render_page, render_rss_page
 from .rendu_statique import render_article_page, render_category_page
 from .rss import render_rss
@@ -125,33 +126,20 @@ def ecrire_page(items: list[dict], previews: dict[str, dict], categories: dict[s
     print(f"OK : {len(items)} article(s) écrits dans {sortie.relative_to(ROOT)}")
 
 
+def ecrire_code_de_conduite(items: list[dict]) -> None:
+    """Écrit build/code-de-conduite.html : page statique, comme la page RSS."""
+    from .ressources import ecrire_fichier
+    from .rendu import render_code_de_conduite
+    ecrire_fichier(BUILD / "code-de-conduite.html", render_code_de_conduite(len(items), len({i["key"] for i in items})))
+
+
 def ecrire_flux_rss(items: list[dict], categories: dict[str, str]) -> None:
     flux = BUILD / "rss.xml"
     flux.write_text(render_rss(items), encoding="utf-8")
     print(f"OK : flux RSS écrit dans {flux.relative_to(ROOT)} ({min(len(items), RSS_MAX)} article(s))")
 
-    # Un flux RSS par catégorie, dans rss/ : mêmes articles, filtrés sur la catégorie de leur source.
-    dossier_rss = BUILD / DOSSIER_RSS_CATEGORIES
-    dossier_rss.mkdir(parents=True, exist_ok=True)
-    ordre = ordre_des_categories(items, categories)
-    slugs = slugs_categories(ordre)
-    for c in ordre:
-        sous_ensemble = [i for i in items if categories.get(i["key"], AUTRES) == c]
-        cible = dossier_rss / f"{slugs[c]}.xml"
-        cible.write_text(render_rss(
-            sous_ensemble,
-            titre=f"{DOMAINE} : {c}",
-            adresse_flux=f"{URL_SITE}/{DOSSIER_RSS_CATEGORIES}/{slugs[c]}.xml",
-            description=f"Catégorie « {c} » de {DOMAINE} : articles et vidéos des sources suivies, mis à jour automatiquement.",
-        ), encoding="utf-8")
-        print(f"OK : flux de catégorie écrit dans {cible.relative_to(ROOT)} ({min(len(sous_ensemble), RSS_MAX)} article(s))")
-    # Supprime les flux d'une catégorie qui n'existe plus.
-    attendus = {f"{s}.xml" for s in slugs.values()}
-    for ancien in dossier_rss.glob("*.xml"):
-        if ancien.name not in attendus:
-            ancien.unlink()
-            print(f"supprimé (catégorie disparue) : {ancien.relative_to(ROOT)}")
-
+    # Pas de flux par catégorie : leur adresse dépend du nom de la catégorie, et elle disparaîtrait avec
+    # une réorganisation. Le dossier rss/ d'un ancien build est retiré ; la publication retire ses copies.
 
 def ecrire_page_rss(categories: dict[str, str], items: list[dict]) -> None:
     """Écrit build/rss.html : page de découverte des flux RSS par catégorie."""
@@ -166,6 +154,8 @@ def ecrire_page_rss(categories: dict[str, str], items: list[dict]) -> None:
 
 def ecrire_pages_articles(items: list[dict], previews: dict[str, dict]) -> None:
     """Écrit les pages statiques pour chaque article dans build/articles/."""
+    from .rendu import valeurs_barre
+    barre = valeurs_barre(len(items), len({i["key"] for i in items}))
     articles_dossier = BUILD / "articles"
     written = 0
 
@@ -196,7 +186,7 @@ def ecrire_pages_articles(items: list[dict], previews: dict[str, dict]) -> None:
 
         # Utiliser le preview généré s'il existe
         preview_image = article_previews.get(item["link"], "")
-        page = render_article_page(item, previews.get(item["link"], {}), prev_article, next_article, previews, preview_image)
+        page = render_article_page(item, previews.get(item["link"], {}), prev_article, next_article, previews, preview_image, barre=barre)
         sortie = articles_dossier / f"{art_id}-{art_slug}" / "index.html"
         ecrire_si_change(sortie, page)
         written += 1
@@ -215,6 +205,8 @@ def ecrire_pages_articles(items: list[dict], previews: dict[str, dict]) -> None:
 def ecrire_pages_categories(items: list[dict], previews: dict[str, dict],
                             categories: dict[str, str]) -> None:
     """Écrit les pages statiques pour chaque catégorie dans build/categories/."""
+    from .rendu import valeurs_barre
+    barre = valeurs_barre(len(items), len({i["key"] for i in items}))
     # Grouper les articles par source
     groupes: dict[str, list[dict]] = {}
     noms: dict[str, str] = {}
@@ -241,7 +233,7 @@ def ecrire_pages_categories(items: list[dict], previews: dict[str, dict],
         # Trier par date décroissante (plus récents d'abord)
         all_articles.sort(key=lambda i: i["date"] or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
 
-        page = render_category_page(categorie, all_articles, previews)
+        page = render_category_page(categorie, all_articles, previews, barre=barre)
         sortie = categories_dossier / cat_slug / "index.html"
         ecrire_si_change(sortie, page)
         written += 1
@@ -414,8 +406,13 @@ def construire(args: argparse.Namespace) -> None:
         print("8. GÉNÉRATION DES PAGES PRINCIPALES")
         ecrire_page(items, previews, categories, panneaux)
         ecrire_page_rss(categories, items)
+        ecrire_code_de_conduite(items)
         if not args.simple:
             ecrire_flux_rss(items, categories)
+        # Flux par catégorie : supprimés (leur adresse dépend du nom de la catégorie)
+        shutil.rmtree(BUILD / DOSSIER_RSS_CATEGORIES, ignore_errors=True)
+        print("   • Page Ressources (documents de ressources/)")
+        ecrire_ressources(len(items), len({i["key"] for i in items}))
 
         # === Fichiers statiques ===
         print("9. COPIE DES FICHIERS STATIQUES")

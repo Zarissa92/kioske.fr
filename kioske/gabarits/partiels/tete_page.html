@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="fr" ${attributs_html} style="${variables_html}">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="content-language" content="fr">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${titre}</title>
+<meta name="description" content="${description}">
+<link rel="canonical" href="${url_site}${adresse}">
+<meta name="theme-color" content="#000000">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="${nom_site}">
+<meta property="og:title" content="${titre}">
+<meta property="og:description" content="${description}">
+<meta property="og:url" content="${url_site}${adresse}">
+<meta property="og:locale" content="fr_FR">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KiosKe.fr">
+<style>
+${css}</style>
+${script_theme}
+<script type="application/json" id="kioske-donnees">${donnees_json}</script>
+<script>
+${js_donnees_accueil}${js_service_worker}</script>
+</head>

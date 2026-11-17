@@ -18,7 +18,7 @@ const { attendre, charger, clic, touche, suite } = require('./outils');
   t.verif('clic : menu ouvert', ouvert() && bouton.getAttribute('aria-expanded') === 'true');
   t.verif('contient thèmes, mode sobre, flux, réseaux et code de conduite',
     Boolean(d.getElementById('submenu-themes') && d.getElementById('btn-sobre') &&
-      d.getElementById('btn-custom-flux-navbar') && d.getElementById('btn-open-conduite')));
+      d.getElementById('btn-custom-flux-navbar') && d.querySelector('a[href="/code-de-conduite.html"]')));
 
   touche(w, 'Escape');
   t.verif('Échap : menu fermé', !ouvert() && bouton.getAttribute('aria-expanded') === 'false');

@@ -50,6 +50,7 @@ L'image est une capture figée : l'animation se voit dans la page.
 | Fichier / dossier | Rôle |
 | --- | --- |
 | `kioske.cfg` | **Tous les réglages** : domaine, thèmes, veille, serveur. Lu par Python et par les scripts bash. |
+| `ressources/` | **Les documents de la page Ressources**, en Markdown (`.md`). Un dossier = une catégorie, un sous-dossier = une sous-catégorie. Écrit à la main, suivi par git. Voir « Page Ressources ». |
 | `sources/` | Ce que la veille suit : `RSS_feeds.txt`, `Twitch_feeds.txt`, `flux_corrige_main.txt`. Écrits à la main. |
 | `static/` | Fichiers publiés tels quels : `404.html` (page d'erreur, servie par nginx pour toute adresse inexistante), `dispositions-legales.html` (mentions légales, liée en bas de l'accueil ; emplacements à compléter), `favicon.svg`, `apple-touch-icon.png`, `preview.png`, `fonts/` (Russo One pour les titres et la navigation, Inter pour le texte courant ; chemins absolus `/fonts/…` dans les CSS, pour que les pages d'article et de catégorie les trouvent), `theme.js` (thème choisi par le visiteur, pluie matricielle et mode sobre, sur toutes les pages), `style_sobre.css` (feuille du mode sobre, chargée seulement quand il est activé), `sw.js` et `manifest.json` (PWA), icônes `icon-*.png`. |
 | `kioske/` | Le code (paquet Python), la feuille de style `style.css`, les squelettes HTML des pages (`gabarits/`) et leur JavaScript (`js/`). Voir ci-dessous. |
@@ -58,7 +59,7 @@ L'image est une capture figée : l'animation se voit dans la page.
 | `bin/` | Points d'entrée : `build_site.py`, `publier_public.py`. Quelques lignes chacun. |
 | `deploy/` | Scripts du serveur : `kioske.sh` (point d'entrée), `installer_serveur.sh`, `deployer_nginx.sh`, `verifier_serveur.sh`, `lib_config.sh`, `systemd/`, `fail2ban/`. |
 | `data/` | `historique.db`, `cache/`, `build.lock` (locaux, jamais publiés). |
-| `build/` | **Le site généré**, complet : `index.html` (accueil), `rss.html` (découverte des flux RSS), `articles/{id}-{slug}/index.html` (une page par article), `categories/{slug}/index.html` (une page par catégorie), `articles-index.json` (index de tous les articles : recherche et favoris), `rss.xml`, `rss/{slug}.xml` (flux par catégories), `img/previews/` (cartes de partage ; les images des articles restent chez leur source), copie de `static/`, `robots.txt`, `sitemap.xml`. Hors git, jamais édité à la main, jamais envoyé au serveur. |
+| `build/` | **Le site généré**, complet : `index.html` (accueil), `rss.html` (découverte des flux RSS), `articles/{id}-{slug}/index.html` (une page par article), `categories/{slug}/index.html` (une page par catégorie), `articles-index.json` (index de tous les articles : recherche et favoris), `rss.xml` (flux général), `img/previews/` (cartes de partage ; les images des articles restent chez leur source), copie de `static/`, `robots.txt`, `sitemap.xml`. Hors git, jamais édité à la main, jamais envoyé au serveur. |
 | `requirements.txt` | Dépendances Python (`feedparser`, `yt-dlp`, `legacy-cgi`). |
 | `apercu/preview.svg` | Source de `static/preview.png` (image de partage social) : générer avec `rsvg-convert -w 1200 -h 630 apercu/preview.svg -o static/preview.png`. |
 | `docs/img/` | Captures de ce README. |
@@ -75,8 +76,10 @@ Le paquet `kioske/` :
 | `themes.py`, `style.css`, `style_red_neon.css`, `oldstyle.css` | Thèmes et CSS. `themes.py` lit les thèmes de `kioske.cfg` et prépare ce que chaque page reprend (attributs de `<html>`, liste des thèmes pour `static/theme.js`, boutons de choix). Chaque thème peut avoir un CSS distinct (clé `css`). Le CSS du thème par défaut est injecté dans la page ; les CSS des autres thèmes sont servis depuis `static/` et chargés dynamiquement. |
 | `style_favoris.css` | Halo et reflet des cartes de favoris (classe `carte-favori`) des vignettes de la grande galerie (section `galerie-principale`) et de la carte d'article ouverte (`.carte-ouverte .panel-article`). Fichier partagé : `rendu.py` l'ajoute à la page d'accueil seule, tous thèmes confondus. Couleurs prises dans les variables du thème ; animation coupée pour « réduire les animations », effets retirés en contraste renforcé. |
 | `rendu.py`, `rss.py`, `texte.py` | Contenu de la page d'accueil et de `rss.html` (étiquettes, galeries, données ; le squelette est dans `gabarits/`), flux RSS produits, outils de texte (slugs, IDs, échappement HTML). |
+| `ressources.py` | Page Ressources : lit `ressources/`, rend le Markdown (bibliothèque `markdown`), écrit `build/ressources/` : `index.html` (liste et sommaire) et une page par document. Le sommaire est du HTML rendu au build (`sommaire_html()`). |
 | `rendu_statique.py` | Contenu des pages statiques d'articles et de catégories (image, navigation, cartes ; le squelette est dans `gabarits/`). Aucun CSS (il est dans `style.css`) ni JavaScript (il est dans `js/`). |
 | `gabarits.py`, `gabarits/` | Squelettes HTML des pages : `accueil.html`, `article.html`, `categorie.html`, `rss.html`. `${nom}` marque l'endroit d'une valeur ; ni boucle ni condition dans un gabarit. `gabarits.py` fournit `remplir("page.html", nom=valeur, …)` : une valeur manquante arrête le build, et le texte est échappé par Python (`esc()`) avant d'être passé. Un vrai signe dollar s'écrit `$$`. Pour modifier le HTML fixe d'une page, éditer son gabarit ; pour y ajouter une valeur, écrire `${nom}` dans le gabarit et passer `nom=…` dans l'appel `remplir()` de `rendu.py` ou `rendu_statique.py`. |
+| `gabarits/ressources.html`, `gabarits/texte.html`, `gabarits/partiels/`, `style_ressources.css` | Pages statiques : `ressources.html` (index et documents, un seul gabarit), `texte.html` (code de conduite). `partiels/` : en-tête commun (`tete_page.html`), barre du haut et panneaux communs (`barre_haut.html`, `panneaux_communs.html`), remplis par `barre_et_panneaux()` et `valeurs_barre()` (`rendu.py`). `style_ressources.css` : sommaire, document, menu ≡ sur petit écran. |
 | `javascript.py`, `js/` | Tout le JavaScript écrit dans les pages. `js/` : un fichier par rôle — `accueil.js` (panneaux, cartes, recherche, panneau « Mes favoris », menu), `notifications.js` (cloche et notifications des flux personnalisés, désactivées par défaut ; elles arrivent pendant que le site est ouvert), `rafraichissement.js` (l'accueil se recharge seul quand une nouvelle version est publiée, sauf si un panneau est ouvert), `favoris.js` (♡ et favoris enregistrés dans le navigateur, sur toutes les pages qui montrent un article), `partage.js` (bouton 📤), `galerie.js` (flèches des galeries), `carte_ouverte.js` (carte d'article par-dessus la page), `retour_app.js` (bouton précédent dans l'app installée), `installation_pwa.js`, `donnees_accueil.js` (lit le JSON des articles), `service_worker.js`, `page_article.js`, `page_categorie.js`, `page_rss.js`. `javascript.py` les lit (constantes `JS_…`) et fournit `json_pour_page()` pour les données. Pour ajouter un script : créer le fichier dans `js/`, ajouter sa constante dans `javascript.py`, l'insérer dans la page voulue. |
 | `verrou.py` | Un seul build ou une seule publication à la fois. |
 | `construction.py`, `publication.py` | Le build (`build/`) et la copie vers la racine web. |
@@ -87,7 +90,8 @@ Format INI, commenté dans le fichier. Une valeur manquante ou invalide arrête 
 
 | Section | Clés |
 | --- | --- |
-| `[site]` | `domaine`, `nom`, `theme` (thème par défaut), `taille_defaut` (zoom de l'accueil en %, min 75, max 125, défaut 90 ; réglage du site, pas des visiteurs), `largeur_carte_ouverte` (largeur max du panneau article, ex: `min(600px, 85vw)`), `hauteur_carte_ouverte` (zoom de la hauteur des cartes, min 75, max 125, défaut 115), `bordure_panneau_epaisseur` (défaut 8), `espacement_panneau_vertical` (défaut `2.4rem`), `espacement_panneau_horizontal` (marge intérieure gauche et droite des panneaux, défaut `0.5rem`), `galerie_principale` (1 = afficher la grande galerie, 0 = masquer, défaut 1), `galerie_panneau` (1 = afficher galeries des blocs et panneaux, 0 = masquer, défaut 1). |
+| `[site]` | `domaine`, `nom`, `theme` (thème par défaut), `taille_defaut` (zoom de l'accueil en %, min 75, max 125, défaut 90 ; réglage du site, pas des visiteurs), `largeur_carte_ouverte` (largeur max du panneau article, ex: `min(600px, 85vw)`), `hauteur_carte_ouverte` (zoom de la hauteur des cartes, min 75, max 125, défaut 115), `bordure_panneau_epaisseur` (défaut 8), `espacement_panneau_vertical` (défaut `2.4rem`), `espacement_panneau_horizontal` (marge intérieure gauche et droite des panneaux, défaut `0.5rem`), `galerie_principale` (1 = afficher la grande galerie, 0 = masquer, défaut 1), `galerie_panneau` (1 = galeries des blocs de l'accueil, 0 = masquer ; les panneaux ouverts n'ont jamais de galerie, défaut 1). |
+| `[menu]` | `ordre` : ordre des entrées du menu ≡, sous le bloc des thèmes (`sobre`, `flux`, `installer`, `ressources`, `rss`, `discord`, `mastodon`, `conduite`). Une clé absente va à la fin ; une clé inconnue arrête le build. |
 | `[veille]` | `articles_flux_rss` (100), `videos_par_chaine` (15), `articles_par_source` (0 = tous), `delai_nouvel_essai_heures` (24). |
 | `[serveur]` | `ip_jamais_bannies` (adresses que fail2ban ne bannit jamais : serveur et réseau local), `intervalle_timer` (`30min`). La racine web et l'IP publique ne sont plus dans ce fichier : elles sont demandées au terminal par les scripts de `deploy/`. |
 | `[reseaux]` | `discord` (URL du serveur Discord), `mastodon` (profil Mastodon), `rss` (chemin vers la page RSS, défaut `rss.html`). Laissez vide pour désactiver un lien. |
@@ -114,10 +118,13 @@ parcours des visiteurs dans jsdom, sans navigateur, sur les pages de `build/` :
 
 | Fichier | Ce qu'il vérifie |
 |---|---|
-| `test_python.py` | Gabarits (valeur manquante, valeur insérée telle quelle), JSON des données, galerie des blocs, chaque fichier de `js/` utilisé. |
+| `test_python.py` | Gabarits (valeur manquante, valeur insérée telle quelle), JSON des données, galerie des blocs, chaque fichier de `js/` utilisé, Ressources (front matter, arborescence, sommaire, pages statiques), code de conduite, ordre du menu (`[menu] ordre`). |
+| `test_menu.js` | Menu ≡ : ouverture, fermeture au clic dehors et à Échap, liens du menu (Ressources, code de conduite, réseaux). |
+| `test_sobre.js` | Mode sobre : activation, mémorisation, feuille de style, pluie retirée. |
+| `test_ressources.js` | Pages statiques : index et document des Ressources (sommaire, document actif, retour), code de conduite, barre du haut identique à l'accueil. |
 | `test_fermeture.js` | ×, double appui, Échap, fond sombre, bouton précédent : aucune fermeture ne remonte plus loin que l'accueil. |
-| `test_galeries.js` | Galerie des panneaux de catégorie et des blocs de l'accueil : contenu, flèches, liens de retour. |
-| `test_pages.js` | Favoris, partage, données, recherche et code de conduite, sur l'accueil, une page d'article, une page de catégorie et `rss.html`. |
+| `test_galeries.js` | Panneaux ouverts sans galerie ; galerie des blocs de l'accueil : contenu, flèches, cartes sans image : le titre à la place de la vignette. |
+| `test_pages.js` | Favoris, partage, données et recherche sur l'accueil, une page d'article, une page de catégorie et `rss.html` ; le lien vers le code de conduite. |
 | `test_securite.js` | Un titre ou un résumé contenant du HTML reste du texte ; un fichier de favoris trafiqué ne passe pas d'adresse `javascript:`. |
 | `test_notifications.js` | Cloche selon le flux, notifications désactivées par défaut, activation sans inondation, seules les sources cochées notifient, arrêt à la désactivation (API Notification simulée). |
 | `test_rafraichissement.js` | Nouvelle version détectée : rechargement si rien n'est ouvert, bannière sinon. |
@@ -206,6 +213,7 @@ jusqu'à la ligne `[…]` suivante. Une source sans catégorie tombe dans le blo
   recherche, bouton ♡ (favoris), bouton « ≡ Menu » (un seul menu, l'ancien ⚙️ est fondu dedans). Le menu contient le choix du thème, le mode sobre, la personnalisation des flux, l'installation, les liens Flux RSS, Discord et
   Mastodon (selon `[reseaux]` ; de vrais liens, les externes dans un nouvel onglet avec
   `rel="noopener noreferrer"`) et le code de conduite. Le menu se ferme au clic dehors, à Échap (le focus revient au bouton) ou après un choix. Le bouton annonce l'état du menu (`aria-expanded`).
+  Le nom du site et le drapeau sont agrandis (1,5 rem et 1,9 rem sur ordinateur, réduits sur tablette et téléphone) par `style_ressources.css`, avec des sélecteurs `.kioske-navbar` pour passer devant les feuilles de thème.
 - **Thème au choix du visiteur** : boutons `.theme-bouton`, gérés par `static/theme.js`. Le choix est gardé
   dans `localStorage` (clé `kioske-theme`, aucun cookie) et s'applique à toutes les pages. Le build pose le
   thème par défaut sur `<html>` (`data-fond`, `data-pluie`, `--panneau-opacite`) : sans JavaScript, c'est
@@ -230,9 +238,7 @@ jusqu'à la ligne `[…]` suivante. Une source sans catégorie tombe dans le blo
   rangée de petites vignettes des 12 derniers articles de la catégorie ayant une image. Flèches < et >
   comme sur la grande galerie ; elle défile aussi au doigt ou à la barre de défilement. Un clic ouvre la
   carte de l'article.
-- **Galerie par catégorie** : dans le panneau d'une catégorie, la même galerie en plus petit, avec les 12
-  derniers articles de la catégorie ayant une image. Elle est placée au-dessus des cartes et défile avec
-  elles. Pas de galerie si la catégorie n'a aucune image.
+- **Galeries** : seulement sur la page d'accueil, dans chaque bloc de catégorie. Les articles sont triés par date, du plus récent au plus ancien, toutes sources confondues. Un article sans image (ou dont l'image ne charge pas) garde sa carte, avec son titre à la place de la vignette. Les panneaux ouverts par une tuile, un tag ou un titre n'ont pas de galerie.
 - **Étiquettes** : une par source, dans un bloc par catégorie. Un clic ouvre le panneau de la source
   (30 cartes par page, pagination). Le bouton « + » d'un titre de catégorie ouvre le panneau de la catégorie,
   toutes sources mélangées, du plus récent au plus ancien.
@@ -241,18 +247,19 @@ jusqu'à la ligne `[…]` suivante. Une source sans catégorie tombe dans le blo
   cartes des favoris, export et import en JSON, effacement. Les favoris enregistrés par une ancienne version
   (lien du site d'origine seul) sont complétés à l'ouverture du panneau à partir de `articles-index.json` ;
   un article qui n'est plus dans l'index garde son lien d'origine.
-- **Code de conduite** : panneau ouvert depuis le menu ≡, avec boutons Partager et Copier le lien.
+- **Code de conduite** : page statique `/code-de-conduite.html`, ouverte depuis le menu ≡.
 - **Heures en Paris** : toutes les dates affichées sont en heure de Paris (CET/CEST). L'attribut HTML
   `datetime` reste en UTC.
-- **Page de découverte des flux** : `rss.html` liste le flux principal et un flux par catégorie ayant des
-  articles (les mêmes que ceux écrits dans `build/rss/`), avec icônes RSS aux couleurs du drapeau trans et
-  un lien de retour vers l'accueil. Les flux sont aussi déclarés dans l'en-tête de l'accueil.
+- **Page de découverte des flux** : `rss.html` propose le flux général (`rss.xml`), avec une icône RSS aux couleurs du drapeau trans. Les flux sont aussi déclarés dans l'en-tête de l'accueil. Il n'y a plus de flux par catégorie : leur adresse dépendait du nom de la catégorie et disparaissait à chaque réorganisation.
 - **Lien GitHub** : en bas de la page, avec la licence (GPL v3).
 
 ### Carte d'article
 
 - **Format** : « carte à jouer » (ratio 2.5:3.5), image fixe en haut (35 % de la hauteur), texte
   défilant au milieu, boutons en bas (Précédent, ♡, 📤 partage, Suivant). Plein écran sur téléphone.
+- **Petit écran** : sous ~375 px, les quatre boutons ne tiennent pas en une ligne (`.fav-heart` et `.share-btn`
+  ont des marges de 0,8 rem). La barre peut passer à la ligne, et sous 400 px ses marges et sa police sont
+  réduites. Règles dans les 7 `kioske/style_<thème>.css`, après `:where(.panel-article) .article-nav`.
 - **Ouverture en JavaScript** (accueil et pages de catégorie) : un clic simple sur une carte charge la
   page statique de l'article (`fetch`), en extrait `main.panel-article` et l'affiche par-dessus la page,
   dans `.carte-ouverte`. Le style (section « Carte d'article ouverte » de `kioske/style.css`) et le script
@@ -270,6 +277,28 @@ jusqu'à la ligne `[…]` suivante. Une source sans catégorie tombe dans le blo
   `<html>`, non modifiable par les visiteurs) ; ce zoom est annulé sur la carte ouverte pour qu'elle ait
   la taille de la page statique.
 
+### Page Ressources et code de conduite (pages statiques)
+
+- **Adresses** : `/ressources/` (index, avec le sommaire) et `/ressources/<catégorie>/[<sous-catégorie>/]<document>/` : une page HTML par document, produite au build (comme les articles). `/code-de-conduite.html` : page statique, comme la page RSS.
+- **Accès** : « 📚 Ressources » et « 📖 Code de conduite » dans le menu ≡, sur toutes les pages. Ce sont des liens, pas des panneaux.
+- **Mise en page** : sommaire à gauche (catégories et sous-catégories repliables, document courant surligné), document à droite. Sur téléphone, le sommaire passe au-dessus du document.
+- **Écrire un document** : un fichier `.md` dans `ressources/<catégorie>/` (ou `ressources/<catégorie>/<sous-catégorie>/`). En tête, un bloc facultatif :
+
+  ```
+  ---
+  titre: Titre affiché
+  description: Une phrase sous le titre
+  ordre: 10
+  ---
+  ```
+
+  Sans `titre`, le nom du fichier sert de titre. Sans `ordre`, l'ordre est alphabétique, après les éléments qui ont un `ordre` (plus petit = plus haut). Un fichier `_dossier.md` dans un dossier donne le `titre`, la `description` et l'`ordre` de la catégorie ou sous-catégorie (son corps est ignoré). Les fichiers et dossiers qui commencent par `.` ou `_` sont ignorés ; un dossier plus profond que la sous-catégorie est ignoré, avec un avertissement au build. Les documents à la racine de `ressources/` (hors dossier) sont ignorés.
+- **Contenu** : Markdown avec les tableaux, le code délimité, les listes et les sauts de ligne simples (extensions `extra`, `sane_lists`, `nl2br`). Le HTML écrit dans un `.md` passe tel quel : n'y mettre que du contenu de confiance. Les images : une adresse `https://…` ; un chemin relatif ne marche pas.
+- **Build** : `build/ressources/` est reconstruit à chaque fois (un document supprimé ne reste pas en ligne). `build --simple` aussi.
+- **Menu ≡ sur petit écran** : sur 768 px et moins, le menu part du bord de la barre et prend la largeur de l'écran moins une marge ; sur les autres écrans, il est ancré à droite du bouton Menu. Hauteur limitée à la fenêtre, avec défilement interne. Ordre des entrées : `[menu] ordre` dans `kioske.cfg`.
+- **Barre du haut** : la même partout (marque et compteurs, recherche, ♡, 🔔, menu ≡). Elle vient de `valeurs_barre()` (`kioske/rendu.py`) et des fragments `kioske/gabarits/partiels/`.
+- **Serveur** : nginx sert les pages Ressources comme des fichiers (`try_files $uri $uri/index.html`, nommer l'index : `$uri/` seul donne une 404 dans un bloc `location ~`) et `code-de-conduite.html` comme les autres pages à la racine. Règles dans `deploy/kioske-nginx.conf` et `deploy/deployer_nginx.sh`.
+- **Tests** : `RessourcesDuDossier` (tests/test_python.py) et `tests/test_ressources.js` (pages statiques, barre comparée à celle de l'accueil).
 ### Bouton précédent et historique
 
 - **Panneaux de l'accueil** : un panneau ouvert par un clic ajoute une entrée d'historique
@@ -337,8 +366,7 @@ Le CSS est dans `kioske/style.css`, inséré dans la page au build.
   en mémoire et jamais écrite ; seule la carte, petite, est stockée. Une carte est recomposée seulement
   si elle n'existe pas encore.
 - L'ancien dossier `build/img/veille/` (copies d'images d'avant la bascule) est vidé à chaque build (`purger_images`).
-- **Flux RSS produits** : `build/rss.xml` (les 100 articles les plus récents) et un flux par catégorie
-  dans `build/rss/`, avec le texte complet de chaque article.
+- **Flux RSS produit** : `build/rss.xml` (les 100 articles les plus récents), avec le texte complet de chaque article. Pas de flux par catégorie : le build retire un ancien dossier `build/rss/`, et la publication retire ses copies sur le serveur.
 
 ## Déploiement sur le serveur
 
@@ -415,7 +443,7 @@ sudo systemctl start kioske-veille.service   # publier tout de suite
 | Adresse | Réponse |
 |---|---|
 | `/`, `/index.html`, `/rss.html`, `/rss.xml`, `/sitemap.xml`, `/robots.txt`, `/articles-index.json` | servie (débit « pages ») |
-| `/articles/<id>-<titre>/`, `/categories/<nom>/`, `/rss/<nom>.xml` | servie, ou 404 ordinaire si la page a disparu |
+| `/articles/<id>-<titre>/`, `/categories/<nom>/` | servie, ou 404 ordinaire si la page a disparu |
 | `/manifest.json`, `/theme.js`, `/sw.js`, `/favicon.svg`, `/preview.png`, `/apple-touch-icon.png`, `/icon-<taille>.png`, `/img/previews/<fichier>`, `/fonts/<fichier>` | servie (débit « fichiers ») |
 | `/favicon.ico`, `/apple-touch-icon-….png`, `/browserconfig.xml`, `/ads.txt`, `/humans.txt`, `/security.txt`, `/.well-known/…` | 404 ordinaire : navigateurs et robots les demandent d'eux-mêmes |
 | fichier ou dossier caché (`/.env`, `/.git/…`) | 404 (et ban immédiat par `kioske-scan`) |
@@ -519,6 +547,8 @@ au prochain chargement.
 - La base n'est jamais purgée : sans `articles_par_source`, la page grossit avec le temps.
 - Ne pas mettre dans la veille une ressource dont le nom se résout en adresse privée
   (ex. `blog.zarisse.fr` depuis le réseau local) : Chrome demande alors l'accès au réseau local.
+
+- **Pages Ressources et code de conduite : règles nginx dans `deploy/kioske-nginx.conf` et `deploy/deployer_nginx.sh` (les deux ensemble).** Elles se déploient avec `deploy/kioske.sh nginx` sur le serveur, à refaire après chaque modification de ces fichiers.
 
 ## Licences
 

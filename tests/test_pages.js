@@ -7,7 +7,7 @@ const { attendre, charger, clic, touche, panneauOuvert, nbFavoris, premierArticl
   let { w, d, erreurs } = charger('index.html', '/');
   await attendre(300);
   t.verif('données lues depuis le JSON de la page',
-    Object.keys(w.sourcesData).length > 0 && Object.keys(w.categoriesData).length > 0 && w.conductCode.length > 0);
+    Object.keys(w.sourcesData).length > 0 && Object.keys(w.categoriesData).length > 0);
   const onclicks = [...d.querySelectorAll('[onclick]')];
   t.verif('aucun onclick dans la page', onclicks.length === 0, '(' + onclicks.length + ')');
   let ouvertures = 0; d.getElementById('fav-file-input').click = () => { ouvertures++; };
@@ -30,8 +30,7 @@ const { attendre, charger, clic, touche, panneauOuvert, nbFavoris, premierArticl
   t.verif('l\'adresse partagée est celle de l\'article, sans « from »', partages[0] && /\/articles\/[^?]+\/$/.test(partages[0].url), partages[0] && partages[0].url);
   t.verif('la carte reste ouverte après ♡ et 📤', !carte.hidden);
   touche(w, 'Escape'); await attendre();
-  clic(w, d.getElementById('btn-open-conduite')); await attendre();
-  t.verif('le code de conduite s\'affiche', panneauOuvert(d) && panneauOuvert(d).id === 'container-conduct' && panneauOuvert(d).textContent.includes('Code de conduite'));
+  t.verif('le code de conduite est un lien vers sa page statique', !!d.querySelector('a[href="/code-de-conduite.html"]'));
   t.verif('aucune erreur JavaScript', erreurs.length === 0, erreurs.join(' | '));
   t.fin();
 
@@ -92,7 +91,7 @@ const { attendre, charger, clic, touche, panneauOuvert, nbFavoris, premierArticl
   t = suite('Page des flux RSS');
   ({ w, d, erreurs } = charger('rss.html', '/rss.html'));
   await attendre(200);
-  t.verif('des liens de flux', d.querySelectorAll('a.rss-lien').length > 1);
+  t.verif('le flux général est proposé (un seul lien, pas de flux par catégorie)', d.querySelectorAll('a.rss-lien').length === 1 && !!d.querySelector('a.rss-lien[href="rss.xml"]'));
   t.verif('aucune erreur JavaScript', erreurs.length === 0, erreurs.join(' | '));
   t.fin();
 })();

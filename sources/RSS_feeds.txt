@@ -18,6 +18,8 @@
 "https://www.mediapart.fr/journal/podcasts/rss"
 "https://feeds.audiomeans.fr/feed/d9cd7538-7491-4873-b0c4-90ccba60ccf6.xml"  #lescouillessurlatbale
 
+[Vidéo et radio: Peertube]
+"https://canard.tube/feeds/videos.xml?videoChannelId=2" #CanardRefractaire
 
 [Panneau: Médias Libre]
 
@@ -46,7 +48,9 @@
 "https://agauche.org/feed/"
 "https://rezo.net/backend/"
 "https://www.infolibertaire.net/feed"
-
+"https://infokiosques.net/spip.php?page=backend"
+"https://splann.org/feed/integral-fr" #ecologie bretonne
+"https://editionslibertalia.com/spip.php?page=backend"
 
 [Panneau: International]
 [International: Presse]

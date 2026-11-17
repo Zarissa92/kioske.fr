@@ -14,11 +14,3 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Barre de recherche globale : redirige vers l'accueil
-document.getElementById('form-recherche').addEventListener('submit', (e) => {
-  e.preventDefault();
-  const query = document.getElementById('recherche-input').value.trim();
-  if (query) {
-    window.location.href = '/?q=' + encodeURIComponent(query);
-  }
-});

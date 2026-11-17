@@ -5,7 +5,7 @@
 <meta http-equiv="content-language" content="fr">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Flux RSS — ${nom_site}</title>
-<meta name="description" content="Tous les flux RSS du ${domaine_echappe}, organisés par catégories.">
+<meta name="description" content="Le flux RSS général du ${domaine_echappe} : les articles des sources suivies.">
 <link rel="canonical" href="${url_site}/rss.html">
 <meta name="theme-color" content="#000000">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -17,30 +17,29 @@
 <style>
 ${css}</style>
 ${script_theme}
+<script type="application/json" id="kioske-donnees">${donnees_json}</script>
+<script>
+${js_donnees_accueil}</script>
 <script>
 ${js_service_worker}</script>
 </head>
 <body>
+${barre_haut}
+${panneaux_communs}
 <main class="panel">
-  <p><a class="rss-lien" href="/">← Accueil</a></p>
-  ${choix_theme}
   <p class="kicker">// ${domaine} flux RSS</p>
   <h1>${nom_site}</h1>
-  <p class="sub">Découvrez tous les flux RSS du ${domaine_echappe}</p>
+  <p class="sub">Le flux RSS du ${domaine_echappe}, à suivre dans votre lecteur</p>
 
   <div class="rss-page">
     <h2>📡 Flux RSS</h2>
 
-    <h3>Principal</h3>
     ${flux_principal}
-
-    <h3>Par catégorie</h3>
-    ${flux_categories}
   </div>
 
 </main>
 <p class="mentions">Chaque flux renvoie vers sa source d'origine. Textes, images et vidéos : leurs auteur.ice.s et sites respectifs.</p>
 <script>
-${js_page_rss}</script>
+${js_barre}${js_retour_app}${js_installation_pwa}${js_page_rss}</script>
 </body>
 </html>

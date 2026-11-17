@@ -11,6 +11,7 @@ from .gabarits import remplir
 from .texte import esc, adresse_sure, article_id, slug_article, slug_categorie
 from .javascript import (JS_CARTE_OUVERTE, JS_FAVORIS, JS_INSTALLATION_PWA, JS_PAGE_ARTICLE, JS_PAGE_CATEGORIE,
                          JS_PARTAGE, JS_RETOUR_APP, JS_SERVICE_WORKER)
+from .rendu import valeurs_barre
 from .themes import ATTRIBUTS_HTML, CSS, SCRIPT_THEME, VARIABLES_HTML
 
 # Le style de la carte ouverte est dans kioske/style.css (« Carte d'article ouverte »).
@@ -27,7 +28,7 @@ def image_avec_repli(src: str, alt: str, lettre: str) -> str:
             f'onerror="{ONERROR_IMAGE}"><span class="lettre" hidden>{esc(lettre)}</span>')
 
 
-def render_article_page(item: dict, preview: dict, prev_article: dict | None = None, next_article: dict | None = None, previews: dict[str, dict] | None = None, preview_image: str = "") -> str:
+def render_article_page(item: dict, preview: dict, prev_article: dict | None = None, next_article: dict | None = None, previews: dict[str, dict] | None = None, preview_image: str = "", barre: dict | None = None) -> str:
     """Page HTML d'un article avec navigation Précédent/Suivant.
 
     previews: dict optionnel qui mappe link → preview, pour calculer les slugs corrects.
@@ -83,6 +84,7 @@ def render_article_page(item: dict, preview: dict, prev_article: dict | None = N
 
     return remplir(
         "article.html",
+        **(barre or valeurs_barre()),
         attributs_html=ATTRIBUTS_HTML,
         variables_html=VARIABLES_HTML,
         titre=esc(title),
@@ -92,7 +94,7 @@ def render_article_page(item: dict, preview: dict, prev_article: dict | None = N
         meta_og_image=meta_og_image,
         meta_og_dimensions=meta_og_dimensions,
         meta_twitter_image=meta_twitter_image,
-        css=CSS,
+        css=CSS + "\n" + (barre or valeurs_barre())["css_barre"],
         script_theme=SCRIPT_THEME,
         js_service_worker=JS_SERVICE_WORKER,
         media=media,
@@ -103,15 +105,13 @@ def render_article_page(item: dict, preview: dict, prev_article: dict | None = N
         lien_origine=esc(adresse_sure(item["link"], "")),
         boutons_navigation=nav_buttons,
         js_retour_app=JS_RETOUR_APP,
-        js_favoris=JS_FAVORIS,
-        js_partage=JS_PARTAGE,
         js_installation_pwa=JS_INSTALLATION_PWA,
         js_page_article=JS_PAGE_ARTICLE,
     )
 
 
 def render_category_page(category_name: str, articles: list[dict],
-                        previews: dict[str, dict]) -> str:
+                        previews: dict[str, dict], barre: dict | None = None) -> str:
     """Page HTML d'une catégorie avec ses articles triés par date."""
     # Param pour retour à la catégorie
     cat_slug = slug_categorie(category_name)
@@ -152,22 +152,21 @@ def render_category_page(category_name: str, articles: list[dict],
 
     canonical = f"{URL_SITE}/categories/{slug_categorie(category_name)}/"
 
+    barre = barre or valeurs_barre()
     return remplir(
         "categorie.html",
+        **barre,
         attributs_html=ATTRIBUTS_HTML,
         variables_html=VARIABLES_HTML,
         categorie=esc(category_name),
         nom_site_echappe=esc(NOM_SITE),
         nom_site=NOM_SITE,
         adresse_canonique=canonical,
-        css=CSS,
+        css=CSS + "\n" + barre["css_barre"],
         script_theme=SCRIPT_THEME,
         js_service_worker=JS_SERVICE_WORKER,
         grille="".join(sources_html),
-        js_carte_ouverte=JS_CARTE_OUVERTE,
         js_retour_app=JS_RETOUR_APP,
-        js_favoris=JS_FAVORIS,
-        js_partage=JS_PARTAGE,
         js_installation_pwa=JS_INSTALLATION_PWA,
         js_page_categorie=JS_PAGE_CATEGORIE,
     )

@@ -71,6 +71,8 @@ map $uri $kioske_cache_control {
     # Page d'accueil : revérifiée à chaque visite (304 si elle n'a pas changé, donc léger)
     /                                 "no-cache, must-revalidate, max-age=0";
     /index.html                       "no-cache, must-revalidate, max-age=0";
+    # Pages Ressources (statiques) : revérifiées, le contenu change à chaque publication
+    ~^/ressources(/|$)                "no-cache, must-revalidate, max-age=0";
     # Pages, theme.js, index des articles : 30 min (durée du timer de mise à jour)
     default                           "public, max-age=1800, must-revalidate";
 }
@@ -116,7 +118,7 @@ EMPLACEMENTS="$(cat <<'NGINX'
     }
 
     # Pages et données à la racine : accueil, page des flux, flux RSS, plan du site, index de recherche
-    location ~ ^/(index\.html|rss\.html|dispositions-legales\.html|rss\.xml|sitemap\.xml|robots\.txt|articles-index\.json)$ {
+    location ~ ^/(index\.html|rss\.html|code-de-conduite\.html|dispositions-legales\.html|rss\.xml|sitemap\.xml|robots\.txt|articles-index\.json)$ {
         limit_req zone=kioske_pages burst=40 nodelay;
         try_files $uri =404;
     }
@@ -125,6 +127,16 @@ EMPLACEMENTS="$(cat <<'NGINX'
     location ~ ^/(articles|categories)/[a-z0-9-]+(/|/index\.html)?$ {
         limit_req zone=kioske_pages burst=40 nodelay;
         try_files $uri $uri/ =404;
+    }
+
+    # Pages Ressources (statiques, produites par le build) : /ressources/ (index) et un dossier par document,
+    # /ressources/<catégorie>/[<sous-catégorie>/]<document>/index.html. Segments limités aux caractères des
+    # slugs (a-z, 0-9, -) et trois niveaux au plus. Pas d'accolades dans cette expression (nginx les
+    # prendrait pour un bloc).
+    # index.html nommé : dans un bloc « location ~ », « $uri/ » seul ne sert pas l'index du dossier (404).
+    location ~ ^/ressources(/[a-z0-9-]+)?(/[a-z0-9-]+)?(/[a-z0-9-]+)?/?$ {
+        limit_req zone=kioske_pages burst=40 nodelay;
+        try_files $uri $uri/index.html =404;
     }
 
     # Flux RSS par catégorie : /rss/<nom>.xml

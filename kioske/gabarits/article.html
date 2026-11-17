@@ -27,16 +27,15 @@ ${meta_twitter_image}
 <meta name="apple-mobile-web-app-title" content="KiosKe.fr">
 <style>${css}</style>
 ${script_theme}
+<script type="application/json" id="kioske-donnees">${donnees_json}</script>
+<script>
+${js_donnees_accueil}</script>
 <script>
 ${js_service_worker}</script>
 </head>
 <body class="page-article">
-<div class="recherche-globale">
-  <form id="form-recherche" class="recherche-form">
-    <input type="text" id="recherche-input" class="recherche" placeholder="Chercher..." aria-label="Barre de recherche globale" autocomplete="off">
-    <button type="submit" class="recherche-bouton">🔍</button>
-  </form>
-</div>
+${barre_haut}
+${panneaux_communs}
 <main class="panel panel-article" data-summary="${description}">
   <button id="btn-retour" class="btn-retour" aria-label="Retour">← Retour</button>
   <article>
@@ -49,7 +48,6 @@ ${js_service_worker}</script>
   </article>
 </main>
 <script>
-${js_retour_app}
-${js_favoris}${js_partage}${js_installation_pwa}${js_page_article}</script>
+${js_barre}${js_retour_app}${js_installation_pwa}${js_page_article}</script>
 </body>
 </html>

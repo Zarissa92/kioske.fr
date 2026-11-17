@@ -9,14 +9,14 @@ from pathlib import Path
 from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
-from .config import DOMAINE, DOSSIER_RSS_CATEGORIES, GALERIE_PANNEAU, NOM_SITE, URL_SITE, CFG
+from .config import DOMAINE, DOSSIER_RSS_CATEGORIES, GALERIE_PANNEAU, NOM_SITE, ORDRE_MENU, URL_SITE, CFG
 from .gabarits import remplir
 from .javascript import (JS_ACCUEIL, JS_CARTE_OUVERTE, JS_DONNEES_ACCUEIL, JS_FAVORIS, JS_FLUX_PERSONNALISE,
                          JS_GALERIE, JS_INSTALLATION_PWA, JS_NOTIFICATIONS, JS_RAFRAICHISSEMENT, JS_PAGE_RSS, JS_PARTAGE, JS_RETOUR_APP,
                          JS_SERVICE_WORKER, json_pour_page)
 from .sources import AUTRES, ordre_des_categories
 from .texte import cle_alphabetique, esc, slugs_categories, truncate_label, article_id, slug_article
-from .themes import ATTRIBUTS_HTML, CHOIX_THEME, CSS, CSS_FAVORIS, SCRIPT_THEME, VARIABLES_HTML
+from .themes import ATTRIBUTS_HTML, CHOIX_THEME, CSS, CSS_FAVORIS, CSS_RESSOURCES, SCRIPT_THEME, VARIABLES_HTML
 
 # Chemin vers le code de conduite
 CODE_DE_CONDUITE_PATH = Path(__file__).parent.parent / "accueil" / "code-de-conduite.html"
@@ -50,19 +50,27 @@ def render_galerie_bloc(categorie: str, items: list[dict], previews: dict[str, d
     brancherGalerie(), branche toutes les « .galerie-slider » de la page.
     """
     cartes = []
-    for item in items:
+    # Les articles arrivent source par source, pas par date : on trie d'abord, pour que la galerie montre
+    # les plus récents de la catégorie (et non les premiers de la première source).
+    epoque = datetime.min.replace(tzinfo=timezone.utc)
+    for item in sorted(items, key=lambda i: i.get("date") or epoque, reverse=True):
         if len(cartes) >= NB_GALERIE_BLOC:
             break
         apercu = previews.get(item["link"], {})
         image = apercu.get("image") or item["image"] or ""
-        if not image:
-            continue
         title = apercu.get("title") or item["title"]
         article_url = f'/articles/{article_id(item["link"])}-{slug_article(title, item["link"])}/'
         source_name = item.get("source", "")
+        # Sans image : la carte affiche le titre. Image qui ne charge pas : retirerCarte() met le titre à sa place.
+        if image:
+            media = (f'<img src="{esc(image)}" alt="{esc(title)}" loading="lazy" referrerpolicy="no-referrer" '
+                     f'onerror="retirerCarte(this)">')
+            classe = "galerie-carte"
+        else:
+            media = f'<span class="galerie-carte-texte">{esc(title)}</span>'
+            classe = "galerie-carte galerie-carte-sans-image"
         cartes.append(
-            f'<a href="{esc(article_url)}" class="galerie-carte" title="{esc(title)}" data-source="{esc(source_name)}">'
-            f'<img src="{esc(image)}" alt="{esc(title)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest(&#39;.galerie-carte&#39;).remove()"></a>'
+            f'<a href="{esc(article_url)}" class="{classe}" title="{esc(title)}" data-source="{esc(source_name)}">{media}</a>'
         )
     if not cartes:
         return ""
@@ -148,6 +156,76 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> str:
 
 
 
+
+def _code_de_conduite() -> str:
+    """Contenu du code de conduite (accueil/code-de-conduite.html), lu au build."""
+    return CODE_DE_CONDUITE_PATH.read_text(encoding="utf-8") if CODE_DE_CONDUITE_PATH.exists() else ""
+
+
+def page_statique(gabarit: str, nb_articles: int, nb_sources: int, *, titre: str, description: str, adresse: str,
+                  **corps: str) -> str:
+    """Page HTML statique avec la barre du haut partagée. Le gabarit « tete » est commun à toutes ces pages ;
+    `corps` remplit les emplacements propres au gabarit (sommaire, corps…)."""
+    barre = valeurs_barre(nb_articles, nb_sources)
+    tete = remplir("partiels/tete_page.html", **barre, attributs_html=ATTRIBUTS_HTML, variables_html=VARIABLES_HTML,
+                   titre=esc(titre), description=esc(description), adresse=esc(adresse), nom_site=esc(NOM_SITE),
+                   url_site=URL_SITE, css=CSS + "\n" + barre["css_barre"], script_theme=SCRIPT_THEME,
+                   js_service_worker=JS_SERVICE_WORKER)
+    return remplir(gabarit, **barre, tete=tete, js_retour_app=JS_RETOUR_APP, js_installation_pwa=JS_INSTALLATION_PWA,
+                   **corps)
+
+
+def render_code_de_conduite(nb_articles: int, nb_sources: int) -> str:
+    """Page statique du code de conduite (accueil/code-de-conduite.html), comme la page RSS."""
+    return page_statique("texte.html", nb_articles, nb_sources, titre=f"Code de conduite — {NOM_SITE}",
+                         description="Code de conduite du Discord du " + NOM_SITE, adresse="/code-de-conduite.html",
+                         corps=f'<h1>Code de conduite</h1><div class="ressources-texte">{_code_de_conduite()}</div>')
+
+
+def valeurs_barre(nb_articles: int = 0, nb_sources: int = 0) -> dict[str, str]:
+    """Tout ce que les gabarits reçoivent pour la barre du haut partagée (accueil, Ressources, article,
+    catégorie, RSS) : le HTML de la barre et des panneaux, les données vides attendues par les scripts
+    (le code de conduite y est), les scripts de la barre et leur feuille de style."""
+    barre, panneaux = barre_et_panneaux(nb_articles, nb_sources)
+    return {
+        "barre_haut": barre,
+        "panneaux_communs": panneaux,
+        "donnees_json": json_pour_page({"sources": {}, "categories": {}, "sources_metadata": {}, "galerie_panneau": 0}),
+        "js_donnees_accueil": JS_DONNEES_ACCUEIL,
+        "js_barre": JS_FAVORIS + JS_PARTAGE + JS_ACCUEIL + JS_FLUX_PERSONNALISE + JS_NOTIFICATIONS + JS_CARTE_OUVERTE,
+        "css_barre": CSS_FAVORIS + "\n" + CSS_RESSOURCES,
+    }
+
+
+def barre_et_panneaux(nb_articles: int, nb_sources: int, sur_accueil: bool = False) -> tuple[str, str]:
+    """Barre du haut (marque, compteurs, recherche, ♡, notifications, menu ≡) et panneaux communs.
+    Les mêmes sur toutes les pages. L'ordre des entrées du menu vient de kioske.cfg ([menu] ordre)."""
+    lien_discord = CFG.get("reseaux", "discord", fallback="")
+    lien_mastodon = CFG.get("reseaux", "mastodon", fallback="")
+    lien_rss = CFG.get("reseaux", "rss", fallback="rss.html")
+    # Adresse relative (rss.html) : fausse sur /ressources/ (elle y pointe vers /ressources/rss.html) ; on part de la racine
+    if lien_rss and not lien_rss.startswith(("http://", "https://", "/")):
+        lien_rss = "/" + lien_rss
+    # « Personnaliser flux » lit les sources de l'accueil : ailleurs, le lien y renvoie (?flux=personnaliser)
+    if sur_accueil:
+        bouton_flux = '<button type="button" class="menu-button" id="btn-custom-flux-navbar">⚙️ Personnaliser flux</button>'
+    else:
+        bouton_flux = '<a class="menu-button" id="btn-flux-accueil" href="/?flux=personnaliser">⚙️ Personnaliser flux</a>'
+    elements = {
+        "sobre": '<button type="button" class="menu-button" id="btn-sobre" aria-pressed="false">✨ Mode sobre : désactivé</button>',
+        "flux": bouton_flux,
+        "installer": '<button type="button" class="menu-button" id="btn-install-pwa-settings">⬇ Installer l\'app</button>',
+        "ressources": '<a class="menu-button" href="/ressources/">📚 Ressources</a>',
+        "rss": f'<a class="menu-button" href="{esc(lien_rss)}">📡 Flux RSS</a>' if lien_rss else "",
+        "discord": f'<a class="menu-button" href="{esc(lien_discord)}" target="_blank" rel="noopener noreferrer">💜 Discord</a>' if lien_discord else "",
+        "mastodon": f'<a class="menu-button" href="{esc(lien_mastodon)}" target="_blank" rel="noopener noreferrer">🦣 Mastodon</a>' if lien_mastodon else "",
+        "conduite": '<a class="menu-button" href="/code-de-conduite.html">📖 Code de conduite</a>',
+    }
+    menu = "\n          ".join(elements[cle] for cle in ORDRE_MENU if elements[cle])
+    barre = remplir("partiels/barre_haut.html", domaine=DOMAINE, nb_articles=nb_articles, nb_sources=nb_sources,
+                    choix_theme=CHOIX_THEME, elements_menu=menu)
+    panneaux = remplir("partiels/panneaux_communs.html", choix_theme=CHOIX_THEME)
+    return barre, panneaux
 
 def render_page(items: list[dict], previews: dict[str, dict],
                 categories: dict[str, str] | None = None,
@@ -272,10 +350,6 @@ def render_page(items: list[dict], previews: dict[str, dict],
     titre_page = NOM_SITE
     description = "Le KiosKe : une veille automatique des médias indépendants, des luttes et des voix LGBTQIA+. Une seule page statique (HTML5, CSS et JavaScript minimal), reconstruite toutes les 30 minutes sur le serveur à partir de flux RSS et de chaînes Twitch. Les images sont hébergées par le site : la page ne charge rien d'un autre site, sans publicité ni pistage."
     keywords = "kioske, veille, médias indépendants, LGBTQIA+, Mélenchon, RSS, Twitch, informatique libre"
-    # Réseaux sociaux
-    lien_discord = CFG.get("reseaux", "discord", fallback="")
-    lien_mastodon = CFG.get("reseaux", "mastodon", fallback="")
-    lien_rss = CFG.get("reseaux", "rss", fallback="rss.html")
 
     # Préparer les données des groupes pour le JavaScript
     groupes_json = {}
@@ -349,11 +423,6 @@ def render_page(items: list[dict], previews: dict[str, dict],
             # Les articles sont déjà triés par catégorie, juste les ajouter au panneau
             categories_json[panneau_nom] = panneau_articles
 
-    # Charger le contenu du code de conduite
-    conduite_html = ""
-    if CODE_DE_CONDUITE_PATH.exists():
-        conduite_html = CODE_DE_CONDUITE_PATH.read_text(encoding="utf-8")
-
     # Métadonnées des sources (pour la configuration du flux personnalisé)
     sources_metadata = {}
     for cle in ordre:
@@ -365,17 +434,11 @@ def render_page(items: list[dict], previews: dict[str, dict],
 
     # Données lues par kioske/js/donnees_accueil.js
     donnees_json = json_pour_page(
-        {"sources": groupes_json, "categories": categories_json, "conduite": conduite_html,
-         "sources_metadata": sources_metadata, "galerie_panneau": GALERIE_PANNEAU})
+        {"sources": groupes_json, "categories": categories_json,
+         "sources_metadata": sources_metadata, "galerie_panneau": 0})
 
-    # Générer les boutons de réseaux sociaux conditionnellement
-    boutons_reseaux = ""
-    if lien_rss:
-        boutons_reseaux += f'<a class="menu-button" href="{esc(lien_rss)}">📡 Flux RSS</a>\n      '
-    if lien_discord:
-        boutons_reseaux += f'<a class="menu-button" href="{esc(lien_discord)}" target="_blank" rel="noopener noreferrer">💜 Discord</a>\n      '
-    if lien_mastodon:
-        boutons_reseaux += f'<a class="menu-button" href="{esc(lien_mastodon)}" target="_blank" rel="noopener noreferrer">🦣 Mastodon</a>\n      '
+    # Barre du haut et panneaux communs : les mêmes que sur la page Ressources
+    barre_haut, panneaux_communs = barre_et_panneaux(len(items), len(groupes), sur_accueil=True)
 
     return remplir(
         "accueil.html",
@@ -388,15 +451,13 @@ def render_page(items: list[dict], previews: dict[str, dict],
         nom_site=esc(NOM_SITE),
         domaine=DOMAINE,
         liens_rss=liens_rss,
-        css=CSS + "\n" + CSS_FAVORIS,
+        css=CSS + "\n" + CSS_FAVORIS + "\n" + CSS_RESSOURCES,
         script_theme=SCRIPT_THEME,
         donnees_json=donnees_json,
         js_donnees_accueil=JS_DONNEES_ACCUEIL,
         js_service_worker=JS_SERVICE_WORKER,
-        nb_articles=len(items),
-        nb_sources=len(groupes),
-        choix_theme=CHOIX_THEME,
-        boutons_reseaux=boutons_reseaux,
+        barre_haut=barre_haut,
+        panneaux_communs=panneaux_communs,
         galerie=galerie_html,
         nuage=nuage,
         js_favoris=JS_FAVORIS,
@@ -412,36 +473,25 @@ def render_page(items: list[dict], previews: dict[str, dict],
 
 
 def render_rss_page(categories: dict[str, str] | None = None, items: list[dict] | None = None) -> str:
-    """Page de découverte des flux RSS par catégorie.
-    Mêmes catégories et mêmes noms de fichier que les flux écrits par le build (ecrire_flux_rss) :
-    une catégorie sans article n'a pas de flux, donc pas de lien."""
-    categories = categories or {}
-    ordre_categories = ordre_des_categories(items or [], categories)
-    slugs = slugs_categories(ordre_categories)
-
-
-    # Lien vers le flux RSS principal
+    """Page RSS : le flux général (rss.xml). Pas de flux par catégorie (voir ecrire_flux_rss)."""
+    # Lien vers le flux RSS général
     flux_principal = f'<a href="rss.xml" class="rss-lien rss-principal"><svg viewBox="0 0 20 20" aria-hidden="true"><rect y="0" width="20" height="4" fill="#5BCEFA"/><rect y="4" width="20" height="4" fill="#F5A9B8"/><rect y="8" width="20" height="4" fill="#FFFFFF"/><rect y="12" width="20" height="4" fill="#F5A9B8"/><rect y="16" width="20" height="4" fill="#5BCEFA"/><g fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round"><circle cx="4.5" cy="15.5" r="1.8" fill="#000" stroke="none"/><path d="M3 10.5a6.5 6.5 0 0 1 6.5 6.5"/><path d="M3 4.5a12.5 12.5 0 0 1 12.5 12.5"/></g></svg> {esc(DOMAINE)}</a>'
-
-    # Flux par catégorie
-    flux_categories = ""
-    for categorie in ordre_categories:
-        slug = slugs[categorie]
-        flux_categories += f'<h2>{esc(categorie)}</h2><a href="rss/{slug}.xml" class="rss-lien">{ICONE_RSS} {esc(categorie)}</a>'
 
     return remplir(
         "rss.html",
+        **valeurs_barre(len(items or []), len({i["key"] for i in (items or [])})),
         attributs_html=ATTRIBUTS_HTML,
         variables_html=VARIABLES_HTML,
         nom_site=esc(NOM_SITE),
         domaine_echappe=esc(DOMAINE),
         url_site=URL_SITE,
-        css=CSS,
+        css=CSS + "\n" + valeurs_barre()["css_barre"],
         script_theme=SCRIPT_THEME,
         js_service_worker=JS_SERVICE_WORKER,
         choix_theme=CHOIX_THEME,
         domaine=DOMAINE,
         flux_principal=flux_principal,
-        flux_categories=flux_categories,
         js_page_rss=JS_PAGE_RSS,
+        js_retour_app=JS_RETOUR_APP,
+        js_installation_pwa=JS_INSTALLATION_PWA,
     )

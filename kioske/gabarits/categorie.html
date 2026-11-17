@@ -19,23 +19,22 @@
 <meta name="apple-mobile-web-app-title" content="KiosKe.fr">
 <style>${css}</style>
 ${script_theme}
+<script type="application/json" id="kioske-donnees">${donnees_json}</script>
+<script>
+${js_donnees_accueil}</script>
 <script>
 ${js_service_worker}</script>
 </head>
 <body>
-<div class="recherche-globale">
-  <form id="form-recherche" class="recherche-form">
-    <input type="text" id="recherche-input" class="recherche" placeholder="Chercher..." aria-label="Barre de recherche globale" autocomplete="off">
-    <button type="submit" class="recherche-bouton">🔍</button>
-  </form>
-</div>
+${barre_haut}
+${panneaux_communs}
 <main class="panel panel-category">
   <button id="btn-retour" class="btn-retour" aria-label="Retour à l'accueil">← Accueil</button>
   <h1>${categorie}</h1>
   ${grille}
 </main>
 <script>
-${js_favoris}${js_partage}${js_carte_ouverte}
+${js_barre}
 ${js_retour_app}
 ${js_installation_pwa}${js_page_categorie}</script>
 </body>

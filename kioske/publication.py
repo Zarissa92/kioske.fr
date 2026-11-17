@@ -20,7 +20,8 @@ from .construction import analyser_arguments, construire, copier_si_change
 from .verrou import verrou
 
 # Sans ces fichiers, rien n'est publié.
-OBLIGATOIRES = [NOM_PAGE, "favicon.svg", "preview.png", "apple-touch-icon.png", "rss.xml", "fonts/russo-one.woff2", "fonts/inter.woff2"]
+OBLIGATOIRES = [NOM_PAGE, "favicon.svg", "preview.png", "apple-touch-icon.png", "rss.xml", "fonts/russo-one.woff2", "fonts/inter.woff2",
+               "ressources/index.html", "code-de-conduite.html"]
 # Dossiers entièrement générés : un fichier qui n'est plus dans build/ est retiré de la racine web.
 DOSSIERS_PURGES = [DOSSIER_IMAGES, DOSSIER_RSS_CATEGORIES]
 

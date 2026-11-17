@@ -15,6 +15,7 @@ SOURCES = ROOT / "sources"
 FLUX_RSS = SOURCES / "RSS_feeds.txt"
 CHAINES_TWITCH = SOURCES / "Twitch_feeds.txt"
 REGLAGES_FLUX = SOURCES / "flux_corrige_main.txt"
+RESSOURCES = ROOT / "ressources"  # documents Markdown de la page Ressources (kioske/ressources.py)
 STATIC = ROOT / "static"  # favicon, icône, image de partage, polices : recopiés tels quels dans build/
 
 # Données (jamais publiées)
@@ -77,3 +78,18 @@ DELAI_ECHEC = entier("veille", "delai_nouvel_essai_heures") * 3600  # secondes
 
 GALERIE_PRINCIPALE = entier_opt("site", "galerie_principale", 1)
 GALERIE_PANNEAU = entier_opt("site", "galerie_panneau", 1)
+
+# Ordre des entrées du menu ≡ (section [menu], clé ordre) : voir kioske.cfg
+MENU_CLES = ["sobre", "flux", "installer", "ressources", "rss", "discord", "mastodon", "conduite"]
+
+
+def ordre_menu() -> list[str]:
+    demande = [c.strip() for c in CFG.get("menu", "ordre", fallback="").split(",") if c.strip()]
+    for cle in demande:
+        if cle not in MENU_CLES:
+            raise SystemExit(f"{CONFIG.name} : [menu] ordre : clé « {cle} » inconnue (attendues : {', '.join(MENU_CLES)})")
+    ordre = list(dict.fromkeys(demande))  # sans doublon, dans l'ordre demandé
+    return ordre + [cle for cle in MENU_CLES if cle not in ordre]
+
+
+ORDRE_MENU = ordre_menu()

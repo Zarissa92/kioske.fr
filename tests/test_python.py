@@ -54,8 +54,8 @@ class GalerieDesBlocs(unittest.TestCase):
 
     def test_limite_et_articles_sans_image(self):
         html = render_galerie_bloc("Médias", self.articles(40), {})
-        self.assertEqual(html.count('class="galerie-carte"'), NB_GALERIE_BLOC)
-        self.assertNotIn('src=""', html)   # les articles sans image sont sautés
+        self.assertEqual(html.count('<a href="'), NB_GALERIE_BLOC)   # une carte par article, avec ou sans image
+        self.assertNotIn('src=""', html)   # sans image : le titre, pas une image vide
 
     def test_texte_echappe(self):
         html = render_galerie_bloc('Médias & "tests"', self.articles(3), {})
@@ -68,9 +68,11 @@ class GalerieDesBlocs(unittest.TestCase):
         self.assertIn('class="galerie-arrow-left"', html)
         self.assertIn('class="galerie-arrow-right"', html)
 
-    def test_aucune_image_aucune_galerie(self):
+    def test_sans_image_le_titre_remplace_la_vignette(self):
         sans_image = [a for a in self.articles(20) if not a["image"]]
-        self.assertEqual(render_galerie_bloc("Médias", sans_image, {}), "")
+        html = render_galerie_bloc("Médias", sans_image, {})
+        self.assertIn("galerie-carte-sans-image", html)
+        self.assertNotIn("<img", html)
 
 
 class PageRemplaceeDe404(unittest.TestCase):
@@ -239,6 +241,158 @@ class ImagesDesSources(unittest.TestCase):
         html = image_avec_repli("https://exemple.test/a.jpg", "Titre", "A")
         self.assertIn('onerror="this.onerror=null;this.hidden=true;this.nextElementSibling.hidden=false"', html)
         self.assertIn('<span class="lettre" hidden>A</span>', html)
+
+
+class RessourcesDuDossier(unittest.TestCase):
+    """Page Ressources : lecture de ressources/ (catégories, sous-catégories, front matter) et rendu Markdown."""
+
+    def setUp(self):
+        import tempfile
+        self.tmp = tempfile.TemporaryDirectory()
+        self.racine = Path(self.tmp.name) / "ressources"
+        self.racine.mkdir()
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def ecrire(self, chemin, texte):
+        fichier = self.racine / chemin
+        fichier.parent.mkdir(parents=True, exist_ok=True)
+        fichier.write_text(texte, encoding="utf-8")
+
+    def test_front_matter(self):
+        from kioske.ressources import separer_front_matter
+        meta, corps = separer_front_matter('---\ntitre: "Bonjour"\nordre: 3\n---\n# Texte\n')
+        self.assertEqual(meta, {"titre": "Bonjour", "ordre": "3"})
+        self.assertEqual(corps, "# Texte\n")
+
+    def test_sans_front_matter_tout_est_corps(self):
+        from kioske.ressources import separer_front_matter
+        self.assertEqual(separer_front_matter("# Seul\n"), ({}, "# Seul\n"))
+
+    def test_arborescence_categories_sous_categories_et_ordre(self):
+        from kioske.ressources import charger_arbre
+        self.ecrire("Zeta/a.md", "# A\n")
+        self.ecrire("Alpha/sous/b.md", "---\ntitre: Bee\nordre: 2\n---\nTexte **gras**\n")
+        self.ecrire("Alpha/sous/c.md", "---\nordre: 1\n---\nTexte\n")
+        self.ecrire("Alpha/_dossier.md", "---\ntitre: Première\nordre: 1\n---\n")
+        arbre = charger_arbre(self.racine)
+        # Ordre demandé d'abord : « Alpha » (ordre 1) avant « Zeta » (sans ordre)
+        self.assertEqual([c["titre"] for c in arbre], ["Première", "Zeta"])
+        sous = arbre[0]["sous"][0]
+        self.assertEqual(sous["titre"], "sous")
+        self.assertEqual([e["titre"] for e in sous["entrees"]], ["c", "Bee"])
+        self.assertEqual(sous["entrees"][1]["chemin"], "alpha/sous/b")
+        self.assertIn("<strong>gras</strong>", sous["entrees"][1]["html"])
+
+    def test_fichiers_et_dossiers_caches_ignores(self):
+        from kioske.ressources import charger_arbre
+        self.ecrire("Cat/_brouillon.md", "# Non\n")
+        self.ecrire("Cat/.cache/x.md", "# Non\n")
+        self.ecrire("Cat/ok.md", "# Oui\n")
+        arbre = charger_arbre(self.racine)
+        self.assertEqual([e["titre"] for e in arbre[0]["entrees"]], ["ok"])
+
+    def test_dossier_trop_profond_ignore(self):
+        from kioske.ressources import charger_arbre
+        self.ecrire("Cat/Sous/Trop/profond.md", "# Non\n")
+        arbre = charger_arbre(self.racine)
+        self.assertEqual(arbre[0]["sous"][0]["entrees"], [])
+
+    def test_slugs_uniques_dans_un_dossier(self):
+        from kioske.ressources import charger_arbre
+        self.ecrire("Cat/Mon doc.md", "# A\n")
+        self.ecrire("Cat/mon-doc.md", "# B\n")
+        slugs = [e["slug"] for e in charger_arbre(self.racine)[0]["entrees"]]
+        self.assertEqual(len(set(slugs)), 2)
+
+    def test_saut_de_ligne_garde(self):
+        from kioske.ressources import charger_arbre
+        self.ecrire("Cat/saut.md", "Première ligne\nSeconde ligne\n")
+        html = charger_arbre(self.racine)[0]["entrees"][0]["html"]
+        self.assertIn("<br", html)
+
+    def test_racine_absente_donne_une_arborescence_vide(self):
+        from kioske.ressources import charger_arbre
+        self.assertEqual(charger_arbre(Path(self.tmp.name) / "absent"), [])
+
+    def test_pages_statiques_sommaire_et_retour(self):
+        from kioske.ressources import charger_arbre, page_document, page_index
+        self.ecrire("Cat/doc.md", "# A\n")
+        arbre = charger_arbre(self.racine)
+        index = page_index(arbre, 0, 0)
+        self.assertIn('href="/ressources/cat/doc/"', index)
+        self.assertNotIn("onclick=", index)
+        doc = page_document(arbre, arbre[0], None, arbre[0]["entrees"][0], 0, 0)
+        self.assertIn('aria-current="page"', doc)
+        self.assertIn("← Toutes les ressources", doc)
+
+    def test_code_de_conduite_statique(self):
+        from kioske.rendu import render_code_de_conduite
+        self.assertIn("<h1>Code de conduite</h1>", render_code_de_conduite(0, 0))
+
+
+class OrdreDuMenu(unittest.TestCase):
+    """Clé [menu] ordre de kioske.cfg : ordre demandé, clés absentes à la fin, refus des clés inconnues."""
+
+    def setUp(self):
+        import configparser
+        from kioske import config
+        self.config = config
+        self.sauve = config.CFG
+        self.cfg = configparser.ConfigParser()
+
+    def tearDown(self):
+        self.config.CFG = self.sauve
+
+    def ordre(self, valeur):
+        self.cfg.add_section("menu")
+        self.cfg.set("menu", "ordre", valeur)
+        self.config.CFG = self.cfg
+        return self.config.ordre_menu()
+
+    def test_ordre_demande_puis_absentes_a_la_fin(self):
+        self.assertEqual(self.ordre("conduite, ressources"),
+                         ["conduite", "ressources", "sobre", "flux", "installer", "rss", "discord", "mastodon"])
+
+    def test_doublons_ignores(self):
+        self.assertEqual(self.ordre("rss, rss, discord")[:3], ["rss", "discord", "sobre"])
+
+    def test_cle_inconnue_arrete_le_build(self):
+        with self.assertRaises(SystemExit) as erreur:
+            self.ordre("rss, inconnue")
+        self.assertIn("inconnue", str(erreur.exception))
+
+    def test_sans_section_ordre_par_defaut(self):
+        self.config.CFG = self.cfg
+        self.assertEqual(self.config.ordre_menu(), self.config.MENU_CLES)
+
+
+class GalerieDeBloc(unittest.TestCase):
+    """La galerie d'un bloc prend les articles les plus récents de la catégorie, toutes sources confondues."""
+
+    def test_plus_recent_d_abord(self):
+        from datetime import datetime, timezone
+        from kioske.rendu import render_galerie_bloc
+        ancien = {"link": "https://a.test/vieux", "title": "Vieux", "image": "https://a.test/v.jpg", "source": "A",
+                  "date": datetime(2020, 1, 1, tzinfo=timezone.utc)}
+        recent = {"link": "https://b.test/neuf", "title": "Neuf", "image": "https://b.test/n.jpg", "source": "B",
+                  "date": datetime(2026, 11, 1, tzinfo=timezone.utc)}
+        html = render_galerie_bloc("Divers", [ancien, recent], {})  # « ancien » vient en premier (source A)
+        self.assertLess(html.index("Neuf"), html.index("Vieux"))
+
+
+class GalerieSansImage(unittest.TestCase):
+    """Un article sans image garde sa place dans la galerie, avec son titre à la place de la vignette."""
+
+    def test_titre_sans_image(self):
+        from datetime import datetime, timezone
+        from kioske.rendu import render_galerie_bloc
+        sans = {"link": "https://a.test/texte", "title": "Article texte", "image": "", "source": "A",
+                "date": datetime(2026, 11, 2, tzinfo=timezone.utc)}
+        html = render_galerie_bloc("Divers", [sans], {})
+        self.assertIn("galerie-carte-sans-image", html)
+        self.assertIn('<span class="galerie-carte-texte">Article texte</span>', html)
 
 
 if __name__ == "__main__":
