@@ -59,7 +59,7 @@ L'image est une capture figée : l'animation se voit dans la page.
 | `bin/` | Points d'entrée : `build_site.py`, `publier_public.py`. Quelques lignes chacun. |
 | `deploy/` | Scripts du serveur : `kioske.sh` (point d'entrée), `installer_serveur.sh`, `deployer_nginx.sh`, `verifier_serveur.sh`, `lib_config.sh`, `systemd/`, `fail2ban/`. |
 | `data/` | `historique.db`, `cache/`, `build.lock` (locaux, jamais publiés). |
-| `build/` | **Le site généré**, complet : `index.html` (accueil), `rss.html` (découverte des flux RSS), `articles/{id}-{slug}/index.html` (une page par article), `categories/{slug}/index.html` (une page par catégorie), `articles-index.json` (index de tous les articles : recherche et favoris), `rss.xml` (flux général), `img/previews/` (cartes de partage ; les images des articles restent chez leur source), copie de `static/`, `robots.txt`, `sitemap.xml`. Hors git, jamais édité à la main, jamais envoyé au serveur. |
+| `build/` | **Le site généré**, complet : `index.html` (accueil), `rss.html` (découverte des flux RSS), `articles/{id}-{slug}/index.html` (une page par article), `categories/{slug}/index.html` (une page par catégorie), `articles-index.json` (index de tous les articles : recherche et favoris), `rss.xml` (flux général), `img/previews/` (cartes de partage ; les images des articles restent chez leur source), copie de `static/`, CSS des thèmes (copiés depuis `kioske/`), `robots.txt`, `sitemap.xml`. Hors git, jamais édité à la main, jamais envoyé au serveur. |
 | `requirements.txt` | Dépendances Python (`feedparser`, `yt-dlp`, `legacy-cgi`). |
 | `apercu/preview.svg` | Source de `static/preview.png` (image de partage social) : générer avec `rsvg-convert -w 1200 -h 630 apercu/preview.svg -o static/preview.png`. |
 | `docs/img/` | Captures de ce README. |
@@ -73,7 +73,7 @@ Le paquet `kioske/` :
 | `flux.py`, `twitch.py`, `apercus.py`, `reseau.py` | Récupération : flux RSS, vidéos Twitch (yt-dlp), aperçus Open Graph. |
 | `images.py` | Adresses des images (https, telles quelles), et téléchargement en mémoire pour composer les cartes de partage. |
 | `historique.py` | Base SQLite de tout ce qui a été récupéré. |
-| `themes.py`, `style.css`, `style_red_neon.css`, `oldstyle.css` | Thèmes et CSS. `themes.py` lit les thèmes de `kioske.cfg` et prépare ce que chaque page reprend (attributs de `<html>`, liste des thèmes pour `static/theme.js`, boutons de choix). Chaque thème peut avoir un CSS distinct (clé `css`). Le CSS du thème par défaut est injecté dans la page ; les CSS des autres thèmes sont servis depuis `static/` et chargés dynamiquement. |
+| `themes.py`, `style_<thème>.css` | Thèmes et CSS. `themes.py` lit les thèmes de `kioske.cfg` et prépare ce que chaque page reprend (attributs de `<html>`, liste des thèmes pour `static/theme.js`, boutons de choix). Chaque thème a son CSS (clé `css`, source dans `kioske/`). Le CSS du thème par défaut est injecté dans la page ; le build copie les autres dans `build/` (rien dans `static/`), où ils sont chargés dynamiquement. |
 | `style_favoris.css` | Halo et reflet des cartes de favoris (classe `carte-favori`) des vignettes de la grande galerie (section `galerie-principale`) et de la carte d'article ouverte (`.carte-ouverte .panel-article`). Fichier partagé : `rendu.py` l'ajoute à la page d'accueil seule, tous thèmes confondus. Couleurs prises dans les variables du thème ; animation coupée pour « réduire les animations », effets retirés en contraste renforcé. |
 | `rendu.py`, `rss.py`, `texte.py` | Contenu de la page d'accueil et de `rss.html` (étiquettes, galeries, données ; le squelette est dans `gabarits/`), flux RSS produits, outils de texte (slugs, IDs, échappement HTML). |
 | `ressources.py` | Page Ressources : lit `ressources/`, rend le Markdown (bibliothèque `markdown`), écrit `build/ressources/` : `index.html` (liste et sommaire) et une page par document. Le sommaire est du HTML rendu au build (`sommaire_html()`). |
@@ -390,7 +390,7 @@ Elle fonctionne par **liste blanche** : elle n'envoie que ce qui sert au déploi
 `kioske/`, `accueil/`, `sources/`, `static/`, `deploy/`, `kioske.cfg` et
 `requirements.txt`. Tout le reste est exclu, notamment `build/` (le site généré reste sur le serveur),
 `data/` (historique, caches, verrou), `tests/`, `docs/`, les venvs, `README.md`,
-`TODO.md`, `.git/`, `CLAUDE.md`. Avec `--delete`, les fichiers exclus côté serveur ne sont pas retirés.
+`TODO.md`, `.git/`, `CLAUDE.md`, `CHANGELOG.md`. Avec `--delete`, les fichiers exclus côté serveur ne sont pas retirés.
 Une copie de l'ancienne fonction reste dans `~/.config/fish/functions/kioske_update.fish.avant-liste-blanche`.
 
 **Sur le serveur**, en utilisateur normal (`meli`) :
@@ -507,13 +507,13 @@ application native, et fonctionne partiellement hors ligne.
 - `static/sw.js` : service worker pour le caching des assets statiques et la résilience hors ligne.
 - `static/icon-96.png`, `icon-128.png`, `icon-192.png`, `icon-256.png`, `icon-512.png` : icônes en 5 résolutions (générées depuis `apercu/preview.svg` avec `rsvg-convert`).
 
-**Service Worker** :
+**Service Worker** (`static/sw.js`, version `CACHE_VERSION` à incrémenter à la main après chaque modification ; le build ne la change plus) :
 - **Cache-first** : assets statiques (CSS, JS, fonts, icônes). Se chargent depuis le cache si disponibles.
 - **Network-first** : toutes les pages (accueil, `/articles/…/`, `/categories/…/`, `.html`), flux RSS, images. Vérifient le réseau d'abord, cache en fallback si hors ligne.
 - **Fallback hors ligne** : page d'accueil cachée si le réseau est indisponible et la page ne l'est pas.
 
 **Installation** :
-- **Bouton « ⬇ Installer l'app »** : présent dans l'ancien panneau d'infos (menu « + »), qui n'a plus de bouton d'ouverture depuis la barre du haut. Voir « Limites ».
+- **Bouton « ⬇ Installer l'app »** : dans le menu ≡ de la barre (id `btn-install-pwa-menu`, géré par `kioske/js/installation_pwa.js`). Le panneau d'infos a été supprimé.
 - **Via le navigateur** :
   - **Téléphone** (Chrome, Firefox, Edge) : visiter le site, puis « Installer » dans le menu du navigateur.
   - **Ordinateur** (Chrome, Edge) : visiter le site, cliquer sur l'icône « Installer » dans la barre d'adresse.

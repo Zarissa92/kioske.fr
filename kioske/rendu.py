@@ -225,7 +225,7 @@ def barre_et_panneaux(nb_articles: int, nb_sources: int, sur_accueil: bool = Fal
     elements = {
         "sobre": '<button type="button" class="menu-button" id="btn-sobre" aria-pressed="false">✨ Mode sobre : désactivé</button>',
         "flux": bouton_flux,
-        "installer": '<button type="button" class="menu-button" id="btn-install-pwa-settings">⬇ Installer l\'app</button>',
+        "installer": '<button type="button" class="menu-button" id="btn-install-pwa-menu">⬇ Installer l\'app</button>',
         "ressources": '<a class="menu-button" href="/ressources/">📚 Ressources</a>',
         "rss": f'<a class="menu-button" href="{esc(lien_rss)}">📡 Flux RSS</a>' if lien_rss else "",
         "discord": f'<a class="menu-button" href="{esc(lien_discord)}" target="_blank" rel="noopener noreferrer">💜 Discord</a>' if lien_discord else "",
@@ -235,7 +235,7 @@ def barre_et_panneaux(nb_articles: int, nb_sources: int, sur_accueil: bool = Fal
     menu = "\n          ".join(elements[cle] for cle in ORDRE_MENU if elements[cle])
     barre = remplir("partiels/barre_haut.html", domaine=DOMAINE, nb_articles=nb_articles, nb_sources=nb_sources,
                     choix_theme=CHOIX_THEME, elements_menu=menu)
-    panneaux = remplir("partiels/panneaux_communs.html", choix_theme=CHOIX_THEME)
+    panneaux = remplir("partiels/panneaux_communs.html")
     return barre, panneaux
 
 def render_page(items: list[dict], previews: dict[str, dict],

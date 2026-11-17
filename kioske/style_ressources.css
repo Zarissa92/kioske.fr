@@ -2,7 +2,6 @@
    Fichier partagé : themes.py le ajoute à l'accueil et à la page Ressources. Couleurs prises dans les
    variables du thème ; pas de police ici (elle vient du thème). */
 
-
 /* Les deux panneaux (sommaire, document) sont des cases de la grille : la largeur et les marges de
    « .panel » du thème (1100 px centrés au-dessus de 1024 px) les feraient se chevaucher. */
 .ressources-page > .panel {
@@ -165,3 +164,4 @@ body { min-height: 100vh; }
   .kioske-navbar .navbar-brand { font-size: 1.1rem; }
   .kioske-navbar .navbar-brand .flag { font-size: 1.3rem; }
 }
+

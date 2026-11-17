@@ -1,6 +1,6 @@
-// Gestion de l'installation PWA
+// Installation de l'app (PWA) par le bouton « Installer l'app » du menu ≡ (id btn-install-pwa-menu).
+// Le navigateur envoie beforeinstallprompt quand l'app est installable ; on garde l'événement pour le lancer au clic.
 let installPromptEvent = null;
-const btnInstallPWA = document.getElementById('btn-install-pwa');
 const btnInstallPWAMenu = document.getElementById('btn-install-pwa-menu');
 
 window.addEventListener('beforeinstallprompt', (e) => {
@@ -21,10 +21,6 @@ function creerHandlerInstall() {
     }
     installPromptEvent = null;
   };
-}
-
-if (btnInstallPWA) {
-  btnInstallPWA.addEventListener('click', creerHandlerInstall());
 }
 
 if (btnInstallPWAMenu) {

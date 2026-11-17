@@ -1,5 +1,5 @@
-/* Feuille de style du KiosKe : tout le CSS du site, inséré tel quel dans chaque page au build.
-   Les thèmes (fond, pluie, opacité du grand panneau) sont à la fin, section « Thèmes ». */
+/* Thème par défaut (kioske.cfg, [theme.default]). Son CSS est inséré dans chaque page au build ;
+   les autres thèmes ont leur fichier, chargé par static/theme.js. */
 /* Police uniforme du site : fichier local, servi depuis fonts/ (une copie à la racine publiée) */
 @font-face {
   font-family: "Russo One";
@@ -41,10 +41,8 @@ h1, h2, h3, .navbar-brand, .btn-favs, .btn-menu, .btn-settings, .menu-button, .n
   --neon-coeur: #7FE5FF;   /* bleu trans */
   --neon-halo: #FFD0DD;    /* rose trans */
 }
-
 * { margin: 0; padding: 0; box-sizing: border-box; }
 [hidden] { display: none !important; }
-
 html, body {
   background: linear-gradient(135deg, #000 0%, #342424 50%, #000 100%);
   background-attachment: fixed;
@@ -52,44 +50,6 @@ html, body {
   font-family: "Inter", system-ui, sans-serif;
   overflow-x: hidden;
   overflow-y: auto;
-}
-
-.recherche-globale .recherche {
-  display: flex;
-  width: min(100%, 400px);
-  margin: 0 auto;                /* centre le bloc, car le parent est en text-align: center */
-}
-
-.recherche-globale .recherche input {
-  flex: 1;
-  min-width: 0;                  /* empêche le champ de déborder sur petit écran */
-  padding: 0.5rem 0.75rem;
-  font: inherit;
-  color: inherit;
-  background: var(--bg);
-  border: 1px solid var(--color-text-accent);
-  border-right: none;
-  border-radius: 6px 0 0 6px;
-  outline: none;
-}
-
-.recherche-globale .recherche input:focus {
-  border-color: var(--color-text-main);      /* si la variable existe dans votre thème */
-}
-
-.recherche-globale .recherche button {
-  display: flex;
-  align-items: center;
-  padding: 0 0.75rem;
-  color: inherit;
-  background: var(--bg);
-  border: 1px solid var(--color-text-accent);
-  border-radius: 0 6px 6px 0;
-  cursor: pointer;
-}
-
-.recherche-globale .recherche button:hover {
-  background: var(--color-text-accent);
 }
 /* Navbar top sticky */
 .kioske-navbar {
@@ -156,7 +116,6 @@ html, body {
   cursor: pointer;
   transition: all 0.2s;
 }
-
 /* Loupe dessinée en CSS */
 .loupe {
   position: relative;
@@ -165,7 +124,6 @@ html, body {
   height: 14px;
   flex-shrink: 0;
 }
-
 /* Cercle de la loupe */
 .loupe::before {
   content: "";
@@ -178,7 +136,6 @@ html, body {
   border-radius: 50%;
   box-sizing: border-box;
 }
-
 /* Manche de la loupe */
 .loupe::after {
   content: "";
@@ -191,17 +148,14 @@ html, body {
   border-radius: 1px;
   transform: rotate(-45deg);
 }
-
 .navbar-search button:hover {
   color: var(--color-text-main);
   border-color: var(--color-text-main);
 }
-
 .navbar-search:focus-within button {
   border-color: var(--color-text-main);
   color: var(--color-text-main);
 }
-
 .navbar-controls {
   display: flex;
   align-items: center;
@@ -209,7 +163,6 @@ html, body {
   position: relative;
   justify-content: flex-start;
 }
-
 .navbar-button-group {
   position: relative;
 }
@@ -247,14 +200,12 @@ html, body {
   display: none;
   margin-top: 0.5rem;
 }
-
 .navbar-button-group .navbar-menu {
   right: 0;
 }
 .navbar-menu.open { display: block; }
 .navbar-menu-group {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  /*padding: 0.8rem 1rem;  -  modif du 13/10/2026 */
 }
 .navbar-menu-group:last-child { border-bottom: none; }
 .navbar-menu-title {
@@ -354,7 +305,6 @@ html, body {
   color: #000;
   border-color: var(--color-text-main);
 }
-
 .panel {
   position: relative;
   z-index: 1;
@@ -367,18 +317,6 @@ html, body {
   border-radius: var(--rayon-panneau);
   text-align: center;
 }
-.infos-container { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 100; }
-.infos-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .7); cursor: pointer; }
-.popover-infos { position: relative; z-index: 1; width: min(600px, calc(100vw - 2rem)); height: fit-content; max-height: calc(100vh - 2rem); overflow: auto; padding: 0; box-sizing: border-box; background: #0a0000; color: var(--color-light); border: 1px solid var(--color-text-main); border-radius: var(--rayon-panneau); }
-.infos-fermer { position: absolute; top: .5rem; right: .5rem; width: 2rem; height: 2rem; border: 1px solid var(--color-text-accent); background: #000; color: var(--color-text-main); font: inherit; font-size: 1.2rem; cursor: pointer; z-index: 300; }
-.infos-fermer:hover, .infos-fermer:focus-visible { background: var(--color-text-main); color: #000; outline: none; }
-.popover-contenu { padding: 2rem 1.5rem 1.5rem; }
-.popover-section { padding-bottom: 1.2rem; border-bottom: 1px solid var(--color-text-accent); }
-.popover-section:last-child { border-bottom: none; padding-bottom: 0; }
-/* Barre de recherche dans le popover */
-.popover-section .recherche { margin: 0 auto; }
-/* Thèmes dans le popover */
-.popover-section .choix-theme { margin-bottom: 0; }
 .kicker { font-size: 0.85rem; color: var(--color-light); opacity: 0.8; margin-bottom: 0.5rem; letter-spacing: 0.1em; }
 .choix-theme { display: flex; justify-content: center; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; margin-top: -3rem; }
 .choix-theme .theme-bouton { padding: .3rem .7rem; border: 1px solid var(--color-text-accent); color: var(--color-light); background: transparent; font: inherit; font-size: .8rem; cursor: pointer; }
@@ -392,7 +330,6 @@ h1 { font-size: clamp(1.8rem, 6vw, 2.8rem); line-height: 1.2; margin-bottom: 0.6
 .cursor { font-size: 1.8rem; line-height: 1; animation: blink 1s steps(1) infinite; }
 .drapeau { font-size: .5em; line-height: 1; }
 .sub { color: var(--color-light); margin-bottom: 0.3rem; }
-
 @keyframes blink { 50% { opacity: 0; } }
 @media (min-width: 1100px) {
   /* PC : la barre suit la largeur du panneau (mêmes bords) ; la recherche prend la place du milieu */
@@ -451,19 +388,16 @@ h1 { font-size: clamp(1.8rem, 6vw, 2.8rem); line-height: 1.2; margin-bottom: 0.6
   }
   .panel { padding: 2rem 1.2rem; }
 }
-
 /* sources : une case par source ; le clic ouvre ses articles dans un panneau (popover, sans JavaScript) */
 .cartes { position: relative; z-index: 1; max-width: 1200px; width: calc(100% - 32px); margin: 0 auto 1rem; }
 /* Les cartes remplissent leur colonne : leur taille se règle par le nombre de colonnes. */
 .grille { --colonnes: 8; display: grid; grid-template-columns: repeat(var(--colonnes), minmax(0, 1fr)); gap: 1rem; }
 @media (max-width: 960px) { .grille { --colonnes: 4; } }
 @media (max-width: 640px) { .grille { --colonnes: 2; gap: .6rem; } }
-
 .categorie-panneau h2 { font-size: clamp(1.1rem, 2.6vw, 1.5rem); text-transform: uppercase; color: #fff; margin: 0 2.4rem 1rem 0; }
 .categorie-fermer { position: absolute; z-index: 300; top: .5rem; right: .5rem; width: 2rem; height: 2rem; border: 1px solid var(--color-text-accent); background: #000; color: var(--color-text-main); font: inherit; font-size: 1.2rem; cursor: pointer; }
 .categorie-fermer:hover, .categorie-fermer:focus-visible { background: var(--color-text-main); color: #000; }
 .compte { font-weight: 400; opacity: .7; font-size: .8rem; }
-
 /* panneau d'un article : s'ouvre au clic sur la carte, dans la page, sans aller sur le site */
 button.carte { font: inherit; padding: 0; cursor: pointer; }
 /* conteneur pour le backdrop et le panneau */
@@ -514,7 +448,6 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .article-lien { display: block; padding: 0.4rem 0.8rem; color: var(--color-light); border: 1px solid var(--color-text-accent); text-decoration: none; overflow-wrap: anywhere; text-align: center; font-size: 0.8rem; }
 .article-lien:hover, .article-lien:focus-visible { background: var(--color-text-main); color: #000; outline: none; }
 .article-nav { flex: 0 0 auto; display: flex; gap: 0.4rem; justify-content: center; padding: 0.8rem; border-top: 1px solid var(--color-text-accent); }
-
 /* textes, marges et bouton des cartes : même format que les cartes ouvertes, miniaturisé.
    Aspect ratio 3/4, image 35%, contenu scrollable. */
 .carte {
@@ -556,7 +489,6 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   border: 1px solid var(--color-text-main); background: #000; color: var(--color-text-main); font-size: .6rem; transition: all .2s;
 }
 .carte:hover .carte-plus, .carte:focus-visible .carte-plus { background: var(--color-text-main); color: #000; }
-
 .mentions { position: relative; z-index: 0; max-width: 1200px; width: calc(100% - 32px); margin: 0 auto; font-size: .8rem; opacity: .85; text-align: center; pointer-events: auto; }
 .mentions a { color: var(--color-light); text-decoration: none; transition: all .2s; }
 .mentions a:hover, .mentions a:focus-visible { color: var(--color-text-main); text-decoration: underline; opacity: 1; outline: none; }
@@ -578,7 +510,6 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   .grille { --colonnes: 2; }
   .carte { width: 100%; }
   .carte-corps { padding: .3rem .3rem; }
-  /*.carte .meta, .carte .carte-extrait { display: none; }*/
   .carte:hover .meta, .carte:hover .carte-extrait { display: block; }
   .carte .carte-titre { font-size: .4rem; margin: 0; line-height: 1; }
   .carte-plus { width: 0.6rem; height: 0.6rem; font-size: 0.4rem; right: 0.15rem; bottom: 0.15rem; }
@@ -595,12 +526,10 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 /* marge à droite du titre : ancienne place de l'icône RSS, gardée pour ne pas changer la mise en page */
 .groupe { position: relative; }
 .groupe h2 { padding-right: 2rem; }
-
 /* ----- Effets néon légers sur les titres de panneaux ----- */
 .groupe h3.titre-panneau:hover { }
 .groupe { position: relative; }
 .groupe h2 { padding-right: 2rem; }
-
 /* Écrans larges (PC) : le panneau n'est plus une colonne de téléphone, et la veille tient sur deux colonnes. */
 @media (min-width: 900px) {
   .panel { max-width: 1000px; padding: 1.5rem 2rem; }
@@ -612,7 +541,6 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .nav-btn { padding: .5rem .8rem; border: 1px solid var(--color-text-accent); background: #000; color: var(--color-light); font: inherit; font-size: .9rem; cursor: pointer; transition: all .2s; }
 .nav-btn:hover, .nav-btn:focus-visible { background: var(--color-text-main); color: #000; border-color: var(--color-text-main); outline: none; }
 .nav-btn:disabled { opacity: .5; cursor: not-allowed; }
-
 /* Galerie horizontale des 10 derniers articles */
 .galerie { display: flex;  overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; scrollbar-width: thin; scrollbar-color: var(--color-text-accent) transparent; justify-content: flex-start; width: 100%; }
 .galerie::-webkit-scrollbar { height: 6px; }
@@ -622,11 +550,9 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .galerie-carte img { width: 100%; height: 100%; object-fit: cover; }
 .galerie-carte .lettre { font: 700 2rem "Courier New", monospace; color: #fff; }
 .galerie-carte:hover, .galerie-carte:focus-visible { border-color: var(--color-text-main); outline: none; }
-
 @media (min-width: 1100px) {
   .panel { width: min(1100px, calc((100vw - 2rem) / 1.25)); max-width: none; }
 }
-
 /* Bouton favori (cœur) dans la barre de navigation */
 .fav-heart { padding: 0.5rem 0.8rem; margin: 0 0.8rem; font-size: 1.4rem; line-height: 1; cursor: pointer; transition: all 0.2s; color: var(--neon-coeur); user-select: none; border: 2px solid #ffffff; background: #000; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; border-radius: 0.8rem; }
 .fav-heart:hover { transform: scale(1.15); color: var(--neon-coeur); border-color: #ffffff; outline: none; }
@@ -635,14 +561,6 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .share-btn { padding: 0.5rem 0.8rem; margin: 0 0.8rem; font-size: 1.4rem; line-height: 1; cursor: pointer; transition: all 0.2s; color: var(--neon-coeur); user-select: none; border: 2px solid #ffffff; background: #000; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; border-radius: 0.8rem; }
 .share-btn:hover { transform: scale(1.15); color: var(--color-text-main); border-color: var(--color-text-main); outline: none; }
 .share-btn:focus-visible { outline: 2px solid var(--color-text-main); outline-offset: 2px; }
-
-/* Bouton "Mes favoris" dans le popover */
-.btn-mes-favoris { display: block; width: 100%; padding: 0.7rem 0.8rem; border: 1px solid var(--color-text-accent); background: #000; color: var(--color-light); font: inherit; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; text-align: center; }
-.btn-mes-favoris:hover, .btn-mes-favoris:focus-visible { background: var(--color-text-main); color: #000; border-color: var(--color-text-main); outline: none; }
-
-.btn-install-pwa { display: block; width: 100%; padding: 0.7rem 0.8rem; border: 1px solid var(--color-text-accent); background: #000; color: var(--color-light); font: inherit; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; text-align: center; }
-.btn-install-pwa:hover, .btn-install-pwa:focus-visible { background: var(--color-text-main); color: #000; border-color: var(--color-text-main); outline: none; }
-
 /* Boutons de contrôle des favoris dans le panneau */
 .fav-controls { flex: 0 0 auto; padding: 1rem 0; border-top: 1px solid var(--color-text-accent); text-align: center; gap: 0.5rem; display: flex; flex-direction: column; }
 /* Favoris et résultats de recherche : la grille est directement dans le panneau, qui a une hauteur
@@ -660,7 +578,6 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .fav-export, .fav-import { display: block; padding: 0.6rem; border: 1px solid var(--color-text-accent); background: #000; color: var(--color-light); font: inherit; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; text-align: center; }
 .fav-export:hover, .fav-import:hover { background: var(--color-text-main); color: #000; border-color: var(--color-text-main); }
 #fav-file-input { display: none; }
-
 /* Conteneur défilant */
 
 .galerie-slider {
@@ -670,7 +587,6 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
     width: 100%;
     min-width: 0;
 }
-
 .galerie {
     display: flex;
     flex: 1;
@@ -682,11 +598,9 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
     overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;
 }
-
 .galerie::-webkit-scrollbar {
     display: none;
 }
-
 /* Cartes (version active) */
 .galerie-carte {
     position: relative;
@@ -707,7 +621,6 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
         box-shadow .35s ease,
         filter .35s ease;
 }
-
 .galerie-carte img {
     width: 100%;
     height: 100%;
@@ -717,18 +630,15 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 
     transition: transform .5s ease;
 }
-
-/*Grow au survol*/
+/* Galerie : agrandissement au survol */
 .galerie-carte:hover {
     transform: translateY(-7px) scale(1.07);
     z-index: 5;
     overflow: visible;
 }
-
 .galerie-carte:hover img {
     transform: scale(1.12);
 }
-
 .galerie-carte-wrapper {
     display: flex;
     flex-direction: column;
@@ -740,22 +650,6 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
     flex: 0 0 auto;
     border-radius: 0.8rem;
 }
-
-.galerie-carte-date {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 2;
-    padding: 4px 6px;
-    background: rgba(0, 0, 0, 0.75);
-    color: #fff;
-    font-size: 10px;
-    line-height: 1.3;
-    text-align: center;
-    font-family: inherit;
-}
-
 .galerie-carte-titre {
     position: absolute;
     bottom: 0;
@@ -770,15 +664,13 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
     text-align: center;
     font-family: inherit;
 }
-
-/* Responsive * SOPHIA*/
+/* Petits écrans : galerie plus petite */
 @media (max-width: 600px) {
     .galerie-carte {
         flex-basis: 91px;
         height: 121px;
     }
 }
-
 @media (prefers-reduced-motion: reduce) {
     .galerie {
         scroll-behavior: auto;
@@ -789,11 +681,9 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
         transition: none;
     }
 }
-
 /* ==========================================================================
-   Règles venues du code Python (kioske/rendu.py, kioske/rendu_statique.py).
-   Tout le CSS du site est dans ce fichier ; l'ordre des blocs ci-dessous est
-   celui dans lequel ils étaient ajoutés aux pages.
+   Règles qui étaient écrites dans le code Python (kioske/rendu.py, kioske/rendu_statique.py) : elles sont
+   ici avec le reste du CSS du thème.
    ========================================================================== */
 
 /* --- Éléments des panneaux créés par le script de l'accueil --- */
@@ -871,12 +761,6 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 /* « ✓ Copié ! » : bouton de copie du code de conduite, bouton de partage d'un article */
 .panneau-bouton.est-copie, .share-btn.est-copie { color: var(--neon-coeur); }
 .grille-vide { grid-column: 1 / -1; color: var(--neon-coeur); padding: 2rem; text-align: center; }
-/* bouton « + » d'une catégorie, sur l'accueil */
-.tag-categorie { margin-left: auto; padding: 0.2rem 0.5rem; font-size: 0.8rem; background: #000; border: 1px solid var(--color-text-main); color: var(--color-text-main); cursor: pointer; font-weight: normal; }
-/* barre de recherche des pages d'article et de catégorie */
-.recherche-form { display: flex; gap: 0.5rem; }
-.recherche-bouton { padding: 0.6rem 1rem; background: var(--color-text-accent); border: 1px solid var(--color-text-main); color: var(--color-text-main); cursor: pointer; border-radius: 0.8rem; }
-
 /* --- Flux personnalisé --- */
 .custom-flux-toggle-all {
   margin-bottom: 1rem;
@@ -884,11 +768,9 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   border-bottom: 1px solid var(--color-text-accent);
   text-align: center;
 }
-
 .custom-flux-toggle-all .panneau-bouton {
   min-width: 120px;
 }
-
 .custom-flux-category {
   margin-bottom: 1.2rem;
   padding: 0.8rem;
@@ -896,11 +778,9 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   border-radius: 0.4rem;
   background: rgba(255, 255, 255, 0.02);
 }
-
 .custom-flux-category:last-child {
   margin-bottom: 0;
 }
-
 .custom-flux-category-title {
   font-size: 0.85rem;
   text-transform: uppercase;
@@ -911,19 +791,16 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   padding-bottom: 0.4rem;
   border-bottom: 1px solid var(--color-text-accent);
 }
-
 .custom-flux-checkboxes-group {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.6rem;
 }
-
 @media (max-width: 600px) {
   .custom-flux-checkboxes-group {
     grid-template-columns: 1fr;
   }
 }
-
 .custom-flux-checkbox-label {
   display: flex;
   align-items: center;
@@ -934,11 +811,9 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   border-radius: 0.3rem;
   user-select: none;
 }
-
 .custom-flux-checkbox-label:hover {
   background: rgba(255, 255, 255, 0.08);
 }
-
 .custom-flux-checkbox {
   cursor: pointer;
   width: 16px;
@@ -946,13 +821,11 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   accent-color: var(--color-text-main);
   flex-shrink: 0;
 }
-
 .custom-flux-checkbox-label span {
   font-size: 0.8rem;
   color: var(--color-light);
   overflow-wrap: break-word;
 }
-
 #custom-flux-indicator {
   display: none;
   font-size: 0.75rem;
@@ -960,19 +833,9 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   margin-left: 0.5rem;
   white-space: nowrap;
 }
-
-/* --- Code de conduite (panneau de l'accueil) --- */
-.conduct-panneau h2 { font-size: clamp(1.1rem, 2.6vw, 1.3rem); color: #fff; margin: 0; padding: 0; }
-.conduct-panneau h3 { font-size: 1rem; color: #fff; margin: 1.2rem 0 0.4rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--color-text-accent); }
-.conduct-panneau p { margin: 0.5rem 0; line-height: 1.5; }
-.conduct-panneau ul { margin: 0.5rem 0 0.5rem 1.2rem; }
-.conduct-panneau li { margin-bottom: 0.3rem; }
-.conduct-panneau blockquote { margin: 0.5rem 0; padding: 0.6rem 0.9rem; border-left: 3px solid var(--color-text-main); background: rgba(255, 255, 255, .05); font-style: italic; }
-.conduct-panneau strong { color: #fff; }
-
 /* --- Page de catégorie --- */
 /* :where() limite ces règles à la page de catégorie sans leur ajouter de priorité */
-/* Cartes Pokemon : restaurer l'aspect */
+/* Cartes de la page de catégorie : format des cartes */
 .carte-lien {
   display: flex;
   flex-direction: column;
@@ -1011,7 +874,6 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   margin: 0 0 1rem 0;
   font-weight: bold;
 }
-
 /* --- Page des flux RSS --- */
 .rss-page { max-width: 560px; margin: 2rem auto; padding: 2rem; }
 .rss-page h2 { font-size: 1.8rem; margin-bottom: 1.5rem; }
@@ -1020,7 +882,6 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .rss-lien:hover { background: var(--color-text-main); color: #000; }
 .rss-lien svg { display: inline-block; width: 1.2rem; height: 1.2rem; margin-right: 0.5rem; vertical-align: middle; }
 .rss-principal { border: 2px solid var(--color-text-main); font-weight: bold; }
-
 /* --- Carte d'article ouverte : page d'article, et carte affichée par-dessus l'accueil ou une page de
    catégorie. Les règles internes sont limitées à .panel-article par :where(), qui n'ajoute aucune
    priorité : le rendu est le même des deux côtés. --- */
@@ -1046,7 +907,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   border-color: var(--color-text-main);
   outline: none;
 }
-/* Format Pokemon pour la carte d'article : responsive */
+/* Carte d'article ouverte : format responsive */
 .panel-article {
   /* Sur desktop : hauteur raisonnable */
   height: min(90vh, calc(100vw * 4 / 3 - 4rem));
@@ -1151,13 +1012,10 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   :where(.panel-article) .article-nav .fav-heart,
   :where(.panel-article) .article-nav .share-btn { margin: 0 .2rem; padding: .3rem .5rem; font-size: 1.1rem; }
 }
-
-
 /* Carte d'article ouverte en JavaScript par-dessus la page */
 .carte-ouverte { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; overflow: auto; }
 .carte-ouverte-fond { position: fixed; inset: 0; background: rgba(0, 0, 0, .7); cursor: pointer; }
 .carte-ouverte .panel-article { flex: 0 0 auto; background: #0a0000; }
-
 /* --- Propre à la page d'article (body de classe page-article) : la carte occupe toute la page sur petit écran --- */
 @media (max-width: 1024px) {
   :where(body.page-article) {
@@ -1171,7 +1029,6 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
     margin: 0 !important;
   }
 }
-
 /* ==========================================================================
    Thèmes. Un thème (kioske.cfg, [theme.<nom>]) = un fond, la pluie ou non, l'opacité du grand panneau.
    Le build pose le thème par défaut sur <html> : data-fond, data-pluie et --panneau-opacite.
@@ -1200,13 +1057,11 @@ html[data-fond="pluie"] {
   --r-moyen: #cccccc;
   --r-bas: #999999;
 }
-
 html[data-theme="white_neon"] #pluie i::before {
   background: linear-gradient(to top, var(--r-tete) 0%, var(--r-haut) 10%, var(--r-moyen) 40%, var(--r-bas) 70%, rgba(153, 153, 153, 0.3) 100%) !important;
   -webkit-background-clip: text !important;
   background-clip: text !important;
 }
-
 #pluie {
   display: none;
   position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;

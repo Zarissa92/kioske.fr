@@ -1,3 +1,7 @@
+// Script de l'accueil : menu ≡, panneaux d'articles (source, catégorie, recherche, favoris), barre de
+// recherche et adresse des panneaux (#source=…, #cat=…, &p=…). Les favoris (lecture, sauvegarde, cœur)
+// sont dans favoris.js ; la carte d'article ouverte, dans carte_ouverte.js.
+// Popover ouvert (un seul à la fois), ou null.
 let openPopover = null;
 // Nombre d'images dans la galerie d'un panneau de catégorie
 const NB_GALERIE_CATEGORIE = 12;
@@ -90,7 +94,7 @@ if (menuNavbar && btnMenuNavbar) {
   menuNavbar.querySelectorAll('.menu-button').forEach(b => b.addEventListener('click', () => fermerMenuNavbar()));
 }
 
-// Bouton Personnaliser flux dans le menu paramètres
+// Bouton « Personnaliser flux » du menu ≡
 const btnCustomFluxNavbar = document.getElementById('btn-custom-flux-navbar');
 if (btnCustomFluxNavbar) {
   btnCustomFluxNavbar.addEventListener('click', () => {
@@ -99,25 +103,6 @@ if (btnCustomFluxNavbar) {
   });
 }
 
-// Bouton Installer l'app dans le menu paramètres
-const btnInstallPwaSettings = document.getElementById('btn-install-pwa-settings');
-if (btnInstallPwaSettings) {
-  btnInstallPwaSettings.addEventListener('click', () => {
-    const evt = new Event('click');
-    const btnInstallPwa = document.getElementById('btn-install-pwa');
-    if (btnInstallPwa) btnInstallPwa.dispatchEvent(evt);
-  });
-}
-
-// Fermeture du conteneur d'infos
-document.querySelectorAll('[data-close-infos]').forEach(elem => {
-  elem.addEventListener('click', (e) => {
-    const container = document.getElementById('bloc-infos-container');
-    if (container) {
-      container.hidden = true;
-    }
-  });
-});
 // Panneau des favoris, déjà dans la page : son bouton × et son fond sombre. Les autres panneaux,
 // créés par le script, branchent les leurs à la création.
 document.querySelector('#favoris .categorie-fermer')?.addEventListener('click', () => closePopover());
@@ -207,7 +192,6 @@ function creerPanneauArticles({ id, titre: texteTitre, cle, articles, ancre, gal
 
   const backdrop = document.createElement('div');
   backdrop.className = 'categorie-backdrop';
-  backdrop.setAttribute('data-close-source', cle);
   backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closePopover(); });
 
   const panneau = document.createElement('div');
@@ -368,7 +352,6 @@ function createSearchResultsPanel() {
   container.hidden = true;
   const backdrop = document.createElement('div');
   backdrop.className = 'categorie-backdrop';
-  backdrop.setAttribute('data-close-source', 'search-results');
   backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closePopover(); });
   const panneau = document.createElement('div');
   panneau.id = 'search-results-panneau';
@@ -403,9 +386,6 @@ document.querySelectorAll('.nuage .tag').forEach(tag => {
       createSourcePanel(sourceKey, sourceName);
       const sourceId = idPanneau('source-', sourceKey);
       showPopover(sourceId);
-      // Fermer le menu +
-      const infosContainer = document.getElementById('bloc-infos-container');
-      if (infosContainer) infosContainer.hidden = true;
     }
   });
 });
@@ -426,55 +406,52 @@ document.querySelectorAll('.titre-panneau').forEach(titre => {
 // Barre de recherche
 const rechercheInput = document.getElementById('recherche');
 function lancerRecherche(texte) {
-    const query = (texte || '').toLowerCase().trim();
-    if (!query) return;
+  const query = (texte || '').toLowerCase().trim();
+  if (!query) return;
 
-    // Créer le panneau s'il n'existe pas
-    createSearchResultsPanel();
+  // Créer le panneau s'il n'existe pas
+  createSearchResultsPanel();
 
-    // Charger l'index JSON et filtrer les articles
-    fetch('/articles-index.json')
-      .then(response => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return response.json();
-      })
-      .then(articles => {
-        const resultGrid = document.getElementById('search-results-grille');
-        if (!resultGrid) {
-          console.error('Grille de résultats non trouvée');
-          return;
-        }
-        resultGrid.replaceChildren();
+  // Charger l'index JSON et filtrer les articles
+  fetch('/articles-index.json')
+    .then(response => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    })
+    .then(articles => {
+      const resultGrid = document.getElementById('search-results-grille');
+      if (!resultGrid) {
+        console.error('Grille de résultats non trouvée');
+        return;
+      }
+      resultGrid.replaceChildren();
 
-        // Filtrer les articles par query (tous les termes)
-        const terms = query.split(/\s+/).filter(t => t.length > 0);
-        const results = articles.filter(article => {
-          const searchText = (article.title + ' ' + article.summary + ' ' + article.source).toLowerCase();
-          return terms.every(term => searchText.includes(term));
-        });
-
-        // Créer les cartes au format Pokémon
-        results.forEach(article => {
-          resultGrid.appendChild(carteArticle(article, article.url));
-        });
-
-        if (results.length > 0) {
-          const compte = document.querySelector('#search-results-panneau h2 .compte');
-          if (compte) {
-            compte.textContent = `(${results.length})`;
-          }
-          showPopover('search-results');
-          // Fermer le menu +
-          const infosContainer = document.getElementById('bloc-infos-container');
-          if (infosContainer) infosContainer.hidden = true;
-        } else {
-          alert('Aucun résultat trouvé pour: ' + query);
-        }
-      })
-      .catch(err => {
-        console.error('Erreur lors du chargement de l\'index:', err);
-        alert('Erreur lors de la recherche. Vérifiez votre connexion.');
+      // Filtrer les articles par query (tous les termes)
+      const terms = query.split(/\s+/).filter(t => t.length > 0);
+      const results = articles.filter(article => {
+        const searchText = (article.title + ' ' + article.summary + ' ' + article.source).toLowerCase();
+        return terms.every(term => searchText.includes(term));
       });
+
+      // Une carte par résultat
+      results.forEach(article => {
+        resultGrid.appendChild(carteArticle(article, article.url));
+      });
+
+      if (results.length > 0) {
+        const compte = document.querySelector('#search-results-panneau h2 .compte');
+        if (compte) {
+          compte.textContent = `(${results.length})`;
+        }
+        showPopover('search-results');
+      } else {
+        alert('Aucun résultat trouvé pour: ' + query);
+      }
+    })
+    .catch(err => {
+      console.error('Erreur lors du chargement de l\'index:', err);
+      alert('Erreur lors de la recherche. Vérifiez votre connexion.');
+    });
 }
 if (rechercheInput) {
   rechercheInput.addEventListener('keydown', (e) => {
@@ -535,8 +512,6 @@ function adresseSure(adresse, defaut = '#') {
 function openFavoritesPanel() {
   // Fermer le menu navbar quand on ouvre le panneau des favoris
   fermerMenuNavbar();
-
-  document.getElementById('bloc-infos-container').hidden = true;
 
   afficherFavoris(getFavorites());
   showPopover('favoris');
@@ -646,15 +621,11 @@ function clearFavorites() {
 // Boutons
 document.getElementById('fav-export-btn')?.addEventListener('click', exportFavorites);
 document.getElementById('fav-file-input')?.addEventListener('change', importFavorites);
-// Boutons de la page : ♡ de la barre et « Mes favoris » ouvrent le panneau, « Charger des favoris »
-// ouvre le choix de fichier
+// ♡ de la barre ouvre le panneau des favoris ; « Charger des favoris » ouvre le choix de fichier.
 // button.btn-favs : les liens qui ont la même classe (📚 Ressources) ne sont pas des boutons de favoris
-document.querySelectorAll('button.btn-favs, .btn-mes-favoris').forEach(b => b.addEventListener('click', () => openFavoritesPanel()));
+document.querySelectorAll('button.btn-favs').forEach(b => b.addEventListener('click', () => openFavoritesPanel()));
 document.getElementById('fav-import-btn')?.addEventListener('click', () => document.getElementById('fav-file-input').click());
 document.getElementById('fav-clear-btn')?.addEventListener('click', clearFavorites);
-
-
-// Gestionnaire pour le bouton "Code de conduite"
 
 // Gestionnaire pour les sous-menus déroulants : fermer les autres quand on en ouvre un
 document.querySelectorAll('.submenu-toggle').forEach(btn => {

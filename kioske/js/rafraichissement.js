@@ -1,5 +1,5 @@
 // Actualisation automatique de l'accueil : quand une nouvelle version est publiée, la page se recharge toute seule
-// si rien n'est ouvert (panneau, carte d'article, menu d'infos). Sinon une bannière propose de l'actualiser, et la
+// si rien n'est ouvert (panneau ou carte d'article). Sinon une bannière propose de l'actualiser, et la
 // page se rechargera à la vérification suivante, dès que tout est refermé. Une requête HEAD suffit (pas de contenu).
 const ACTU_INTERVALLE = 5 * 60 * 1000;   // ms entre deux vérifications
 let versionAffichee = null;              // Last-Modified de la page chargée (référence)
@@ -11,8 +11,7 @@ function rechargerPage() {
 function quelqueChoseOuvert() {
   const panneau = [...document.querySelectorAll('.categorie-container')].some(c => !c.hidden);
   const carte = document.querySelector('.carte-ouverte');
-  const infos = document.getElementById('bloc-infos-container');
-  return panneau || (!!carte && !carte.hidden) || (!!infos && !infos.hidden);
+  return panneau || (!!carte && !carte.hidden);
 }
 
 function afficherBandeauNouveautes() {

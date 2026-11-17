@@ -84,7 +84,7 @@ def ecrire_si_change(cible: Path, texte: str) -> None:
 
 
 def copier_css_themes() -> None:
-    """Copie les CSS des thèmes de kioske/ vers static/."""
+    """Copie les CSS des thèmes de kioske/ directement dans build/ (pas de copie tenue dans static/)."""
     from .themes import charger_themes
 
     try:
@@ -95,7 +95,7 @@ def copier_css_themes() -> None:
                 css_file = css_file.lstrip("/")
                 source = PAQUET / css_file
                 if source.exists():
-                    cible = STATIC / css_file
+                    cible = BUILD / css_file
                     copier_si_change(source, cible)
     except SystemExit:
         pass  # kioske.cfg vide ou incohérent, thèmes non disponibles

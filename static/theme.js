@@ -2,7 +2,7 @@
 // Les thèmes viennent de kioske.cfg ; le build les écrit dans la page (<script id="kioske-themes">) et
 // pose le thème par défaut sur <html>. Ce script applique le thème choisi par le visiteur (gardé dans
 // localStorage) et fabrique la pluie. Chargé dans <head>, avant l'affichage : pas de changement visible
-// de thème au chargement. Les règles CSS sont dans kioske/style.css (section « Thèmes »).
+// de thème au chargement. Le CSS de chaque thème est dans kioske/style_<thème>.css.
 //
 // La pluie n'est jamais écrite dans le HTML : ses caractères sont dans un attribut (data-g) et affichés
 // par CSS (::before). Les navigateurs n'y voient donc pas de texte, et ne prennent plus la page pour du
@@ -76,13 +76,16 @@
     });
   }
 
+  // Feuille du thème choisi. Le thème par défaut est déjà dans la page (CSS inline) : sa feuille est
+  // retirée, et les autres sont ajoutées par-dessus.
   function chargerCss(id) {
-    // Charger le CSS du thème selon les données JSON
     const theme = themes.find(t => t.id === id);
-    if (!theme || !theme.css) return; // Pas de CSS personnalisé pour ce thème
-
-    // Remplacer la balise <link> existante ou en créer une
+    if (!theme) return;
     let lien = document.getElementById('theme-css-link');
+    if (id === defaut || !theme.css) {
+      if (lien) lien.remove();
+      return;
+    }
     if (!lien) {
       lien = document.createElement('link');
       lien.id = 'theme-css-link';
@@ -124,7 +127,7 @@
       });
     });
 
-    // Bouton « Mode sobre » du menu ⚙️ (accueil seulement) : l'effet vaut pour toutes les pages
+    // Bouton « Mode sobre » du menu ≡ (accueil seulement) : l'effet vaut pour toutes les pages
     const boutonSobre = document.getElementById('btn-sobre');
     if (boutonSobre) {
       const majSobre = () => {

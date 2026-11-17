@@ -26,28 +26,6 @@ OBLIGATOIRES = [NOM_PAGE, "favicon.svg", "preview.png", "apple-touch-icon.png", 
 DOSSIERS_PURGES = [DOSSIER_IMAGES, DOSSIER_RSS_CATEGORIES]
 
 
-def incrementer_service_worker() -> str | None:
-    """Incrémente CACHE_VERSION dans build/sw.js (v1 → v2, etc.). Retourne la nouvelle version."""
-    import re
-    sw_path = BUILD / "sw.js"
-    if not sw_path.exists():
-        return None
-
-    content = sw_path.read_text(encoding="utf-8")
-
-    # Chercher 'kioske-v<number>' et incrémenter
-    match = re.search(r"'kioske-v(\d+)'", content)
-    if match:
-        old_version = int(match.group(1))
-        new_version = old_version + 1
-        old_line = f"'kioske-v{old_version}'"
-        new_line = f"'kioske-v{new_version}'"
-        content = content.replace(old_line, new_line)
-        sw_path.write_text(content, encoding="utf-8")
-        return f"v{new_version}"
-    return None
-
-
 def publier(public: Path) -> None:
     page = BUILD / NOM_PAGE
     for nom in OBLIGATOIRES:
@@ -82,17 +60,13 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     debut = datetime.now(timezone.utc)
-    sw_version = None
     with verrou():  # le build et la copie forment un tout : pas de build concurrent entre les deux
         if not args.sans_build:
             construire(analyser_arguments(["--simple"] if args.simple else []))
-            sw_version = incrementer_service_worker()
         publier(args.public)
     fin = datetime.now(timezone.utc)
     duree = fin - debut
     print("="*60)
-    if sw_version:
-        print(f"Service Worker : {sw_version}")
     print(f"Heure de fin : {fin.strftime('%d/%m/%Y %H:%M:%S')}")
     print(f"Durée totale : {duree.total_seconds():.1f}s")
     print("="*60 + "\n")

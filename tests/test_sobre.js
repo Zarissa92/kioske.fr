@@ -1,4 +1,4 @@
-// Mode sobre : bouton du menu ⚙️, pluie retirée, feuille style_sobre.css ajoutée et retirée, mémorisé.
+// Mode sobre : bouton du menu ≡, pluie retirée, feuille style_sobre.css ajoutée et retirée, mémorisé.
 const { attendre, charger, clic, suite } = require('./outils');
 
 (async () => {
