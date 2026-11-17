@@ -4,12 +4,13 @@ Le squelette des pages est dans kioske/gabarits/ (accueil.html, rss.html), le CS
 et le JavaScript dans kioske/js/. Ce module fabrique les morceaux qui dépendent des articles."""
 from __future__ import annotations
 
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
-from .config import DOMAINE, DOSSIER_RSS_CATEGORIES, GALERIE_PANNEAU, NOM_SITE, ORDRE_MENU, URL_SITE, CFG
+from .config import DOMAINE, DOSSIER_RSS_CATEGORIES, GALERIE_PANNEAU, NOM_SITE, ORDRE_MENU, ORDRE_PANNEAUX, URL_SITE, CFG
 from .gabarits import remplir
 from .javascript import (JS_ACCUEIL, JS_CARTE_OUVERTE, JS_DONNEES_ACCUEIL, JS_FAVORIS, JS_FLUX_PERSONNALISE,
                          JS_GALERIE, JS_INSTALLATION_PWA, JS_NOTIFICATIONS, JS_RAFRAICHISSEMENT, JS_PAGE_RSS, JS_PARTAGE, JS_RETOUR_APP,
@@ -40,6 +41,16 @@ ICONE_RSS = (
 
 # Nombre d'images dans la galerie de chaque bloc de catégorie de l'accueil
 NB_GALERIE_BLOC = 12
+
+
+def ordre_des_panneaux(noms: list[str], demande: list[str]) -> list[str]:
+    """Panneaux demandés d'abord, dans leur ordre ; les autres gardent leur ordre, à la suite.
+    Un nom demandé mais absent des sources est signalé (et ignoré)."""
+    for nom in demande:
+        if nom not in noms:
+            print(f"kioske : [panneaux] ordre : « {nom} » ne correspond à aucun panneau (ignoré)", file=sys.stderr)
+    rang = {nom: i for i, nom in enumerate(demande)}
+    return sorted(noms, key=lambda nom: rang.get(nom, len(rang)))  # tri stable
 
 
 def render_galerie_bloc(categorie: str, items: list[dict], previews: dict[str, dict]) -> str:
@@ -270,7 +281,8 @@ def render_page(items: list[dict], previews: dict[str, dict],
     ordre_categories = ordre_des_categories(items, categories)
     slugs = slugs_categories(ordre_categories)
 
-    # Créer les blocs : pour chaque panneau, afficher ses catégories
+    # Créer les blocs : pour chaque panneau, afficher ses catégories (ordre : [panneaux] ordre de kioske.cfg)
+    par_panneau = {nom: par_panneau[nom] for nom in ordre_des_panneaux(list(par_panneau), ORDRE_PANNEAUX)}
     blocs = ""
     for panneau_nom in par_panneau:
         categories_panneau = par_panneau[panneau_nom]
@@ -450,6 +462,7 @@ def render_page(items: list[dict], previews: dict[str, dict],
         url_site=URL_SITE,
         nom_site=esc(NOM_SITE),
         domaine=DOMAINE,
+        date_maj=datetime.now(ZoneInfo("Europe/Paris")).strftime("%d/%m/%Y"),
         liens_rss=liens_rss,
         css=CSS + "\n" + CSS_FAVORIS + "\n" + CSS_RESSOURCES,
         script_theme=SCRIPT_THEME,

@@ -93,3 +93,12 @@ def ordre_menu() -> list[str]:
 
 
 ORDRE_MENU = ordre_menu()
+
+
+def ordre_panneaux() -> list[str]:
+    """Noms de panneaux demandés dans [panneaux] ordre (sans doublon). Vide = ordre par défaut."""
+    demande = [p.strip() for p in CFG.get("panneaux", "ordre", fallback="").split(",") if p.strip()]
+    return list(dict.fromkeys(demande))
+
+
+ORDRE_PANNEAUX = ordre_panneaux()

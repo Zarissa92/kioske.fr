@@ -368,6 +368,51 @@ class OrdreDuMenu(unittest.TestCase):
         self.assertEqual(self.config.ordre_menu(), self.config.MENU_CLES)
 
 
+class OrdreDesPanneaux(unittest.TestCase):
+    """[panneaux] ordre : les panneaux cités passent en tête, les autres gardent leur ordre."""
+
+    def setUp(self):
+        import configparser
+        from kioske import config, rendu
+        self.config, self.rendu = config, rendu
+        self.sauve = config.CFG
+        self.cfg = configparser.ConfigParser()
+
+    def tearDown(self):
+        self.config.CFG = self.sauve
+
+    def ordre(self, valeur):
+        self.cfg.add_section("panneaux")
+        self.cfg.set("panneaux", "ordre", valeur)
+        self.config.CFG = self.cfg
+        return self.config.ordre_panneaux()
+
+    def test_lecture_de_la_clef(self):
+        self.assertEqual(self.ordre("LGBT, Médias, LGBT"), ["LGBT", "Médias"])
+
+    def test_vide_donne_liste_vide(self):
+        self.assertEqual(self.ordre(""), [])
+
+    def test_sans_section_donne_liste_vide(self):
+        self.config.CFG = self.cfg
+        self.assertEqual(self.config.ordre_panneaux(), [])
+
+    def test_demande_en_tete_puis_les_autres_dans_leur_ordre(self):
+        noms = ["Actu", "Médias", "LGBT", "Vidéo"]
+        self.assertEqual(self.rendu.ordre_des_panneaux(noms, ["LGBT", "Médias"]),
+                         ["LGBT", "Médias", "Actu", "Vidéo"])
+
+    def test_nom_inconnu_ignore(self):
+        noms = ["Actu", "LGBT"]
+        self.assertEqual(self.rendu.ordre_des_panneaux(noms, ["Inconnu", "LGBT"]), ["LGBT", "Actu"])
+
+    def test_sans_demande_ordre_inchange(self):
+        noms = ["Vidéo", "Actu", ""]
+        self.assertEqual(self.rendu.ordre_des_panneaux(noms, []), noms)
+
+
+
+
 class GalerieDeBloc(unittest.TestCase):
     """La galerie d'un bloc prend les articles les plus récents de la catégorie, toutes sources confondues."""
 

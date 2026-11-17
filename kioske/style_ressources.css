@@ -75,7 +75,7 @@ body { min-height: 100vh; }
 
 /* Sur petit écran, le bouton Menu est souvent près du bord gauche (barre sur deux lignes) : ancré à droite de
    son bouton, le menu sortait de l'écran à gauche. Il part alors du bord de la barre du haut, sur la largeur de l'écran. */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .kioske-navbar .navbar-button-group, .kioske-navbar .navbar-controls { position: static; }  /* le menu se place par rapport à la barre entière */
   .kioske-navbar .navbar-button-group .navbar-menu {
     left: 0.5rem;
