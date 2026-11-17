@@ -15,12 +15,20 @@ et documentation.
 
 Projet autonome depuis le 2026-11-11, réorganisé depuis : code dans le paquet `kioske/`, site généré dans `build/`, réglages dans `kioske.cfg`. Voir l'historique git pour les modifications détaillées.
 
-<p align="center"><img src="docs/img/kioske-accueil.png" width="640" alt="Page d'accueil : choix du thème, titre, et étiquettes des sources rangées par catégorie"></p>
+<p align="center"><img src="docs/img/kioske-accueil.png" width="640" alt="Page d'accueil, thème par défaut : titre, recherche, et étiquettes des sources rangées par catégorie"></p>
+
+Le menu ≡ regroupe les thèmes, le mode sobre, la personnalisation des flux, l'installation, les ressources et les réseaux.
+
+<p align="center"><img src="docs/img/kioske-menu.png" width="640" alt="Menu ≡ ouvert : thèmes, mode sobre, personnaliser flux, installer l'app, ressources, flux RSS, Discord, Mastodon, code de conduite"></p>
 
 Cliquer sur une étiquette ouvre le panneau de la source, avec une carte par article. Cliquer sur une
 carte ouvre l'article par-dessus la page, au format « carte à jouer » (texte du flux, lien vers l'original).
 
 <p align="center"><img src="docs/img/kioske-cartes.png" width="640" alt="Fenêtre d'une source : une carte par article, avec image, date, titre et extrait"></p>
+
+Sur téléphone, la mise en page s'adapte, et chaque thème a ses couleurs (ici le thème violet).
+
+<p align="center"><img src="docs/img/kioske-theme-violet-telephone.png" width="300" alt="Accueil sur téléphone, thème violet"></p>
 
 ### Aperçu : effet shiny
 
