@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Déploie la configuration nginx SUR LE SERVEUR (Debian 13) sans modifier les certificats.
-# À lancer en utilisateur normal (meli). Demande sudo pour nginx.
+# À lancer en utilisateur normal (<utilisateur>). Demande sudo pour nginx.
 #
 # Copie deploy/kioske-nginx.conf dans /etc/nginx/sites-available/kioske.fr,
 # teste la configuration avec nginx -t, et recharge nginx.
@@ -21,7 +21,7 @@ avert()   { printf '\033[1;33m[attention]\033[0m %s\n' "$*"; }
 erreur()  { printf '\033[1;31m[erreur]\033[0m %s\n' "$*" >&2; exit 1; }
 
 if [[ "$EUID" -eq 0 && -z "${SUDO_USER:-}" ]]; then
-    erreur "Lance ce script en utilisateur normal (meli), pas en root : il utilise sudo."
+    erreur "Lance ce script en utilisateur normal (<utilisateur>), pas en root : il utilise sudo."
 fi
 
 [[ -f "$CONF_SRC" ]] || erreur "Fichier de configuration absent : $CONF_SRC"

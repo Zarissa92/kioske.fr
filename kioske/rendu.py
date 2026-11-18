@@ -232,11 +232,15 @@ def barre_et_panneaux(nb_articles: int, nb_sources: int, sur_accueil: bool = Fal
         "mastodon": f'<a class="menu-button" href="{esc(lien_mastodon)}" target="_blank" rel="noopener noreferrer">🦣 Mastodon</a>' if lien_mastodon else "",
         "conduite": '<a class="menu-button" href="/code-de-conduite.html">📖 Code de conduite</a>',
     }
-    menu = "\n          ".join(elements[cle] for cle in ORDRE_MENU if elements[cle])
+    menu = "\n          ".join(elements[cle] for cle in ORDRE_MENU if cle not in HORS_MENU and elements[cle])
     barre = remplir("partiels/barre_haut.html", domaine=DOMAINE, nb_articles=nb_articles, nb_sources=nb_sources,
                     choix_theme=CHOIX_THEME, elements_menu=menu)
     panneaux = remplir("partiels/panneaux_communs.html")
     return barre, panneaux
+
+# Sorties du menu ⚙️ : Ressources a son bouton « + » ; Discord, Mastodon et le code de conduite sont dans la page Ressources.
+HORS_MENU = {"ressources", "discord", "mastodon", "conduite"}
+
 
 def render_page(items: list[dict], previews: dict[str, dict],
                 categories: dict[str, str] | None = None,

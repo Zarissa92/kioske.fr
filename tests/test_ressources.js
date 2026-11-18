@@ -25,8 +25,8 @@ const { attendre, charger, suite } = require('./outils');
       t.verif('document : titre dans le contenu', !!doc.d.querySelector('main h1'));
       t.verif('document : document actif marqué dans le sommaire',
         !!doc.d.querySelector('.ressources-sommaire a[aria-current="page"][href="' + chemin + '"]'));
-      t.verif('document : lien « Toutes les ressources » dans le contenu',
-        !!doc.d.querySelector('main a.ressources-retour[href="/ressources/"]'));
+      t.verif('document : aucun lien « Toutes les ressources »',
+        !doc.d.querySelector('main a[href="/ressources/"]'));
       t.verif('document : aucune erreur JavaScript', doc.erreurs.length === 0, doc.erreurs.join(' | '));
       doc.w.close();
     }
@@ -46,8 +46,8 @@ const { attendre, charger, suite } = require('./outils');
   {
     const { w, d } = charger('index.html', '/');
     await attendre(60);
-    t.verif('menu : lien vers les ressources', !!d.querySelector('#navbar-menu a[href="/ressources/"]'));
-    t.verif('menu : lien vers le code de conduite', !!d.querySelector('#navbar-menu a[href="/code-de-conduite.html"]'));
+    t.verif('barre : bouton + vers les ressources', !!d.querySelector('.kioske-navbar a.btn-settings[href="/ressources/"]'));
+    t.verif('menu ⚙️ : pas de lien vers le code de conduite', !d.querySelector('#navbar-menu a[href="/code-de-conduite.html"]'));
     w.close();
   }
 

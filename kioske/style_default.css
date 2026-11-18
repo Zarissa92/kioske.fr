@@ -104,6 +104,7 @@ html, body {
   align-items: center;
   gap: 1.5rem;
 }
+.navbar-marque { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
 .navbar-brand {
   display: flex;
   align-items: center;
@@ -217,6 +218,8 @@ html, body {
   border-radius: 2px;
   white-space: nowrap;
 }
+/* Bouton ♡ (favoris) : violet, bordure néon légère */
+.btn-favs { color: #c084fc; border-color: #c084fc; box-shadow: 0 0 2px #c084fc, 0 0 6px rgba(192, 132, 252, 0.35), inset 0 0 3px rgba(192, 132, 252, 0.25); }
 .btn-favs:hover, .btn-favs:focus-visible, .btn-menu:hover, .btn-menu:focus-visible, .btn-settings:hover, .btn-settings:focus-visible {
   background: var(--color-text-main);
   color: #000;
@@ -226,8 +229,15 @@ html, body {
   font-size: 0.9rem;
   padding: 0.5rem 1rem;
 }
-.btn-notifications { font-size: 1.2rem; }
+/* Les cinq boutons de la barre (♡, 🔔, ➕, ⚙️, 🏠) ont la même taille */
+.btn-favs, .btn-menu, .btn-settings, .btn-plus, .btn-home {
+  box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;
+  width: 2.6rem; height: 2.6rem; padding: 0; font-size: 1.1rem; line-height: 1; text-decoration: none;
+}
+.btn-notifications { font-size: 1.1rem; }
 .btn-menu .icone-menu { font-size: 1.2rem; }
+/* Libellé du bouton ⚙️ masqué à l'écran, lu par les lecteurs d'écran */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .navbar-menu {
   position: absolute;
   top: 100%;
@@ -382,6 +392,7 @@ h1 { font-size: clamp(1.8rem, 6vw, 2.8rem); line-height: 1.2; margin-bottom: 0.6
     display: flex;
     flex-wrap: wrap;
   }
+  .navbar-marque { order: 1; }
   .navbar-brand {
     font-size: 1rem;
     gap: 0.4rem;
@@ -416,11 +427,9 @@ h1 { font-size: clamp(1.8rem, 6vw, 2.8rem); line-height: 1.2; margin-bottom: 0.6
     font-size: 0.85rem;
     padding: 0.4rem 0.6rem;
   }
-  .btn-favs, .btn-menu {
-    padding: 0.4rem 0.6rem;
-    font-size: 0.85rem;
+  .btn-favs, .btn-menu, .btn-settings, .btn-plus, .btn-home {
+    width: 2.4rem; height: 2.4rem; font-size: 1rem;
   }
-  .btn-menu { font-size: 1rem; }
   .navbar-menu {
     right: 0rem;
     min-width: calc(50vw - 1rem);

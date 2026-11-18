@@ -312,7 +312,7 @@ jusqu'à la ligne `[…]` suivante. Une source sans catégorie tombe dans le blo
   ---
   ```
 
-  Sans `titre`, le nom du fichier sert de titre. Sans `ordre`, l'ordre est alphabétique, après les éléments qui ont un `ordre` (plus petit = plus haut). Un fichier `_dossier.md` dans un dossier donne le `titre`, la `description` et l'`ordre` de la catégorie ou sous-catégorie (son corps est ignoré). Les fichiers et dossiers qui commencent par `.` ou `_` sont ignorés ; un dossier plus profond que la sous-catégorie est ignoré, avec un avertissement au build. Les documents à la racine de `ressources/` (hors dossier) sont ignorés.
+  Sans `titre`, le nom du fichier sert de titre. Sans `ordre`, l'ordre est alphabétique, après les éléments qui ont un `ordre` (plus petit = plus haut). Un fichier `_dossier.md` dans un dossier donne le `titre`, la `description` et l'`ordre` de la catégorie ou sous-catégorie (son corps est ignoré). Les fichiers et dossiers qui commencent par `.` ou `_` sont ignorés ; un dossier plus profond que la sous-catégorie est ignoré, avec un avertissement au build. Un fichier `.md` à la racine de `ressources/` est une catégorie comme un dossier : son titre et son ordre viennent de son bloc de tête (sinon, son nom, avec « _ » et « - » remplacés par des espaces), son contenu est son unique document (`/ressources/<nom>/`) ; dans le sommaire, c'est un simple lien. `ressources/index.md` n'est pas une catégorie : son corps est le texte de la page d'index, mis en forme comme un document (titre et description du bloc de tête, sinon « Ressources »).
 - **Contenu** : Markdown avec les tableaux, le code délimité, les listes et les sauts de ligne simples (extensions `extra`, `sane_lists`, `nl2br`). Le HTML écrit dans un `.md` passe tel quel : n'y mettre que du contenu de confiance. Les images : une adresse `https://…` ; un chemin relatif ne marche pas.
 - **Build** : `build/ressources/` est reconstruit à chaque fois (un document supprimé ne reste pas en ligne). `build --simple` aussi.
 - **Menu ≡ sur petit écran** : sur 768 px et moins, le menu part du bord de la barre et prend la largeur de l'écran moins une marge ; sur les autres écrans, il est ancré à droite du bouton Menu. Hauteur limitée à la fenêtre, avec défilement interne. Ordre des entrées : `[menu] ordre` dans `kioske.cfg`.
@@ -411,7 +411,7 @@ Elle n'est pas dans `kioske.cfg`.
 
 ```bash
 kioske_update --dry-run    # ce qui serait envoyé
-kioske_update              # envoi vers <utilisateur>@<serveur>:~/kioske.fr/
+kioske_update              # envoi vers <utilisateur>@<ip-du-serveur>:~/kioske.fr/
 ```
 
 Elle fonctionne par **liste blanche** : elle n'envoie que ce qui sert au déploiement, à savoir `bin/`,
@@ -421,7 +421,7 @@ Elle fonctionne par **liste blanche** : elle n'envoie que ce qui sert au déploi
 `TODO.md`, `.git/`, `CLAUDE.md`, `CHANGELOG.md`. Avec `--delete`, les fichiers exclus côté serveur ne sont pas retirés.
 Une copie de l'ancienne fonction reste dans `~/.config/fish/functions/kioske_update.fish.avant-liste-blanche`.
 
-**Sur le serveur**, en utilisateur normal (`meli`) :
+**Sur le serveur**, en utilisateur normal (`<utilisateur>`) :
 
 ### Déploiement simple (nginx + fail2ban, certificats existants)
 
@@ -452,7 +452,7 @@ deploy/kioske.sh --simulation             # affiche sans rien lancer
 
 **Service** : le timer `kioske-veille` lance `deploy/kioske.sh veille` à l'intervalle de `kioske.cfg`.
 Les modèles sont dans `deploy/systemd/` ; `installer_serveur.sh` y remplace l'utilisateur, le dossier,
-la racine web et l'intervalle. Le service tourne sous `meli` (`Group` = son groupe principal, calculé
+la racine web et l'intervalle. Le service tourne sous `<utilisateur>` (`Group` = son groupe principal, calculé
 par `id -gn "$UTILISATEUR"`), avec `SupplementaryGroups=www-data`, `UMask=0002` et
 `ExecStartPost=+chown -R www-data:www-data` sur la racine web.
 

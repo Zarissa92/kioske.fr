@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installation de la veille SUR LE SERVEUR (Debian 13), en utilisateur normal (meli).
+# Installation de la veille SUR LE SERVEUR (Debian 13), en utilisateur normal (<utilisateur>).
 # Le script demande sudo pour apt et systemd.
 #
 # Usage, depuis le dossier du projet sur le serveur :
@@ -22,7 +22,7 @@ WEB_ROOT="$(demander_repertoire RACINE_WEB 'Répertoire public servi par nginx' 
 INTERVALLE="$(cfg serveur intervalle_timer)"
 UTILISATEUR="${SUDO_USER:-$USER}"
 if [[ "$EUID" -eq 0 && -z "${SUDO_USER:-}" ]]; then
-    echo "Lance ce script en utilisateur normal (meli), pas en root : il utilise sudo." >&2
+    echo "Lance ce script en utilisateur normal (<utilisateur>), pas en root : il utilise sudo." >&2
     exit 1
 fi
 GROUPE="$(id -gn "$UTILISATEUR")"  # groupe principal de l'utilisateur du service (pas celui de root, quand on lance via sudo)

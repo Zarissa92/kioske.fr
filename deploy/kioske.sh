@@ -18,7 +18,7 @@
 #   deploy/kioske.sh aide
 #
 # Étapes : serveur, veille, nginx, fail2ban, statut.
-# À lancer sur le serveur, en utilisateur normal (meli) : les étapes qui en ont besoin demandent sudo.
+# À lancer sur le serveur, en utilisateur normal (<utilisateur>) : les étapes qui en ont besoin demandent sudo.
 # Jamais le Python système : le venv du projet (venv/ sur le serveur, venv_blog/ sur le PC) est utilisé.
 # Domaine et racine web : lus dans kioske.cfg.
 set -Eeuo pipefail

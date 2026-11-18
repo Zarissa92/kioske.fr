@@ -20,6 +20,11 @@ Un dossier peut avoir un fichier _dossier.md, dont seul le bloc de tête compte 
 ordre de la catégorie ou de la sous-catégorie. Sans ordre, les éléments suivent l'ordre alphabétique,
 après ceux qui en ont un. Les fichiers et dossiers dont le nom commence par un point ou un _ sont ignorés.
 
+Un fichier .md à la racine de ressources/ devient une catégorie, comme un dossier : son titre et son ordre
+viennent de son bloc de tête (ou de son nom), et son contenu est l'unique document de la catégorie, à
+l'adresse /ressources/<nom>/. Exception : ressources/index.md (facultatif) est le texte d'introduction de la
+page d'index, rendu en Markdown au-dessus du sommaire ; il n'est pas une catégorie.
+
 Sorties (dans build/ressources/) : index.html (la liste, avec le sommaire) et une page par document,
 ressources/<catégorie>/[<sous-catégorie>/]<document>/index.html, avec le même sommaire.
 """
@@ -36,6 +41,7 @@ from .rendu import page_statique
 from .texte import cle_alphabetique, esc, slug_categorie
 
 DOSSIER_WEB = "ressources"          # build/ressources/ et adresse /ressources/
+FICHIER_INTRO = "index.md"          # texte d'introduction de la page d'index (racine de ressources/)
 FICHIER_DOSSIER = "_dossier.md"     # titre, description et ordre d'une catégorie ou sous-catégorie
 # tableaux, code délimité, listes propres, notes ; nl2br : un saut de ligne dans un paragraphe reste un saut
 EXTENSIONS_MARKDOWN = ["extra", "sane_lists", "nl2br"]
@@ -54,6 +60,11 @@ def separer_front_matter(texte: str) -> tuple[dict[str, str], str]:
         if deux_points and cle.strip():
             meta[cle.strip().lower()] = valeur.strip().strip("\"'")
     return meta, texte[correspondance.end():]
+
+
+def _titre_du_nom(nom: str) -> str:
+    """Titre affiché à partir d'un nom de fichier ou de dossier : « _ » et « - » comptent comme des espaces."""
+    return re.sub(r"\s+", " ", re.sub(r"[_-]", " ", nom)).strip()
 
 
 def _ordre(meta: dict[str, str]) -> int | None:
@@ -105,7 +116,7 @@ def _meta_dossier(dossier: Path) -> dict[str, str]:
 def _entree(fichier: Path, parents: list[str], slug: str) -> dict:
     meta, corps = separer_front_matter(fichier.read_text(encoding="utf-8"))
     return {
-        "titre": meta.get("titre") or fichier.stem,
+        "titre": meta.get("titre") or _titre_du_nom(fichier.stem),
         "slug": slug,
         "chemin": "/".join([*parents, slug]),
         "description": meta.get("description", ""),
@@ -123,7 +134,7 @@ def _entrees(dossier: Path, parents: list[str]) -> list[dict]:
 def _groupe(dossier: Path, parents: list[str], slug: str) -> dict:
     meta = _meta_dossier(dossier)
     return {
-        "titre": meta.get("titre") or dossier.name,
+        "titre": meta.get("titre") or _titre_du_nom(dossier.name),
         "slug": slug,
         "description": meta.get("description", ""),
         "ordre": _ordre(meta),
@@ -135,11 +146,14 @@ def charger_arbre(racine: Path = RESSOURCES) -> list[dict]:
     """Catégories triées, chacune avec ses entrées directes et ses sous-catégories."""
     if not racine.is_dir():
         return []
-    if any(_documents(racine)):
-        print("   ! ressources/ : les documents doivent être dans une catégorie (dossier) ; ignorés")
     dossiers = _dossiers(racine)
-    slugs = _slugs_uniques([d.name for d in dossiers])
+    fichiers = [f for f in _documents(racine) if f.name != FICHIER_INTRO]
+    slugs = _slugs_uniques([d.name for d in dossiers] + [f.stem for f in fichiers])
     categories = []
+    for fichier, slug in zip(fichiers, slugs[len(dossiers):]):
+        entree = _entree(fichier, [], slug)
+        categories.append({"titre": entree["titre"], "slug": slug, "description": entree["description"],
+                           "ordre": entree["ordre"], "entrees": [entree], "sous": [], "fichier": True})
     for dossier, slug in zip(dossiers, slugs):
         categorie = _groupe(dossier, [], slug)
         sous = []
@@ -173,7 +187,15 @@ def sommaire_html(arbre: list[dict], actif: str = "") -> str:
     """Le sommaire en HTML (catégories et sous-catégories repliables). Le document actif est surligné et sa
     catégorie est dépliée. Une seule catégorie : dépliée aussi."""
     blocs = []
+    meta_index, intro = _intro()
+    if intro:  # la page d'index est un lien comme les autres pages
+        attribut = ' aria-current="page"' if actif == "" else ""
+        blocs.append('<ul class="ressources-liste"><li><a href="/ressources/"' + attribut + ">"
+                     + esc(meta_index.get("titre") or "Ressources") + "</a></li></ul>")
     for cat in arbre:
+        if cat.get("fichier"):  # un fichier à la racine : un simple lien, pas un bloc repliable
+            blocs.append(_liste(cat["entrees"], actif))
+            continue
         corps = _liste(cat["entrees"], actif) if cat["entrees"] else ""
         for sous in cat["sous"]:
             corps += _bloc(sous["titre"], actif.startswith(cat["slug"] + "/" + sous["slug"] + "/"),
@@ -187,18 +209,32 @@ def _page(titre: str, description: str, adresse: str, sommaire: str, corps: str,
                          adresse=adresse, sommaire=sommaire, corps=corps)
 
 
+def _intro(racine: Path = RESSOURCES) -> tuple[dict[str, str], str]:
+    """(bloc de tête, corps en HTML) de ressources/index.md. Sans fichier : ({}, "")."""
+    fichier = racine / FICHIER_INTRO
+    if not fichier.is_file():
+        return {}, ""
+    meta, corps = separer_front_matter(fichier.read_text(encoding="utf-8"))
+    return meta, markdown.markdown(corps, extensions=EXTENSIONS_MARKDOWN)
+
+
 def page_index(arbre: list[dict], nb_articles: int, nb_sources: int) -> str:
-    texte = ("Choisissez un document dans le sommaire." if arbre else "Aucune ressource pour le moment.")
+    meta, intro = _intro()
+    if intro:  # la page d'index a la même mise en forme qu'un document : titre, description, texte
+        corps = (f'<h1>{esc(meta.get("titre") or "Ressources")}</h1>'
+                 + (f'<p class="ressources-description">{esc(meta["description"])}</p>' if meta.get("description") else "")
+                 + f'<div class="ressources-texte">{intro}</div>')
+    else:
+        texte = ("Choisissez un document dans le sommaire." if arbre else "Aucune ressource pour le moment.")
+        corps = f"<h1>Ressources</h1><p>{esc(texte)}</p>"
     return _page(f"Ressources — {NOM_SITE}", "Documents et ressources du " + NOM_SITE + ", classés par catégories.",
-                 "/ressources/", sommaire_html(arbre), f"<h1>Ressources</h1><p>{esc(texte)}</p>",
-                 nb_articles, nb_sources)
+                 "/ressources/", sommaire_html(arbre), corps, nb_articles, nb_sources)
 
 
 def page_document(arbre: list[dict], categorie: dict, sous: dict | None, entree: dict,
                   nb_articles: int, nb_sources: int) -> str:
-    fil = categorie["titre"] + (" › " + sous["titre"] if sous else "")
-    corps = ('<p><a class="ressources-retour" href="/ressources/">← Toutes les ressources</a></p>'
-             f'<p class="ressources-fil">{esc(fil)}</p>'
+    fil = "" if categorie.get("fichier") else categorie["titre"] + (" › " + sous["titre"] if sous else "")
+    corps = ((f'<p class="ressources-fil">{esc(fil)}</p>' if fil else "") +
              f'<h1>{esc(entree["titre"])}</h1>'
              + (f'<p class="ressources-description">{esc(entree["description"])}</p>' if entree["description"] else "")
              + f'<div class="ressources-texte">{entree["html"]}</div>')

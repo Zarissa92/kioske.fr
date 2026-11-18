@@ -294,6 +294,22 @@ class RessourcesDuDossier(unittest.TestCase):
         arbre = charger_arbre(self.racine)
         self.assertEqual([e["titre"] for e in arbre[0]["entrees"]], ["ok"])
 
+    def test_fichier_a_la_racine_est_une_categorie(self):
+        from kioske.ressources import charger_arbre
+        self.ecrire("Guide.md", "---\ntitre: Le guide\nordre: 1\n---\n# Texte\n")
+        self.ecrire("index.md", "# Introduction\n")
+        self.ecrire("Cat/doc.md", "# A\n")
+        arbre = charger_arbre(self.racine)
+        self.assertEqual([c["titre"] for c in arbre], ["Le guide", "Cat"])
+        guide = arbre[0]
+        self.assertEqual(guide["entrees"][0]["chemin"], "guide")
+        self.assertIn("<h1>Texte</h1>", guide["entrees"][0]["html"])
+
+    def test_titre_du_nom_tirets_et_soulignes_comme_espaces(self):
+        from kioske.ressources import _titre_du_nom
+        self.assertEqual(_titre_du_nom("mon_guide-2026"), "mon guide 2026")
+        self.assertEqual(_titre_du_nom("a__b--c"), "a b c")
+
     def test_dossier_trop_profond_ignore(self):
         from kioske.ressources import charger_arbre
         self.ecrire("Cat/Sous/Trop/profond.md", "# Non\n")
@@ -326,7 +342,7 @@ class RessourcesDuDossier(unittest.TestCase):
         self.assertNotIn("onclick=", index)
         doc = page_document(arbre, arbre[0], None, arbre[0]["entrees"][0], 0, 0)
         self.assertIn('aria-current="page"', doc)
-        self.assertIn("← Toutes les ressources", doc)
+        self.assertNotIn("Toutes les ressources", doc)
 
     def test_code_de_conduite_statique(self):
         from kioske.rendu import render_code_de_conduite

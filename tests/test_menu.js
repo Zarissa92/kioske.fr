@@ -11,14 +11,15 @@ const { attendre, charger, clic, touche, suite } = require('./outils');
   const ouvert = () => menu.style.display !== 'none';
 
   t.verif('ancien bouton ⚙️ supprimé', d.getElementById('btn-settings') === null && d.getElementById('navbar-settings') === null);
-  t.verif('bouton « Menu » avec libellé visible', bouton.textContent.includes('Menu'));
+  t.verif('bouton « Paramètres » avec libellé visible', bouton.textContent.includes('Paramètres'));
   t.verif('menu fermé au départ', !ouvert() && bouton.getAttribute('aria-expanded') === 'false');
 
   clic(w, bouton);
   t.verif('clic : menu ouvert', ouvert() && bouton.getAttribute('aria-expanded') === 'true');
-  t.verif('contient thèmes, mode sobre, flux, réseaux et code de conduite',
+  t.verif('contient thèmes, mode sobre et flux (ni réseaux ni code de conduite)',
     Boolean(d.getElementById('submenu-themes') && d.getElementById('btn-sobre') &&
-      d.getElementById('btn-custom-flux-navbar') && d.querySelector('a[href="/code-de-conduite.html"]')));
+      d.getElementById('btn-custom-flux-navbar') && !d.querySelector('#navbar-menu a[href="/code-de-conduite.html"]')));
+  t.verif('bouton + de la barre mène aux Ressources', !!d.querySelector('.kioske-navbar a.btn-settings[href="/ressources/"]'));
 
   touche(w, 'Escape');
   t.verif('Échap : menu fermé', !ouvert() && bouton.getAttribute('aria-expanded') === 'false');

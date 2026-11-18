@@ -30,7 +30,7 @@ const { attendre, charger, clic, touche, panneauOuvert, nbFavoris, premierArticl
   t.verif('l\'adresse partagée est celle de l\'article, sans « from »', partages[0] && /\/articles\/[^?]+\/$/.test(partages[0].url), partages[0] && partages[0].url);
   t.verif('la carte reste ouverte après ♡ et 📤', !carte.hidden);
   touche(w, 'Escape'); await attendre();
-  t.verif('le code de conduite est un lien vers sa page statique', !!d.querySelector('a[href="/code-de-conduite.html"]'));
+  t.verif('le bouton + de la barre mène aux Ressources', !!d.querySelector('.kioske-navbar a.btn-settings[href="/ressources/"]'));
   t.verif('aucune erreur JavaScript', erreurs.length === 0, erreurs.join(' | '));
   t.fin();
 

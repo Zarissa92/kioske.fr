@@ -1,9 +1,12 @@
 <nav class="kioske-navbar">
-  <a href="/" class="navbar-brand">
-    <span class="flag">🏳️‍⚧️</span>
-    <span>${domaine}</span>
-    <span class="navbar-stats">${nb_articles} articles · ${nb_sources} sources</span>
-  </a>
+  <div class="navbar-marque">
+    <a href="/" class="navbar-brand">
+      <span class="flag">🏳️‍⚧️</span>
+      <span>${domaine}</span>
+      <span class="navbar-stats">${nb_articles} articles · ${nb_sources} sources</span>
+    </a>
+    <a class="btn-settings btn-home" href="/" title="Accueil" aria-label="Accueil"><span aria-hidden="true">🏠</span></a>
+  </div>
 
   <form id="form-recherche" class="navbar-search">
     <input type="text" id="recherche" placeholder="Chercher..." aria-label="Barre de recherche" autocomplete="off">
@@ -13,9 +16,10 @@
   <div class="navbar-controls">
     <button type="button" class="btn-favs" title="Mes favoris">♡</button>
     <button type="button" class="btn-settings btn-notifications" id="btn-notifications" title="Notifications des flux personnalisés" aria-label="Notifications des flux personnalisés" aria-haspopup="dialog" hidden>🔔</button>
+    <a class="btn-settings btn-plus" href="/ressources/" title="Ressources" aria-label="Ressources"><span aria-hidden="true">➕</span></a>
 
     <div class="navbar-button-group">
-      <button type="button" class="btn-menu" id="btn-menu" title="Menu" aria-controls="navbar-menu" aria-expanded="false"><span class="icone-menu" aria-hidden="true">≡</span> Menu</button>
+      <button type="button" class="btn-menu" id="btn-menu" title="Paramètres" aria-controls="navbar-menu" aria-expanded="false"><span class="icone-menu" aria-hidden="true">⚙️</span><span class="sr-only">Paramètres</span></button>
       <div class="navbar-menu" id="navbar-menu" style="display: none;">
         <div class="navbar-menu-group">
           <button type="button" class="navbar-menu-title submenu-toggle" data-submenu="themes" aria-expanded="false">🎨 Thèmes <span class="fleche-sous-menu" aria-hidden="true">▶</span></button>

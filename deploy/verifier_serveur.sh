@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Vérifie la mise en ligne du site sur le serveur, et liste ce qui reste à faire à la main.
 # Domaine, racine web et IP publique : lus dans kioske.cfg.
-# À lancer sur le serveur, en utilisateur normal (meli). sudo est demandé pour nginx et certbot.
+# À lancer sur le serveur, en utilisateur normal (<utilisateur>). sudo est demandé pour nginx et certbot.
 #
 # Usage :
 #   ./deploy/verifier_serveur.sh               # contrôles locaux

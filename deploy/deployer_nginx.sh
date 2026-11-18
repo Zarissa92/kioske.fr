@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Déploie nginx pour le site SUR LE SERVEUR (Debian 13). À lancer en utilisateur normal (meli).
+# Déploie nginx pour le site SUR LE SERVEUR (Debian 13). À lancer en utilisateur normal (<utilisateur>).
 # Domaine et racine web : lus dans kioske.cfg.
 # Le script demande sudo pour apt, nginx et certbot.
 #
@@ -221,7 +221,7 @@ confirmer_conditions_letsencrypt() {
 }
 
 if [[ "$EUID" -eq 0 && -z "${SUDO_USER:-}" ]]; then
-    erreur "Lance ce script en utilisateur normal (meli), pas en root : il utilise sudo."
+    erreur "Lance ce script en utilisateur normal (<utilisateur>), pas en root : il utilise sudo."
 fi
 
 MODE="installer"
