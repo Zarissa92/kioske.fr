@@ -62,10 +62,13 @@ self.addEventListener('fetch', (event) => {
   // en cache ferait réapparaître ce que le visiteur a masqué (seul Ctrl+Maj+R la remplaçait).
   // articles-index.json (recherche, favoris) et robots.txt changent à chaque build sans que la version du
   // cache change : en cache-first, ils resteraient figés (nouveaux articles absents de la recherche).
+  // Feuilles de thème (style_<thème>.css) : le nom ne change pas quand le contenu change ; en cache-first,
+  // une ancienne couleur restait affichée tant que le service worker n'était pas remplacé.
   if (url.pathname.endsWith('.html') ||
       url.pathname.endsWith('.json') ||
       url.pathname.endsWith('.txt') ||
       url.pathname === '/theme.js' ||
+      /^\/style[A-Za-z0-9_-]*\.css$/.test(url.pathname) ||
       url.pathname.endsWith('/') ||
       url.pathname.includes('/img/') ||
       url.pathname.includes('/rss.xml') ||

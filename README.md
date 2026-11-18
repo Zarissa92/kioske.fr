@@ -26,9 +26,7 @@ carte ouvre l'article par-dessus la page, au format « carte à jouer » (texte 
 
 <p align="center"><img src="docs/img/kioske-cartes.png" width="640" alt="Fenêtre d'une source : une carte par article, avec image, date, titre et extrait"></p>
 
-Sur téléphone, la mise en page s'adapte, et chaque thème a ses couleurs (ici le thème violet).
-
-<p align="center"><img src="docs/img/kioske-theme-violet-telephone.png" width="300" alt="Accueil sur téléphone, thème violet"></p>
+Sur téléphone, la mise en page s'adapte, et chaque thème a ses couleurs.
 
 ### Aperçu : effet shiny
 
@@ -104,9 +102,9 @@ Format INI, commenté dans le fichier. Une valeur manquante ou invalide arrête 
 | `[veille]` | `articles_flux_rss` (100), `videos_par_chaine` (15), `articles_par_source` (0 = tous), `delai_nouvel_essai_heures` (24). |
 | `[serveur]` | `ip_jamais_bannies` (adresses que fail2ban ne bannit jamais : serveur et réseau local), `intervalle_timer` (`30min`). La racine web et l'IP publique ne sont plus dans ce fichier : elles sont demandées au terminal par les scripts de `deploy/`. |
 | `[reseaux]` | `discord` (URL du serveur Discord), `mastodon` (profil Mastodon), `rss` (chemin vers la page RSS, défaut `rss.html`). Laissez vide pour désactiver un lien. |
-| `[theme.<nom>]` | `nom`, `fond` (`etoiles` ou `noir`), `pluie` (`oui` ou `non`), `opacite_panneau` (0 à 100, en %), `css` (fichier CSS optionnel, défaut `style.css`). |
+| `[theme.<nom>]` | `nom`, `fond` (`noir`, seul fond disponible), `pluie` (`oui` ou `non`), `opacite_panneau` (0 à 100, en %), `css` (fichier CSS optionnel, défaut `style.css`). |
 
-Deux thèmes disponibles : `red_neon` (néon rouge intense avec pluie matricielle et fond noir) et `white_neon` (néon blanc aux étoiles avec pluie matricielle et néons réduits de moitié). Ajouter une section `[theme.<nom>]` ajoute un bouton de choix sur la page.
+Thèmes disponibles : `default` (Défaut, sans pluie), `red_neon` (Néon rouge), `white_neon` (Néon blanc), `prune_neon` (Néon prune) et `trans` (Néon trans). Les thèmes néon ont la pluie matricielle et un fond noir. Ajouter une section `[theme.<nom>]` ajoute un bouton de choix sur la page.
 
 Les scripts bash lisent les mêmes valeurs avec `cfg <section> <clé>` (`deploy/lib_config.sh`).
 Après un changement de `intervalle_timer` ou de la racine web (`RACINE_WEB`), relancer `deploy/installer_serveur.sh`.
@@ -482,7 +480,7 @@ sudo systemctl start kioske-veille.service   # publier tout de suite
 
 **Règle à respecter dans la configuration** : aucun `add_header` dans un bloc `location`. Dans nginx, un `add_header` placé dans un `location` annule tous ceux du niveau `server` pour ce `location`. La durée de cache est donc choisie par une table `map $uri $kioske_cache_control` en tête de fichier et envoyée par un seul `add_header Cache-Control` au niveau `server`. Deux scripts de déploiement, qui écrivent **la même configuration** (à modifier ensemble) :
 - **`deploy/deployer_nginx.sh`** : complet, gère les certificats Let's Encrypt (appelle certbot) et déploie nginx. À utiliser lors de l'installation initiale ou pour renégocier les certificats.
-- **`deploy/deployer_nginx_simple.sh`** : copie la configuration nginx depuis `deploy/kioske-nginx.conf`, teste, et recharge nginx sans toucher aux certificats. À utiliser pour mettre à jour la configuration si les certificats sont déjà en place (`deploy/kioske.sh --certificat-ok nginx`).
+- **`deploy/deployer_nginx_simple.sh`** : copie la configuration nginx depuis `deploy/kioske-nginx.conf`, teste, et recharge nginx sans toucher aux certificats. La racine (`root`) n'est pas écrite en dur : le marqueur `__RACINE_WEB__` de la configuration est remplacé par la racine demandée au terminal (défaut `/srv/kioske.fr`, ou `RACINE_WEB` si elle est passée). À utiliser pour mettre à jour la configuration si les certificats sont déjà en place (`deploy/kioske.sh --certificat-ok nginx`).
 
 Les deux scripts testent la configuration et restaurent l'ancienne version si le test échoue. Le certificat couvre le domaine seul, sans `www`. `deploy/kioske.nginx.conf` (avec un point) est un ancien fichier qu'aucun script n'utilise.
 
@@ -547,6 +545,7 @@ application native, et fonctionne partiellement hors ligne.
 **Cache headers** (nginx) :
 - Service worker (`sw.js`) : `no-cache, max-age=0` (toujours vérifier les mises à jour).
 - Manifest (`manifest.json`) : `max-age=86400` (1 jour).
+- Feuilles de thème (`style_<thème>.css`) : `no-cache, must-revalidate, max-age=0` (revérifiées à chaque chargement : le nom ne change pas quand le contenu change).
 - Icônes PWA, polices, `favicon.svg` : `max-age=31536000, immutable` (1 an).
 - Cartes de partage (`/img/`) : `max-age=2592000` (30 jours).
 - Flux RSS/XML : `no-cache, max-age=0` (pas de cache, rafraîchir régulièrement).

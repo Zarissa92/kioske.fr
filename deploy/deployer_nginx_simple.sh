@@ -26,7 +26,18 @@ fi
 
 [[ -f "$CONF_SRC" ]] || erreur "Fichier de configuration absent : $CONF_SRC"
 
-info "Déploiement de la configuration nginx depuis $CONF_SRC"
+# Racine publique : demandée au terminal (ou reçue de RACINE_WEB), défaut /srv/kioske.fr
+source "$DOSSIER/deploy/lib_config.sh"
+RACINE_WEB="$(demander_repertoire RACINE_WEB 'Répertoire public servi par nginx' "/srv/kioske.fr")" || exit 1
+
+# Remplace le marqueur __RACINE_WEB__ de la configuration par la racine choisie
+CONF_TMP="$(mktemp)"
+trap 'rm -f "$CONF_TMP"' EXIT
+sed "s|__RACINE_WEB__|$RACINE_WEB|g" "$CONF_SRC" > "$CONF_TMP"
+grep -q '__RACINE_WEB__' "$CONF_TMP" && erreur "Marqueur __RACINE_WEB__ non remplacé dans la configuration"
+CONF_SRC="$CONF_TMP"
+
+info "Déploiement de la configuration nginx depuis $DOSSIER/deploy/kioske-nginx.conf avec racine=$RACINE_WEB"
 
 # Sauvegarde l'ancienne config
 if [[ -f "$DISPO" ]]; then

@@ -61,7 +61,7 @@ else
 fi
 
 echo "== Fichiers"
-for f in pluie.js manifest.json style_purple_neon.css; do
+for f in pluie.js manifest.json; do
     s=$(statut "https://$DOMAINE/$f")
     [[ "$s" == "200" ]] && bon "$f répond 200" || mauvais "$f répond « ${s:-rien} »"
 done

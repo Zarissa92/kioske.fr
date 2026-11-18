@@ -19,7 +19,7 @@ RE_SECTION = re.compile(r"^\s*\[([^\[\]]+)\]\s*$")
 RE_CLE = re.compile(r"^(\s*)([^#;\s=][^=]*?)(\s*=\s*)(.*?)(\r?\n)?$")
 RE_COULEUR = re.compile(r"^#[0-9a-fA-F]{6}$")
 
-FONDS = ("etoiles", "noir")
+FONDS = ("noir",)
 
 # Réglages des sections fixes : (type, bornes ou choix). Types : texte, entier, choix, couleur.
 SCHEMA = {

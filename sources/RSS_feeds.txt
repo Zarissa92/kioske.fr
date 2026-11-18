@@ -64,13 +64,15 @@
 
 [Technologie: Militant.e.s]
 "https://www.laquadrature.net/feed/"
-"https://rss.framasoft.org/"
+"https://framablog.org/feed/"
 "https://canard.tube/feeds/videos.xml?videoChannelId=2" #CanardRefractaire
 
 [Technologie: Généraliste]
 "https://next.ink/feed/"
 "https://usbeketrica.com/fr/rss"
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCFe-p93CVJ13v3GM0hIzYNg"  #canardpc
+"https://linuxfr.org/news.atom"
+"https://linuxfr.org/journaux.atom"
 
 [panneau: LGBT]
 

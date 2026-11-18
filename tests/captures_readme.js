@@ -44,11 +44,6 @@ async function ouvrir(browser, { largeur, hauteur, theme }) {
     console.log('panneau source');
     await ctx.close();
 
-    // 4. Thème violet, téléphone (responsive)
-    ({ ctx, page } = await ouvrir(browser, { largeur: 390, hauteur: 844, theme: 'purple_neon' }));
-    await page.screenshot({ path: path.join(DOCS, 'kioske-theme-violet-telephone.png') });
-    console.log('violet téléphone');
-    await ctx.close();
   } finally {
     await browser.close();
   }

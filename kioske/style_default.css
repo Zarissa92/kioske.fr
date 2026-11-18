@@ -59,9 +59,9 @@ h1, h2, h3, .navbar-brand, .btn-favs, .btn-menu, .btn-settings, .menu-button, .n
   --border-color-fav-heart-active: #ffffff;
   --overflow-y-galerie: visible;
   --scrollbar-color-galerie: var(--color-text-accent) transparent;
-  --border-radius-galerie-bloc-galerie-carte: .8rem;
+  --border-radius-galerie-bloc-galerie-carte: var(--rayon-panneau);
   --border-galerie-carte: 3px solid var(--color-text-accent);
-  --border-radius-galerie-carte-wrapper: 0.8rem;
+  --border-radius-galerie-carte-wrapper: var(--rayon-panneau);
   --margin-bottom-galerie-panneau: 0.6rem;
   --border-color-groupe-h2-titre-panneau: #FF0054;
   --color-groupe-h2-titre-panneau: #FFF;
@@ -562,7 +562,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .nuage { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem; margin: 0.5rem 0 0; padding: .7rem;
   background: #0a0000; border: var(--border-carte-plus); }
 .nuage .tag { display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .55rem; border: var(--border-nuage-tag);
-  border-radius: .3rem; background: #faf7f7; color: #000; font: inherit; font-size: .8rem; line-height: 1.4; white-space: normal; max-width: 100%; overflow-wrap: anywhere; cursor: pointer; transition: all 0.2s; }
+  border-radius: var(--rayon-panneau); background: #faf7f7; color: #000; font: inherit; font-size: .8rem; line-height: 1.4; white-space: normal; max-width: 100%; overflow-wrap: anywhere; cursor: pointer; transition: all 0.2s; }
 .nuage button.tag { margin: 0; }
 .nuage .tag .nb { font-size: .72rem; opacity: .75; white-space: nowrap; }
 .nuage .tag:hover, .nuage .tag:focus-visible { color: #fff; background: var(--color-text-main); outline: none; }
@@ -672,7 +672,7 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
     position: relative;
     flex: 0 0 115px;
     height: 154px;
-    border-radius: var(--rayon-carte);
+    border-radius: var(--rayon-panneau);
     overflow: hidden;
     isolation: isolate;
     -webkit-mask-image: -webkit-radial-gradient(white, black); /* correctif Safari */

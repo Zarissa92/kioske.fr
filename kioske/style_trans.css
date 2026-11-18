@@ -12,3 +12,9 @@
   --color-text-accent: #F5A9B8;
   --color-text-main: #7FE5FF;
 }
+
+/* Titres des sous-catégories (h2.titre-panneau dans .sous-categorie) : texte et bordures en #ff33cc */
+.groupe .sous-categorie > h2.titre-panneau {
+  color: #ff33cc;
+  border-color: #ff33cc;
+}

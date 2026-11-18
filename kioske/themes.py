@@ -12,8 +12,8 @@ import json
 from .config import CFG, CONFIG, PAQUET
 from .texte import esc
 
-# Fonds possibles (clé `fond` d'un thème). Leur dessin est dans style.css : :root[data-fond="…"].
-FONDS = ("etoiles", "noir")
+# Fonds possibles (clé `fond` d'un thème). Le dessin est dans style_default.css : html[data-fond="…"].
+FONDS = ("noir",)
 
 
 def charger_themes(cfg: configparser.ConfigParser = CFG) -> tuple[list[dict], str]:
