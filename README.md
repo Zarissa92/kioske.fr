@@ -17,7 +17,7 @@ Projet autonome depuis le 2026-11-11, réorganisé depuis : code dans le paquet 
 
 <p align="center"><img src="docs/img/kioske-accueil.png" width="640" alt="Page d'accueil, thème par défaut : titre, recherche, et étiquettes des sources rangées par catégorie"></p>
 
-Le menu ≡ regroupe les thèmes, le mode sobre, la personnalisation des flux, l'installation, les ressources et les réseaux.
+Le menu ⚙️ regroupe les thèmes, le mode sobre, l'affichage des galeries (deux boutons : grande galerie et galeries des blocs, accueil seulement, mémorisés par navigateur), la personnalisation des flux et l'installation. Ressources, Discord, Mastodon et le code de conduite sont dans la page Ressources, accessible par le bouton ➕.
 
 <p align="center"><img src="docs/img/kioske-menu.png" width="640" alt="Menu ≡ ouvert : thèmes, mode sobre, personnaliser flux, installer l'app, ressources, flux RSS, Discord, Mastodon, code de conduite"></p>
 

@@ -109,11 +109,31 @@ def copier_statiques() -> None:
         if source.is_file():
             copier_si_change(source, BUILD / source.relative_to(STATIC))
     ecrire_si_change(BUILD / "robots.txt", f"User-agent: *\nAllow: /\nSitemap: {URL_SITE}/sitemap.xml\n")
+
+
+# Dossiers du build dont chaque index.html est une page publique à référencer.
+DOSSIERS_SITEMAP = ("articles", "categories", "ressources")
+
+
+def ecrire_sitemap() -> int:
+    """Écrit build/sitemap.xml à partir des pages réellement produites : accueil, code de conduite, articles,
+    catégories et Ressources. Renvoie le nombre d'adresses."""
+    from xml.sax.saxutils import escape
+    adresses = [f"{URL_SITE}/"]
+    if (BUILD / "code-de-conduite.html").is_file():
+        adresses.append(f"{URL_SITE}/code-de-conduite.html")
+    for dossier in DOSSIERS_SITEMAP:
+        racine = BUILD / dossier
+        if racine.is_dir():
+            for page in sorted(racine.rglob("index.html")):
+                adresses.append(f"{URL_SITE}/{page.parent.relative_to(BUILD).as_posix()}/")
+    lignes = [f"<url><loc>{escape(a)}</loc></url>" for a in adresses]
     ecrire_si_change(BUILD / "sitemap.xml",
                      '<?xml version="1.0" encoding="UTF-8"?>\n'
                      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-                     f"<url><loc>{URL_SITE}/</loc><changefreq>hourly</changefreq></url>\n"
+                     + "\n".join(lignes) + "\n"
                      "</urlset>\n")
+    return len(adresses)
 
 
 # Version du cache du service worker : empreinte des fichiers qu'il met en cache (static/ et les feuilles
@@ -444,6 +464,7 @@ def construire(args: argparse.Namespace) -> None:
         print("9. COPIE DES FICHIERS STATIQUES")
         copier_css_themes()
         copier_statiques()
+        print(f"   → Sitemap : {ecrire_sitemap()} adresse(s)")
         print(f"   → Service worker : {version_service_worker()}")
         print(f"   → Fichiers statiques copiés\n")
 

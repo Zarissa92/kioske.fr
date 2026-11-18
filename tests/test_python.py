@@ -370,7 +370,7 @@ class OrdreDuMenu(unittest.TestCase):
 
     def test_ordre_demande_puis_absentes_a_la_fin(self):
         self.assertEqual(self.ordre("conduite, ressources"),
-                         ["conduite", "ressources", "sobre", "flux", "installer", "rss", "discord", "mastodon"])
+                         ["conduite", "ressources", "sobre", "grande-galerie", "galeries-blocs", "flux", "installer", "rss", "discord", "mastodon"])
 
     def test_doublons_ignores(self):
         self.assertEqual(self.ordre("rss, rss, discord")[:3], ["rss", "discord", "sobre"])

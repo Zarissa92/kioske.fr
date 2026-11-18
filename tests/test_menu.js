@@ -34,6 +34,19 @@ const { attendre, charger, clic, touche, suite } = require('./outils');
   t.verif('choix dans le menu (mode sobre) : menu refermé', !ouvert());
   t.verif('mode sobre activé par le choix', d.documentElement.dataset.sobre === 'oui');
 
+  // Galeries : un bouton par type, qui masque la galerie correspondante
+  const grande = d.getElementById('btn-grande-galerie');
+  const blocs = d.getElementById('btn-galeries-blocs');
+  t.verif('deux boutons de galeries présents', Boolean(grande && blocs));
+  clic(w, bouton); clic(w, grande); await attendre(20);
+  t.verif('grande galerie : bouton passe à « masquée »', grande.textContent.includes('masquée'));
+  t.verif('grande galerie masquée seule (blocs toujours affichés)',
+    d.documentElement.dataset.grandeGalerie === 'non' && d.documentElement.dataset.galeriesBlocs !== 'non');
+  clic(w, bouton); clic(w, blocs); await attendre(20);
+  t.verif('galeries des blocs : bouton passe à « masquées »', blocs.textContent.includes('masquées'));
+  clic(w, bouton); clic(w, blocs); clic(w, bouton); clic(w, grande); await attendre(20);
+  t.verif('les deux rétablies', d.documentElement.dataset.grandeGalerie !== 'non' && d.documentElement.dataset.galeriesBlocs !== 'non');
+
   t.verif('aucune erreur JavaScript', erreurs.length === 0, erreurs.join(' | '));
   w.close();
   t.fin();

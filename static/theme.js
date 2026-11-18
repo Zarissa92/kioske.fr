@@ -27,6 +27,18 @@
     try { return localStorage.getItem(CLE_SOBRE) === '1'; } catch (e) { return false; }
   }
 
+  // Galeries de l'accueil, un interrupteur par type : affichées par défaut, masquées si « 0 » (mémorisé)
+  const GALERIES = [
+    { id: 'btn-grande-galerie', attribut: 'grandeGalerie', cle: 'kioske-grande-galerie',
+      libelle: 'Grande galerie', etat: ['affichée', 'masquée'] },
+    { id: 'btn-galeries-blocs', attribut: 'galeriesBlocs', cle: 'kioske-galeries-blocs',
+      libelle: 'Galeries des blocs', etat: ['affichées', 'masquées'] },
+  ];
+  function lireGalerie(g) {
+    try { return localStorage.getItem(g.cle) !== '0'; } catch (e) { return true; }
+  }
+  function appliquerGalerie(g, affichee) { racine.dataset[g.attribut] = affichee ? 'oui' : 'non'; }
+
   // Mode sobre : feuille à part (static/style_sobre.css), ajoutée seulement quand le mode est activé
   function appliquerSobre(actif) {
     racine.dataset.sobre = actif ? 'oui' : 'non';
@@ -98,6 +110,7 @@
   }
 
   appliquerSobre(lireSobre());
+  GALERIES.forEach(g => appliquerGalerie(g, lireGalerie(g)));
   appliquer(lireChoix() || defaut);
 
   // La page n'est pas encore lue en entier : la pluie et les boutons attendent <body>
@@ -107,6 +120,24 @@
       b.addEventListener('click', () => {
         try { localStorage.setItem(CLE, b.dataset.themeId); } catch (e) {}
         appliquer(b.dataset.themeId);
+      });
+    });
+
+    // Boutons « Grande galerie » et « Galeries des blocs » du menu ⚙️ (accueil seulement)
+    GALERIES.forEach(g => {
+      const bouton = document.getElementById(g.id);
+      if (!bouton) return;
+      const maj = () => {
+        const affichee = racine.dataset[g.attribut] !== 'non';
+        bouton.setAttribute('aria-pressed', String(affichee));
+        bouton.textContent = '🖼️ ' + g.libelle + ' : ' + (affichee ? g.etat[0] : g.etat[1]);
+      };
+      maj();
+      bouton.addEventListener('click', () => {
+        const affichee = racine.dataset[g.attribut] === 'non';
+        try { localStorage.setItem(g.cle, affichee ? '1' : '0'); } catch (e) {}
+        appliquerGalerie(g, affichee);
+        maj();
       });
     });
 

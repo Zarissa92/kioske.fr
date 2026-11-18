@@ -18,8 +18,7 @@
 "https://www.mediapart.fr/journal/podcasts/rss"
 "https://feeds.audiomeans.fr/feed/d9cd7538-7491-4873-b0c4-90ccba60ccf6.xml"  #lescouillessurlatbale
 
-[Vidéo et radio: Peertube]
-"https://canard.tube/feeds/videos.xml?videoChannelId=2" #CanardRefractaire
+
 
 [Panneau: Médias Libre]
 
@@ -65,6 +64,8 @@
 
 [Technologie: Militant.e.s]
 "https://www.laquadrature.net/feed/"
+"https://rss.framasoft.org/"
+"https://canard.tube/feeds/videos.xml?videoChannelId=2" #CanardRefractaire
 
 [Technologie: Généraliste]
 "https://next.ink/feed/"

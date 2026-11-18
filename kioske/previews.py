@@ -90,7 +90,8 @@ def generer_preview(image_path: str | None, titre: str, meta: str, link: str) ->
             img.paste(article_img, (0, 0))
             image_loaded = True
         except Exception as e:
-            pass  # Fallback vers la lettre si erreur
+            # Fallback vers la lettre ; la raison part dans le journal de build (image absente du preview sinon)
+            print(f"[preview] image non utilisée pour {link} ({image_path}) : {e}", flush=True)
 
     # Si l'image n'a pas pu être chargée, dessiner une lettre
     if not image_loaded:

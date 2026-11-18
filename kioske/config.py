@@ -80,7 +80,7 @@ GALERIE_PRINCIPALE = entier_opt("site", "galerie_principale", 1)
 GALERIE_PANNEAU = entier_opt("site", "galerie_panneau", 1)
 
 # Ordre des entrées du menu ≡ (section [menu], clé ordre) : voir kioske.cfg
-MENU_CLES = ["sobre", "flux", "installer", "ressources", "rss", "discord", "mastodon", "conduite"]
+MENU_CLES = ["sobre", "grande-galerie", "galeries-blocs", "flux", "installer", "ressources", "rss", "discord", "mastodon", "conduite"]
 
 
 def ordre_menu() -> list[str]:

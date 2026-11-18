@@ -10,6 +10,10 @@ Tâches à implémenter dans les prochaines sessions.
 
 - **Servir le JavaScript comme fichiers** : les scripts de `kioske/js/` sont aujourd'hui recopiés dans chaque page, entre `<script>` et `</script>`. Les publier dans `build/js/` et les charger par `<script src="/js/…">` allégerait chaque page (1300 pages d'article portent le même code), laisserait le navigateur les mettre en cache et permettrait de retirer `'unsafe-inline'` de `script-src` dans la politique nginx (`deploy/deployer_nginx.sh`). À faire ensemble : copie des fichiers au build (`kioske/construction.py`), gabarits (`kioske/gabarits/`), liste du cache dans `static/sw.js` et durée de cache nginx, puis l'`onclick` du bloc immuable (`accueil/bloc_immuable.html`) à remplacer par un écouteur, sans quoi la politique sans `'unsafe-inline'` le bloquerait. Vérifier avec `bash tests/lancer.sh` (adapter `tests/outils.js`, qui ne charge que les scripts écrits dans la page).
 
+## Aperçus et images
+
+- **Aperçus Discord sans image d'article** (2026-11-18) : la carte affiche la lettre de repli au lieu de l'image (exemple : article « seven trans actresses », 18/11). Cause non confirmée. Piste : images AVIF acceptées par `kioske/images.py` mais non décodées par Pillow (`features.check('avif')` = False en local) ; l'échec était silencieux. Le journal de build affiche désormais `[preview] image non utilisée … : raison` (`kioske/previews.py`). À faire : relever cette raison sur le serveur ; si c'est l'AVIF, décider entre `pillow-avif-plugin` dans le venv (`requirements.txt`) ou le refus des AVIF. Vérifier aussi si Discord garde une ancienne version de la carte en cache.
+
 ## Configuration (kioske.cfg)
 
 - **Espacements réglables** : rendre les marges et padding configurables pour permettre d'ajuster facilement le layout sans modifier le CSS :
