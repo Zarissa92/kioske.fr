@@ -57,7 +57,7 @@ const { attendre, charger, suite } = require('./outils');
     const statique = charger('code-de-conduite.html', '/code-de-conduite.html');
     await attendre(120);
     // le bouton « Galeries » n'existe que sur l'accueil : on le retire de la comparaison
-    const texte = (d) => d.querySelector('nav.kioske-navbar').textContent.replace(/🖼️ (Grande galerie|Galeries des blocs) : (affichées?|masquées?)/g, '').replace(/\s+/g, ' ').trim();
+    const texte = (d) => d.querySelector('nav.kioske-navbar').textContent.replace(/🖼️ (Grande galerie|Galeries des catégories) : (affichées?|masquées?)/g, '').replace(/\s+/g, ' ').trim();
     t.verif('barre : même texte que l’accueil', texte(accueil.d) === texte(statique.d), texte(statique.d));
     accueil.w.close(); statique.w.close();
   }

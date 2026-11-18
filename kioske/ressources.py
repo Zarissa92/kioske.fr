@@ -41,6 +41,8 @@ from .rendu import page_statique
 from .texte import cle_alphabetique, esc, slug_categorie
 
 DOSSIER_WEB = "ressources"          # build/ressources/ et adresse /ressources/
+DOSSIER_IMAGES = "img"              # ressources/img/ : images des documents, jamais une catégorie
+EXTENSIONS_IMAGES = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif"}
 FICHIER_INTRO = "index.md"          # texte d'introduction de la page d'index (racine de ressources/)
 FICHIER_DOSSIER = "_dossier.md"     # titre, description et ordre d'une catégorie ou sous-catégorie
 # tableaux, code délimité, listes propres, notes ; nl2br : un saut de ligne dans un paragraphe reste un saut
@@ -84,7 +86,19 @@ def _visible(chemin: Path) -> bool:
 
 
 def _dossiers(dossier: Path) -> list[Path]:
-    return sorted(c for c in dossier.iterdir() if c.is_dir() and _visible(c))
+    return sorted(c for c in dossier.iterdir() if c.is_dir() and _visible(c) and c.name != DOSSIER_IMAGES)
+
+
+def _base_images(fichier: Path, racine: Path) -> str:
+    """Adresse de base des images relatives d'un document : son dossier source, sous /ressources/."""
+    relatif = fichier.parent.relative_to(racine).as_posix()
+    return "/ressources/" + ("" if relatif == "." else relatif + "/")
+
+
+def _images_relatives(html: str, base: str) -> str:
+    """Les images relatives (<img src='image.png'>) pointent vers le dossier du document, pas vers la page."""
+    return re.sub(r'(<img\b[^>]*?\bsrc=")(?![a-zA-Z][a-zA-Z0-9+.-]*:|/|#)([^"]+)"',
+                  lambda m: m.group(1) + base + m.group(2) + '"', html)
 
 
 def _documents(dossier: Path) -> list[Path]:
@@ -113,32 +127,33 @@ def _meta_dossier(dossier: Path) -> dict[str, str]:
     return meta
 
 
-def _entree(fichier: Path, parents: list[str], slug: str) -> dict:
+def _entree(fichier: Path, parents: list[str], slug: str, racine: Path) -> dict:
     meta, corps = separer_front_matter(fichier.read_text(encoding="utf-8"))
+    html = markdown.markdown(corps, extensions=EXTENSIONS_MARKDOWN)
     return {
         "titre": meta.get("titre") or _titre_du_nom(fichier.stem),
         "slug": slug,
         "chemin": "/".join([*parents, slug]),
         "description": meta.get("description", ""),
         "ordre": _ordre(meta),
-        "html": markdown.markdown(corps, extensions=EXTENSIONS_MARKDOWN),
+        "html": _images_relatives(html, _base_images(fichier, racine)),
     }
 
 
-def _entrees(dossier: Path, parents: list[str]) -> list[dict]:
+def _entrees(dossier: Path, parents: list[str], racine: Path) -> list[dict]:
     fichiers = _documents(dossier)
     slugs = _slugs_uniques([f.stem for f in fichiers])
-    return _trier([_entree(f, parents, s) for f, s in zip(fichiers, slugs)])
+    return _trier([_entree(f, parents, s, racine) for f, s in zip(fichiers, slugs)])
 
 
-def _groupe(dossier: Path, parents: list[str], slug: str) -> dict:
+def _groupe(dossier: Path, parents: list[str], slug: str, racine: Path) -> dict:
     meta = _meta_dossier(dossier)
     return {
         "titre": meta.get("titre") or _titre_du_nom(dossier.name),
         "slug": slug,
         "description": meta.get("description", ""),
         "ordre": _ordre(meta),
-        "entrees": _entrees(dossier, [*parents, slug]),
+        "entrees": _entrees(dossier, [*parents, slug], racine),
     }
 
 
@@ -151,15 +166,15 @@ def charger_arbre(racine: Path = RESSOURCES) -> list[dict]:
     slugs = _slugs_uniques([d.name for d in dossiers] + [f.stem for f in fichiers])
     categories = []
     for fichier, slug in zip(fichiers, slugs[len(dossiers):]):
-        entree = _entree(fichier, [], slug)
+        entree = _entree(fichier, [], slug, racine)
         categories.append({"titre": entree["titre"], "slug": slug, "description": entree["description"],
                            "ordre": entree["ordre"], "entrees": [entree], "sous": [], "fichier": True})
     for dossier, slug in zip(dossiers, slugs):
-        categorie = _groupe(dossier, [], slug)
+        categorie = _groupe(dossier, [], slug, racine)
         sous = []
         sous_dossiers = _dossiers(dossier)
         for sous_dossier, slug_sous in zip(sous_dossiers, _slugs_uniques([d.name for d in sous_dossiers])):
-            sous.append(_groupe(sous_dossier, [slug], slug_sous))
+            sous.append(_groupe(sous_dossier, [slug], slug_sous, racine))
             for trop_profond in _dossiers(sous_dossier):
                 print(f"   ! {trop_profond.relative_to(racine)} : dossier trop profond, ignoré")
         categorie["sous"] = _trier(sous)
@@ -215,7 +230,7 @@ def _intro(racine: Path = RESSOURCES) -> tuple[dict[str, str], str]:
     if not fichier.is_file():
         return {}, ""
     meta, corps = separer_front_matter(fichier.read_text(encoding="utf-8"))
-    return meta, markdown.markdown(corps, extensions=EXTENSIONS_MARKDOWN)
+    return meta, _images_relatives(markdown.markdown(corps, extensions=EXTENSIONS_MARKDOWN), "/ressources/")
 
 
 def page_index(arbre: list[dict], nb_articles: int, nb_sources: int) -> str:
@@ -250,6 +265,24 @@ def ecrire_fichier(cible: Path, texte: str) -> None:
     tmp.replace(cible)
 
 
+def copier_images(dossier: Path, racine: Path = RESSOURCES) -> int:
+    """Copie les images de ressources/ (dossier img/ et images à côté des documents) dans build/ressources/,
+    au même endroit : un lien relatif y mène. Renvoie le nombre d'images."""
+    n = 0
+    if not racine.is_dir():
+        return 0
+    for source in racine.rglob("*"):
+        relatif = source.relative_to(racine)
+        if (not source.is_file() or source.suffix.lower() not in EXTENSIONS_IMAGES
+                or any(p.startswith((".", "_")) for p in relatif.parts)):
+            continue
+        cible = dossier / relatif
+        cible.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, cible)
+        n += 1
+    return n
+
+
 def ecrire_ressources(nb_articles: int, nb_sources: int) -> int:
     """Écrit build/ressources/ : l'index et une page par document (ressources/<cat>/[<sous>/]<doc>/index.html).
     Le dossier est reconstruit à chaque build, pour qu'un document supprimé ne reste pas en ligne.
@@ -259,6 +292,7 @@ def ecrire_ressources(nb_articles: int, nb_sources: int) -> int:
     if dossier.exists():
         shutil.rmtree(dossier)
     ecrire_fichier(dossier / "index.html", page_index(arbre, nb_articles, nb_sources))
+    copier_images(dossier)
     nombre = 0
     for cat in arbre:
         for entree in cat["entrees"]:

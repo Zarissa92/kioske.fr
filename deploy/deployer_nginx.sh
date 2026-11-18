@@ -129,6 +129,12 @@ EMPLACEMENTS="$(cat <<'NGINX'
         try_files $uri $uri/ =404;
     }
 
+    # Images des documents Ressources (copiées au build, à côté des documents : ressources/img/, image.png…)
+    location ~* ^/ressources/.+\.(png|jpe?g|gif|webp|avif)$ {
+        limit_req zone=kioske_fichiers burst=300 nodelay;
+        try_files $uri =404;
+    }
+
     # Pages Ressources (statiques, produites par le build) : /ressources/ (index) et un dossier par document,
     # /ressources/<catégorie>/[<sous-catégorie>/]<document>/index.html. Segments limités aux caractères des
     # slugs (a-z, 0-9, -) et trois niveaux au plus. Pas d'accolades dans cette expression (nginx les
@@ -292,6 +298,13 @@ fi
 PROTECTIONS="$(cat <<'NGINX'
     # Ne pas annoncer la version de nginx
     server_tokens off;
+
+    # Compression : le HTML de l'accueil (3 Mo) et des articles passe en gzip (texte seulement).
+    gzip              on;
+    gzip_vary         on;
+    gzip_comp_level   5;
+    gzip_min_length   1024;
+    gzip_types        text/css application/javascript text/javascript application/json application/rss+xml application/xml image/svg+xml text/plain;
 
     # Site statique : seules les lectures sont acceptées
     if ($request_method !~ ^(GET|HEAD)$) {

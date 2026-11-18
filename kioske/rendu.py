@@ -226,7 +226,7 @@ def barre_et_panneaux(nb_articles: int, nb_sources: int, sur_accueil: bool = Fal
         "sobre": '<button type="button" class="menu-button" id="btn-sobre" aria-pressed="false">✨ Mode sobre : désactivé</button>',
         "grande-galerie": ('<button type="button" class="menu-button" id="btn-grande-galerie" aria-pressed="true">🖼️ Grande galerie : affichée</button>'
                            if sur_accueil else ""),
-        "galeries-blocs": ('<button type="button" class="menu-button" id="btn-galeries-blocs" aria-pressed="true">🖼️ Galeries des blocs : affichées</button>'
+        "galeries-blocs": ('<button type="button" class="menu-button" id="btn-galeries-blocs" aria-pressed="true">🖼️ Galeries des catégories : affichées</button>'
                            if sur_accueil else ""),
         "flux": bouton_flux,
         "installer": '<button type="button" class="menu-button" id="btn-install-pwa-menu">⬇ Installer l\'app</button>',

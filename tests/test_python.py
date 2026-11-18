@@ -310,6 +310,22 @@ class RessourcesDuDossier(unittest.TestCase):
         self.assertEqual(_titre_du_nom("mon_guide-2026"), "mon guide 2026")
         self.assertEqual(_titre_du_nom("a__b--c"), "a b c")
 
+    def test_dossier_img_n_est_pas_une_categorie(self):
+        from kioske.ressources import charger_arbre
+        self.ecrire("img/photo.png", "x")
+        self.ecrire("Cat/img/autre.png", "x")
+        self.ecrire("Cat/doc.md", "# A\n")
+        arbre = charger_arbre(self.racine)
+        self.assertEqual([c["titre"] for c in arbre], ["Cat"])
+        self.assertEqual(arbre[0]["sous"], [])
+
+    def test_image_relative_pointe_vers_le_dossier_du_document(self):
+        from kioske.ressources import charger_arbre
+        self.ecrire("Cat/Sous/doc.md", "![alt](photo.png)\n\n![web](https://exemple.org/a.png)\n")
+        html = charger_arbre(self.racine)[0]["sous"][0]["entrees"][0]["html"]
+        self.assertIn('src="/ressources/Cat/Sous/photo.png"', html)
+        self.assertIn('src="https://exemple.org/a.png"', html)
+
     def test_dossier_trop_profond_ignore(self):
         from kioske.ressources import charger_arbre
         self.ecrire("Cat/Sous/Trop/profond.md", "# Non\n")

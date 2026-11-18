@@ -139,7 +139,7 @@ def generer_preview(image_path: str | None, titre: str, meta: str, link: str) ->
 
     # Convertir en PNG
     buffer = BytesIO()
-    img.save(buffer, format="PNG")
+    img.save(buffer, format="PNG", optimize=True)
     return buffer.getvalue()
 
 

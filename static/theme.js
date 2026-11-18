@@ -32,7 +32,7 @@
     { id: 'btn-grande-galerie', attribut: 'grandeGalerie', cle: 'kioske-grande-galerie',
       libelle: 'Grande galerie', etat: ['affichée', 'masquée'] },
     { id: 'btn-galeries-blocs', attribut: 'galeriesBlocs', cle: 'kioske-galeries-blocs',
-      libelle: 'Galeries des blocs', etat: ['affichées', 'masquées'] },
+      libelle: 'Galeries des catégories', etat: ['affichées', 'masquées'] },
   ];
   function lireGalerie(g) {
     try { return localStorage.getItem(g.cle) !== '0'; } catch (e) { return true; }

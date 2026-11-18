@@ -17,7 +17,7 @@ Projet autonome depuis le 2026-11-11, réorganisé depuis : code dans le paquet 
 
 <p align="center"><img src="docs/img/kioske-accueil.png" width="640" alt="Page d'accueil, thème par défaut : titre, recherche, et étiquettes des sources rangées par catégorie"></p>
 
-Le menu ⚙️ regroupe les thèmes, le mode sobre, l'affichage des galeries (deux boutons : grande galerie et galeries des blocs, accueil seulement, mémorisés par navigateur), la personnalisation des flux et l'installation. Ressources, Discord, Mastodon et le code de conduite sont dans la page Ressources, accessible par le bouton ➕.
+Le menu ⚙️ regroupe les thèmes, le mode sobre, l'affichage des galeries (deux boutons : grande galerie et galeries des catégories, accueil seulement, mémorisés par navigateur), la personnalisation des flux et l'installation. Ressources, Discord, Mastodon et le code de conduite sont dans la page Ressources, accessible par le bouton ➕.
 
 <p align="center"><img src="docs/img/kioske-menu.png" width="640" alt="Menu ≡ ouvert : thèmes, mode sobre, personnaliser flux, installer l'app, ressources, flux RSS, Discord, Mastodon, code de conduite"></p>
 
@@ -465,7 +465,7 @@ sudo systemctl start kioske-veille.service   # publier tout de suite
 **Droits** : la racine web est en `www-data:www-data`, dossiers `2775`, fichiers `664`. `data/` et
 `build/` appartiennent à l'utilisateur du service.
 
-**nginx** : HTTPS seul avec HSTS, **TLS 1.3 seul**, 0-RTT refusé, version masquée, méthodes `GET` et `HEAD`, aucun envoi de données, en-têtes de sécurité, politique de contenu `default-src 'none'` puis, pour le site seulement (`'self'`) : images, styles, polices, scripts (ceux écrits dans les pages et `/theme.js`), `fetch` (`connect-src` : recherche, carte ouverte, favoris), `manifest.json` et `sw.js`. Rien ne peut être chargé depuis un autre site.
+**nginx** : HTTPS seul avec HSTS, **TLS 1.3 seul**, 0-RTT refusé, version masquée, méthodes `GET` et `HEAD`, aucun envoi de données, en-têtes de sécurité, politique de contenu `default-src 'none'` puis, pour le site seulement (`'self'`) : images, styles, polices, scripts (ceux écrits dans les pages et `/theme.js`), `fetch` (`connect-src` : recherche, carte ouverte, favoris), `manifest.json` et `sw.js`. Rien ne peut être chargé depuis un autre site. Compression gzip du texte (HTML, CSS, JS, JSON, flux, SVG) : la page d'accueil fait environ 3 Mo non compressée.
 
 **Liste blanche** : le site est statique, nginx ne sert donc que les adresses que le build produit. Chaque famille d'adresses a son bloc `location` ; tout le reste tombe dans `location /`, qui répond 404 et écrit une ligne dans `/var/log/nginx/<domaine>.hors-site.log` (en plus du journal d'accès). **En ajoutant un fichier ou un dossier à la racine du site (`static/`, ou une nouvelle sortie du build), l'ajouter aussi à cette liste**, dans `deploy/deployer_nginx.sh` (variable `EMPLACEMENTS`) et dans `deploy/kioske-nginx.conf`, sinon il sera refusé et ses visiteurs comptés comme des sondes.
 

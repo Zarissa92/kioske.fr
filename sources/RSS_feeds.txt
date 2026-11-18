@@ -83,3 +83,4 @@
 "https://thepinktimes.com/rss.xml"
 "https://www.thepinknews.com/feed/"
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCAsbcajgc4tlzwInKWSdeyg"  #Matt
+"https://www.them.us/feeds/feed.rss"
