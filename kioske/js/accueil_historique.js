@@ -37,9 +37,6 @@ function closePopover() {
 }
 // historique : 'ajouter' (nouvelle entrée), 'remplacer' (ouverture au chargement), 'aucun' (retour/avance du navigateur)
 function showPopover(id, historique = 'ajouter') {
-  // Fermer le menu navbar quand on ouvre un panneau
-  fermerMenuNavbar();
-
   const container = document.getElementById('container-' + id);
   const dejaOuvert = !!container && openPopover === container;
   masquerPanneau();

@@ -67,13 +67,3 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".galerie-slider").forEach(brancherGalerie);
 });
 
-// Image qui ne charge pas (adresse refusée par le site d'origine) : la carte affiche le titre à la place.
-function retirerCarte(img) {
-  const carte = img.closest('.galerie-carte');
-  if (!carte) return;
-  const texte = document.createElement('span');
-  texte.className = 'galerie-carte-texte';
-  texte.textContent = carte.getAttribute('title') || '';
-  img.replaceWith(texte);
-  carte.classList.add('galerie-carte-sans-image');
-}

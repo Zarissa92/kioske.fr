@@ -9,12 +9,6 @@ document.querySelectorAll('.categorie-backdrop').forEach(backdrop => {
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    const menu = document.getElementById('navbar-menu');
-    if (menu && menu.style.display !== 'none') {
-      fermerMenuNavbar();
-      document.getElementById('btn-menu')?.focus();
-      return;
-    }
     if (carteOuverte && !carteOuverte.hidden) {
       fermerCarte();
     } else {

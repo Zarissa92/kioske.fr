@@ -20,12 +20,10 @@
 <style>${css}</style>
 ${script_theme}
 <script type="application/json" id="kioske-donnees">${donnees_json}</script>
-<script>
-${js_donnees_accueil}</script>
-<script>
-${js_service_worker}</script>
+
+
 </head>
-<body>
+<body data-page="categorie">
 ${barre_haut}
 ${panneaux_communs}
 <main class="panel panel-category">
@@ -33,9 +31,6 @@ ${panneaux_communs}
   <h1>${categorie}</h1>
   ${grille}
 </main>
-<script>
-${js_barre}
-${js_retour_app}
-${js_installation_pwa}${js_page_categorie}</script>
+${script_bundle}
 </body>
 </html>

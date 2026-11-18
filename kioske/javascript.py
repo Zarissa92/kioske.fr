@@ -32,13 +32,13 @@ def json_pour_page(donnees) -> str:
 JS_SERVICE_WORKER = lire("service_worker.js")      # enregistrement de /sw.js
 # Accueil
 JS_DONNEES_ACCUEIL = lire("donnees_accueil.js")    # lit le JSON « kioske-donnees » de la page
+JS_IMAGES_REPLI = lire("images_repli.js")          # images qui ne chargent pas : repli (data-repli), sans onerror
 JS_GALERIE = lire("galerie.js")                    # flèches des galeries : brancherGalerie()
 # Accueil : découpé en fichiers par rôle. L'ORDRE COMPTE : les fichiers sont concaténés dans une seule balise
 # <script>, comme autrefois accueil.js ; un fichier peut utiliser ce que les précédents ont déclaré.
 FICHIERS_ACCUEIL = [
-    "accueil_historique.js", "accueil_menu.js", "accueil_clavier.js", "accueil_cartes.js",
+    "accueil_historique.js", "accueil_clavier.js", "accueil_cartes.js",
     "accueil_panneaux.js", "accueil_recherche.js", "accueil_adresse.js", "accueil_favoris.js",
-    "accueil_sous_menus.js",
 ]
 JS_ACCUEIL = "".join(lire(nom) for nom in FICHIERS_ACCUEIL)
 JS_FLUX_PERSONNALISE = lire("flux_personnalise.js") # flux personnalisé : sélection des sources
@@ -55,3 +55,15 @@ JS_INSTALLATION_PWA = lire("installation_pwa.js")  # invite d'installation, bout
 JS_PAGE_ARTICLE = lire("page_article.js")
 JS_PAGE_CATEGORIE = lire("page_categorie.js")
 JS_PAGE_RSS = lire("page_rss.js")
+
+# Bundle unique : tout le JavaScript des pages, dans un ordre fixe. Son nom porte une empreinte du contenu
+# (cache longue durée sans risque). Écrit dans build/js/ par construction.py.
+import hashlib as _hashlib
+ORDRE_BUNDLE = [JS_DONNEES_ACCUEIL, JS_SERVICE_WORKER, JS_IMAGES_REPLI, JS_GALERIE, JS_FAVORIS, JS_PARTAGE,
+                JS_ACCUEIL, JS_FLUX_PERSONNALISE, JS_NOTIFICATIONS, JS_RAFRAICHISSEMENT, JS_CARTE_OUVERTE,
+                JS_RETOUR_APP, JS_INSTALLATION_PWA, JS_PAGE_ARTICLE, JS_PAGE_CATEGORIE, JS_PAGE_RSS]
+JS_BUNDLE = "\n".join(ORDRE_BUNDLE)
+EMPREINTE_BUNDLE = _hashlib.sha256(JS_BUNDLE.encode("utf-8")).hexdigest()[:12]
+NOM_BUNDLE = f"kioske.{EMPREINTE_BUNDLE}.js"
+BALISE_BUNDLE = f'<script src="/js/{NOM_BUNDLE}" defer></script>'
+

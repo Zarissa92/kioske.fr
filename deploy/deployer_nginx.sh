@@ -48,7 +48,7 @@ SANS_CERT=0
 # qui sont téléchargées par le build et servies depuis img/veille/ dans la racine web).
 # Scripts : ceux écrits dans les pages et /theme.js ; connect-src pour fetch (recherche, carte ouverte,
 # favoris) ; manifest-src et worker-src pour la PWA (manifest.json, sw.js).
-CSP="default-src 'none'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
+CSP="default-src 'none'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
 
 # Tables et zones du niveau « http », écrites en tête du fichier généré.
 CARTE_CACHE="$(cat <<'NGINX'
@@ -75,7 +75,13 @@ map $uri $kioske_cache_control {
     /index.html                       "no-cache, must-revalidate, max-age=0";
     # Pages Ressources (statiques) : revérifiées, le contenu change à chaque publication
     ~^/ressources(/|$)                "no-cache, must-revalidate, max-age=0";
-    # Pages, theme.js, index des articles : 30 min (durée du timer de mise à jour)
+    # Pages HTML (articles, catégories, flux, dossiers) : revérifiées à chaque visite. Sinon une page en cache
+    # garde l'ancien JavaScript (notifications, thèmes) jusqu'à 30 min, et Ctrl+Maj+R ne suffit pas toujours.
+    # Bundle JavaScript (/js/kioske.<empreinte>.js) : le nom change avec le contenu, donc cache longue durée
+    ~^/js/kioske\.[0-9a-f]+\.js$     "public, max-age=31536000, immutable";
+    ~\.html$                          "no-cache, must-revalidate, max-age=0";
+    ~/$                               "no-cache, must-revalidate, max-age=0";
+    # theme.js, index des articles, autres : 30 min (durée du timer de mise à jour)
     default                           "public, max-age=1800, must-revalidate";
 }
 
@@ -92,6 +98,24 @@ map $sent_http_content_type $kioske_langue {
 limit_req_zone  $binary_remote_addr zone=kioske_pages:10m      rate=10r/s;
 limit_req_zone  $binary_remote_addr zone=kioske_fichiers:10m   rate=100r/s;
 limit_conn_zone $binary_remote_addr zone=kioske_connexions:10m;
+
+# Robots : limite basse (30 pages/min, rafale 10) pour les clients qui se présentent comme des robots ou des scripts.
+# Clé = adresse IP pour eux, vide pour les autres : une clé vide n'est pas comptée, les navigateurs ne sont pas freinés.
+# Au-delà : 429, compté par la jail fail2ban kioske-debit comme les autres.
+map $http_user_agent $kioske_cle_robot {
+    default "";
+    ""      $binary_remote_addr;
+    ~*(bot|crawl|spider|slurp|scrapy|python-requests|python-urllib|aiohttp|httpx|curl|wget|go-http-client|java/|libwww|okhttp|axios|node-fetch|headless|phantomjs|gptbot|claudebot|ccbot|bytespider|amazonbot|perplexitybot|meta-externalagent|petalbot|semrush|ahrefs|mj12bot|dotbot) $binary_remote_addr;
+}
+limit_req_zone $kioske_cle_robot zone=kioske_robots:10m rate=30r/m;
+
+# Robots d'IA (même liste que ROBOTS_IA dans kioske/construction.py, qui leur demande Crawl-delay: 10) :
+# 6 pages/min, soit une toutes les 10 secondes. S'ajoute à la limite des robots (30/min) : la plus stricte joue.
+map $http_user_agent $kioske_cle_robot_ia {
+    default "";
+    "~*(gptbot|chatgpt-user|claudebot|claude-web|anthropic-ai|ccbot|bytespider|perplexitybot|perplexity-user|amazonbot|meta-externalagent|meta-externalfetcher|facebookbot|cohere-ai|cohere-training-data-crawler|diffbot|omgilibot|omgili|imagesiftbot|youbot|ai2bot|timpibot|mistralai-user|img2dataset|duckassistbot|pangubot|kangaroo bot|webzio-extended|velenpublicwebcrawler)" $binary_remote_addr;
+}
+limit_req_zone $kioske_cle_robot_ia zone=kioske_robots_ia:10m rate=6r/m;
 NGINX
 )"
 
@@ -116,18 +140,24 @@ EMPLACEMENTS="$(cat <<'NGINX'
     # Accueil
     location = / {
         limit_req zone=kioske_pages burst=40 nodelay;
+        limit_req zone=kioske_robots burst=10 nodelay;
+        limit_req zone=kioske_robots_ia burst=3 nodelay;
         try_files /index.html =404;
     }
 
     # Pages et données à la racine : accueil, page des flux, flux RSS, plan du site, index de recherche
     location ~ ^/(index\.html|rss\.html|code-de-conduite\.html|dispositions-legales\.html|rss\.xml|sitemap\.xml|robots\.txt|articles-index\.json)$ {
         limit_req zone=kioske_pages burst=40 nodelay;
+        limit_req zone=kioske_robots burst=10 nodelay;
+        limit_req zone=kioske_robots_ia burst=3 nodelay;
         try_files $uri =404;
     }
 
     # Pages d'article et de catégorie : /articles/<id>-<titre>/ et /categories/<nom>/
     location ~ ^/(articles|categories)/[a-z0-9-]+(/|/index\.html)?$ {
         limit_req zone=kioske_pages burst=40 nodelay;
+        limit_req zone=kioske_robots burst=10 nodelay;
+        limit_req zone=kioske_robots_ia burst=3 nodelay;
         try_files $uri $uri/ =404;
     }
 
@@ -144,12 +174,16 @@ EMPLACEMENTS="$(cat <<'NGINX'
     # index.html nommé : dans un bloc « location ~ », « $uri/ » seul ne sert pas l'index du dossier (404).
     location ~ ^/ressources(/[a-z0-9-]+)?(/[a-z0-9-]+)?(/[a-z0-9-]+)?/?$ {
         limit_req zone=kioske_pages burst=40 nodelay;
+        limit_req zone=kioske_robots burst=10 nodelay;
+        limit_req zone=kioske_robots_ia burst=3 nodelay;
         try_files $uri $uri/index.html =404;
     }
 
     # Anciens flux RSS par catégorie (/rss/<nom>.xml, supprimés) : redirection vers le flux unique
     location ~ ^/rss/[a-z0-9-]+\.xml$ {
         limit_req zone=kioske_pages burst=40 nodelay;
+        limit_req zone=kioske_robots burst=10 nodelay;
+        limit_req zone=kioske_robots_ia burst=3 nodelay;
         return 301 /rss.xml;
     }
 
@@ -158,6 +192,13 @@ EMPLACEMENTS="$(cat <<'NGINX'
         limit_req zone=kioske_fichiers burst=300 nodelay;
         types { }
         default_type application/manifest+json;
+    }
+
+    # Bundle JavaScript des pages (/js/kioske.<empreinte>.js) : sans cette règle, la liste blanche le renvoie en 404.
+    # Le cache longue durée vient de la table map (immutable), comme le reste.
+    location ~ ^/js/kioske\.[0-9a-f]+\.js$ {
+        limit_req zone=kioske_fichiers burst=300 nodelay;
+        try_files $uri =404;
     }
 
     # Scripts, icônes et image de partage à la racine

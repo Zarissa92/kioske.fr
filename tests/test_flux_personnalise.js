@@ -42,5 +42,52 @@ async function tuilesVisibles(avant) {
     f.localStorage.setItem('kioske_flux_personnalise', JSON.stringify(choix));
   });
   t.verif('ancien choix sans liste : seules les cochées', r.visibles.length === 3 && !r.visibles.includes(NOUVELLE), '(' + r.visibles.length + ')');
+
+  // Bandeau « nouveau flux ajouté » : affiché à l'ouverture, une seule fois par source.
+  async function bandeau(avant) {
+    const { w, d, erreurs } = charger('index.html', '/', { avant });
+    await attendre(300);
+    return { w, d, texte: d.getElementById('flux-nouveau')?.textContent || null, erreurs };
+  }
+  // Comme au vrai enregistrement : toutes les sources présentes sur la page sont « connues », sauf NOUVELLE
+  // (qui n'existait pas encore au moment du choix).
+  const { d: pageSansChoix } = charger('index.html', '/');
+  const presentes = [...new Set([...pageSansChoix.querySelectorAll('.nuage .tag')].map(t => t.dataset.sourceKey))];
+  const connusSansNouvelle = presentes.filter(k => k !== NOUVELLE);
+  t.verif('la page contient la source nouvelle', presentes.includes(NOUVELLE));
+  const connus = (f) => {
+    f.localStorage.setItem('kioske_flux_personnalise', JSON.stringify(choix));
+    f.localStorage.setItem('kioske_flux_connus', JSON.stringify(connusSansNouvelle));
+  };
+  let b = await bandeau(connus);
+  t.verif('source nouvelle : bandeau affiché', b.texte !== null && b.texte.includes('Nouveau flux ajouté'), b.texte || '');
+  t.verif('bandeau non fermé : pas encore marqué comme annoncé', !JSON.parse(b.w.localStorage.getItem('kioske_flux_annonces') || '[]').includes(NOUVELLE));
+  t.verif('cloche : point rouge (notification en attente)', b.w.document.getElementById('btn-notifications').classList.contains('a-notif'));
+  t.verif('bandeau : aucune erreur JavaScript', b.erreurs.length === 0, b.erreurs.join(' | '));
+  t.verif('nouveau flux : activé par défaut dans le choix personnalisé', JSON.parse(b.w.localStorage.getItem('kioske_flux_personnalise') || '{}')[NOUVELLE] === true);
+
+  // Décochée après activation automatique : elle reste décochée au chargement suivant.
+  b = await bandeau((f) => {
+    f.localStorage.setItem('kioske_flux_personnalise', JSON.stringify(choix));
+    f.localStorage.setItem('kioske_flux_connus', JSON.stringify(connusSansNouvelle));
+    f.localStorage.setItem('kioske_flux_activees_auto', JSON.stringify([NOUVELLE]));
+  });
+  t.verif('source déjà activée automatiquement puis décochée : reste décochée', !JSON.parse(b.w.localStorage.getItem('kioske_flux_personnalise') || '{}')[NOUVELLE]);
+
+  // Quitter sans fermer le bandeau : il revient à la visite suivante (même stockage).
+  const stockage = (w) => Object.fromEntries(Object.keys(w.localStorage).map(k => [k, w.localStorage.getItem(k)]));
+  const sauve = stockage(b.w);
+  b = await bandeau((f) => { for (const [k, v] of Object.entries(sauve)) f.localStorage.setItem(k, v); });
+  t.verif('bandeau non fermé : revient à la visite suivante', b.texte !== null && b.texte.includes('Inter-LGBT'));
+
+  // Fermer le bandeau (OK) : la source est marquée, le bandeau ne revient plus.
+  b.d.querySelector('#flux-nouveau .flux-nouveau-actions button:last-child').click();
+  t.verif('OK : source marquée comme annoncée', JSON.parse(b.w.localStorage.getItem('kioske_flux_annonces') || '[]').includes(NOUVELLE));
+  const sauve2 = stockage(b.w);
+  b = await bandeau((f) => { for (const [k, v] of Object.entries(sauve2)) f.localStorage.setItem(k, v); });
+  t.verif('source déjà annoncée : pas de bandeau', b.texte === null);
+
+  b = await bandeau((f) => { f.localStorage.setItem('kioske_flux_personnalise', JSON.stringify(choix)); });
+  t.verif('ancien choix sans liste : pas de bandeau', b.texte === null);
   t.fin();
 })();

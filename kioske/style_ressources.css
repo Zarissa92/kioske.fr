@@ -122,6 +122,9 @@ body { min-height: 100vh; }
 .ressources-texte p, .ressources-texte ul, .ressources-texte ol { margin: 0 0 0.9rem; }
 .ressources-texte a { color: var(--color-text-main); }
 .ressources-texte img { max-width: 100%; height: auto; }
+.ressources-texte li { margin: 0.25rem 0; }
+.ressources-texte li > ul, .ressources-texte li > ol { margin: 0.3rem 0 0.2rem 1.2rem; }
+.ressources-texte h2[id], .ressources-texte h3[id] { scroll-margin-top: 1rem; }
 .ressources-texte blockquote { margin: 0.9rem 0; padding-left: 0.8rem; border-left: 3px solid var(--color-text-accent); }
 .ressources-texte pre {
   overflow-x: auto;
@@ -159,3 +162,13 @@ body { min-height: 100vh; }
   .kioske-navbar .navbar-brand .flag { font-size: 1.3rem; }
 }
 
+/* Pages de texte (Ressources, Paramètres) : le bloc des thèmes reste dans le flux, sans la remontée de la barre */
+.ressources-texte .choix-theme { margin: 0.6rem 0 1rem; justify-content: flex-start; }
+/* Boutons d'action dans le texte : en ligne, à leur taille (pas pleine largeur) */
+.ressources-texte .menu-button { display: inline-block; width: auto; margin: 0.2rem 0.3rem 0.2rem 0; }
+
+/* Bouton 📤 des pages Ressources : en bas de page, centré, sous un trait (comme le bas d'une carte ouverte),
+   libellé « Partager » sous l'icône */
+.ressources-partage { display: flex; justify-content: center; margin-top: 1.5rem; padding-top: 1.2rem; border-top: var(--border-article-lien); }
+.ressources-partage .share-btn { display: inline-flex; flex-direction: column; align-items: center; gap: 0.25rem; margin: 0; }
+.ressources-partage .partage-libelle { font-size: 0.75rem; }

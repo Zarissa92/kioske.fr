@@ -9,7 +9,7 @@ const { attendre, charger, suite } = require('./outils');
   {
     const { w, d, erreurs } = charger('ressources/index.html', '/ressources/');
     await attendre(60);
-    t.verif('index : titre « Ressources »', d.querySelector('main h1') && d.querySelector('main h1').textContent === 'Ressources');
+    t.verif('index : titre « Menu »', d.querySelector('main h1') && d.querySelector('main h1').textContent === 'Menu');
     t.verif('index : sommaire présent', !!d.querySelector('.ressources-sommaire'));
     t.verif('index : aucune erreur JavaScript', erreurs.length === 0, erreurs.join(' | '));
     const premier = d.querySelector('.ressources-sommaire a[href^="/ressources/"]:not([href="/ressources/"])');

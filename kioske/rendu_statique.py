@@ -9,8 +9,6 @@ from zoneinfo import ZoneInfo
 from .config import NOM_SITE, URL_SITE, CFG
 from .gabarits import remplir
 from .texte import esc, adresse_sure, article_id, slug_article, slug_categorie
-from .javascript import (JS_CARTE_OUVERTE, JS_FAVORIS, JS_INSTALLATION_PWA, JS_PAGE_ARTICLE, JS_PAGE_CATEGORIE,
-                         JS_PARTAGE, JS_RETOUR_APP, JS_SERVICE_WORKER)
 from .rendu import valeurs_barre
 from .themes import ATTRIBUTS_HTML, CSS, SCRIPT_THEME, VARIABLES_HTML
 
@@ -19,13 +17,9 @@ from .themes import ATTRIBUTS_HTML, CSS, SCRIPT_THEME, VARIABLES_HTML
 # Les scripts (carte ouverte, bouton précédent de l'app installée, pages d'article et de catégorie)
 # sont dans kioske/js/ ; kioske/javascript.py les lit.
 
-# Image qui ne charge pas (site d'origine indisponible) : la lettre de repli, déjà présente, prend sa place.
-ONERROR_IMAGE = "this.onerror=null;this.hidden=true;this.nextElementSibling.hidden=false"
-
-
 def image_avec_repli(src: str, alt: str, lettre: str) -> str:
     return (f'<img src="{esc(src)}" alt="{esc(alt)}" loading="lazy" referrerpolicy="no-referrer" '
-            f'onerror="{ONERROR_IMAGE}"><span class="lettre" hidden>{esc(lettre)}</span>')
+            f'data-repli="image"><span class="lettre" hidden>{esc(lettre)}</span>')
 
 
 def render_article_page(item: dict, preview: dict, prev_article: dict | None = None, next_article: dict | None = None, previews: dict[str, dict] | None = None, preview_image: str = "", barre: dict | None = None) -> str:
@@ -96,7 +90,6 @@ def render_article_page(item: dict, preview: dict, prev_article: dict | None = N
         meta_twitter_image=meta_twitter_image,
         css=CSS + "\n" + (barre or valeurs_barre())["css_barre"],
         script_theme=SCRIPT_THEME,
-        js_service_worker=JS_SERVICE_WORKER,
         media=media,
         date=date_html,
         site_origine=esc(host),
@@ -104,9 +97,6 @@ def render_article_page(item: dict, preview: dict, prev_article: dict | None = N
         contenu=esc(contenu),
         lien_origine=esc(adresse_sure(item["link"], "")),
         boutons_navigation=nav_buttons,
-        js_retour_app=JS_RETOUR_APP,
-        js_installation_pwa=JS_INSTALLATION_PWA,
-        js_page_article=JS_PAGE_ARTICLE,
     )
 
 
@@ -164,9 +154,5 @@ def render_category_page(category_name: str, articles: list[dict],
         adresse_canonique=canonical,
         css=CSS + "\n" + barre["css_barre"],
         script_theme=SCRIPT_THEME,
-        js_service_worker=JS_SERVICE_WORKER,
         grille="".join(sources_html),
-        js_retour_app=JS_RETOUR_APP,
-        js_installation_pwa=JS_INSTALLATION_PWA,
-        js_page_categorie=JS_PAGE_CATEGORIE,
     )

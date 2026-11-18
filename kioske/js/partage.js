@@ -10,11 +10,11 @@ function shareArticle(e) {
     navigator.share({ title: titre, url: adresse }).catch(() => {});
   } else if (navigator.clipboard) {
     navigator.clipboard.writeText(adresse).then(() => {
-      const texte = btn.textContent;
+      const contenu = btn.innerHTML;   // icône et libellé éventuels (pages Ressources)
       btn.textContent = '✓';
       btn.classList.add('est-copie');
       setTimeout(() => {
-        btn.textContent = texte;
+        btn.innerHTML = contenu;
         btn.classList.remove('est-copie');
       }, 2000);
     }).catch(() => alert('Partage indisponible sur ce navigateur'));

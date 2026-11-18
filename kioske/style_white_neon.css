@@ -1,17 +1,19 @@
 /* Thème « white_neon » : seulement ce qui le différencie de style_default.css (variables et ajouts). */
 :root {
+  --tag-survol: var(--color-text-main);   /* les néons gardent le survol de leur couleur */
+  --panneau-fond: rgba(10, 0, 0, 0.7);
   --border-carte: 1px solid var(--color-text-accent);
   --color-fav-heart: #ffffff;
   --overflow-y-galerie: hidden;
   --border-radius-galerie-carte-wrapper: initial;
-  --border-color-groupe-h2-titre-panneau: rgba(255, 255, 255, 0.5);
+  --border-color-groupe-h2-titre-panneau: #ffffff;
   --color-groupe-h2-titre-panneau: #ffffff;
-  --text-shadow-groupe-h2-titre-panneau: 0 0 8px #ffffff, 0 0 16px #ffffff;
-  --text-shadow-groupe-h2-titre-panneau-hove: 0 0 12px #ffffff, 0 0 24px #ffffff, 0 0 36px rgba(255, 255, 255, 0.5);
-  --border-color-groupe-h3-titre-panneau: rgba(255, 255, 255, 0.5);
+  --text-shadow-groupe-h2-titre-panneau: 0 0 6px #ffffff, 0 0 12px #ffffff, 0 0 24px #ffffff, 0 0 36px rgba(255, 255, 255, 0.8);
+  --text-shadow-groupe-h2-titre-panneau-hove: 0 0 10px #ffffff, 0 0 20px #ffffff, 0 0 40px #ffffff, 0 0 60px rgba(255, 255, 255, 0.8);
+  --border-color-groupe-h3-titre-panneau: #ffffff;
   --color-groupe-h3-titre-panneau: #ffffff;
-  --text-shadow-groupe-h3-titre-panneau: 0 0 8px #ffffff, 0 0 16px #ffffff;
-  --text-shadow-groupe-h3-titre-panneau-hove: 0 0 12px #ffffff, 0 0 24px #ffffff, 0 0 36px rgba(255, 255, 255, 0.5);
+  --text-shadow-groupe-h3-titre-panneau: 0 0 6px #ffffff, 0 0 12px #ffffff, 0 0 24px #ffffff, 0 0 36px rgba(255, 255, 255, 0.8);
+  --text-shadow-groupe-h3-titre-panneau-hove: 0 0 10px #ffffff, 0 0 20px #ffffff, 0 0 40px #ffffff, 0 0 60px rgba(255, 255, 255, 0.8);
   --width-panel: calc(100% - 32px);
   --background-html-body: var(--bg);
   --color-light: #ffffff;
@@ -20,3 +22,7 @@
   --neon-coeur: #ffffff;
   --neon-halo: #ffffff;
 }
+
+/* Bordures des titres de panneaux : néon (repos et survol) */
+.groupe h2.titre-panneau, .groupe h3.titre-panneau { box-shadow: 0 0 6px #ffffff, 0 0 14px #ffffff, inset 0 0 8px rgba(255, 255, 255, 0.4); }
+.groupe h2.titre-panneau:hover, .groupe h3.titre-panneau:hover { box-shadow: 0 0 10px #ffffff, 0 0 24px #ffffff, inset 0 0 12px rgba(255, 255, 255, 0.5); }

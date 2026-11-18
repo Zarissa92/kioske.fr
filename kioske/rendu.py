@@ -10,11 +10,9 @@ from pathlib import Path
 from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
-from .config import DOMAINE, GALERIE_PANNEAU, NOM_SITE, ORDRE_MENU, ORDRE_PANNEAUX, URL_SITE, CFG
+from .config import DOMAINE, GALERIE_PANNEAU, NOM_SITE, ORDRE_PANNEAUX, URL_SITE, CFG
 from .gabarits import remplir
-from .javascript import (JS_ACCUEIL, JS_CARTE_OUVERTE, JS_DONNEES_ACCUEIL, JS_FAVORIS, JS_FLUX_PERSONNALISE,
-                         JS_GALERIE, JS_INSTALLATION_PWA, JS_NOTIFICATIONS, JS_RAFRAICHISSEMENT, JS_PAGE_RSS, JS_PARTAGE, JS_RETOUR_APP,
-                         JS_SERVICE_WORKER, json_pour_page)
+from .javascript import json_pour_page
 from .sources import AUTRES, ordre_des_categories
 from .texte import cle_alphabetique, esc, truncate_label, article_id, slug_article
 from .themes import ATTRIBUTS_HTML, CHOIX_THEME, CSS, CSS_FAVORIS, CSS_RESSOURCES, SCRIPT_THEME, VARIABLES_HTML
@@ -72,10 +70,10 @@ def render_galerie_bloc(categorie: str, items: list[dict], previews: dict[str, d
         title = apercu.get("title") or item["title"]
         article_url = f'/articles/{article_id(item["link"])}-{slug_article(title, item["link"])}/'
         source_name = item.get("source", "")
-        # Sans image : la carte affiche le titre. Image qui ne charge pas : retirerCarte() met le titre à sa place.
+        # Sans image : la carte affiche le titre. Image qui ne charge pas : images_repli.js met le titre à sa place (data-repli="carte").
         if image:
             media = (f'<img src="{esc(image)}" alt="{esc(title)}" loading="lazy" referrerpolicy="no-referrer" '
-                     f'onerror="retirerCarte(this)">')
+                     f'data-repli="carte">')
             classe = "galerie-carte"
         else:
             media = f'<span class="galerie-carte-texte">{esc(title)}</span>'
@@ -124,7 +122,7 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> str:
 
           media = (
               f'<img src="{esc(image)}" alt="{esc(title)}" '
-              'loading="lazy" referrerpolicy="no-referrer" onerror="(this.closest(&#39;.galerie-carte-wrapper&#39;)||this.closest(&#39;.galerie-carte&#39;)).remove()">'
+              'loading="lazy" referrerpolicy="no-referrer" data-repli="retirer">'
           )
 
           # Lien vers la page d'article
@@ -144,7 +142,7 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> str:
           )
 
       # Ajouter une seule fois le script de retour, pas une fois par carte
-    script_galerie = f"<script>\n{JS_GALERIE}</script>"
+    script_galerie = ""   # galerie et repli d'images : dans le bundle commun (javascript.py)
 
     html = f"""
     <section class="galerie-slider galerie-principale" aria-label="12 derniers articles">
@@ -181,8 +179,8 @@ def page_statique(gabarit: str, nb_articles: int, nb_sources: int, *, titre: str
     tete = remplir("partiels/tete_page.html", **barre, attributs_html=ATTRIBUTS_HTML, variables_html=VARIABLES_HTML,
                    titre=esc(titre), description=esc(description), adresse=esc(adresse), nom_site=esc(NOM_SITE),
                    url_site=URL_SITE, css=CSS + "\n" + barre["css_barre"], script_theme=SCRIPT_THEME,
-                   js_service_worker=JS_SERVICE_WORKER)
-    return remplir(gabarit, **barre, tete=tete, js_retour_app=JS_RETOUR_APP, js_installation_pwa=JS_INSTALLATION_PWA,
+                   )
+    return remplir(gabarit, **barre, tete=tete,
                    **corps)
 
 
@@ -202,48 +200,18 @@ def valeurs_barre(nb_articles: int = 0, nb_sources: int = 0) -> dict[str, str]:
         "barre_haut": barre,
         "panneaux_communs": panneaux,
         "donnees_json": json_pour_page({"sources": {}, "categories": {}, "sources_metadata": {}, "galerie_panneau": 0}),
-        "js_donnees_accueil": JS_DONNEES_ACCUEIL,
-        "js_barre": JS_FAVORIS + JS_PARTAGE + JS_ACCUEIL + JS_FLUX_PERSONNALISE + JS_NOTIFICATIONS + JS_CARTE_OUVERTE,
         "css_barre": CSS_FAVORIS + "\n" + CSS_RESSOURCES,
     }
 
 
-def barre_et_panneaux(nb_articles: int, nb_sources: int, sur_accueil: bool = False) -> tuple[str, str]:
-    """Barre du haut (marque, compteurs, recherche, ♡, notifications, menu ≡) et panneaux communs.
-    Les mêmes sur toutes les pages. L'ordre des entrées du menu vient de kioske.cfg ([menu] ordre)."""
-    lien_discord = CFG.get("reseaux", "discord", fallback="")
-    lien_mastodon = CFG.get("reseaux", "mastodon", fallback="")
-    lien_rss = CFG.get("reseaux", "rss", fallback="rss.html")
-    # Adresse relative (rss.html) : fausse sur /ressources/ (elle y pointe vers /ressources/rss.html) ; on part de la racine
-    if lien_rss and not lien_rss.startswith(("http://", "https://", "/")):
-        lien_rss = "/" + lien_rss
-    # « Personnaliser flux » lit les sources de l'accueil : ailleurs, le lien y renvoie (?flux=personnaliser)
-    if sur_accueil:
-        bouton_flux = '<button type="button" class="menu-button" id="btn-custom-flux-navbar">⚙️ Personnaliser flux</button>'
-    else:
-        bouton_flux = '<a class="menu-button" id="btn-flux-accueil" href="/?flux=personnaliser">⚙️ Personnaliser flux</a>'
-    elements = {
-        "sobre": '<button type="button" class="menu-button" id="btn-sobre" aria-pressed="false">✨ Mode sobre : désactivé</button>',
-        "grande-galerie": ('<button type="button" class="menu-button" id="btn-grande-galerie" aria-pressed="true">🖼️ Grande galerie : affichée</button>'
-                           if sur_accueil else ""),
-        "galeries-blocs": ('<button type="button" class="menu-button" id="btn-galeries-blocs" aria-pressed="true">🖼️ Galeries des catégories : affichées</button>'
-                           if sur_accueil else ""),
-        "flux": bouton_flux,
-        "installer": '<button type="button" class="menu-button" id="btn-install-pwa-menu">⬇ Installer l\'app</button>',
-        "ressources": '<a class="menu-button" href="/ressources/">📚 Ressources</a>',
-        "rss": f'<a class="menu-button" href="{esc(lien_rss)}">📡 Flux RSS</a>' if lien_rss else "",
-        "discord": f'<a class="menu-button" href="{esc(lien_discord)}" target="_blank" rel="noopener noreferrer">💜 Discord</a>' if lien_discord else "",
-        "mastodon": f'<a class="menu-button" href="{esc(lien_mastodon)}" target="_blank" rel="noopener noreferrer">🦣 Mastodon</a>' if lien_mastodon else "",
-        "conduite": '<a class="menu-button" href="/code-de-conduite.html">📖 Code de conduite</a>',
-    }
-    menu = "\n          ".join(elements[cle] for cle in ORDRE_MENU if cle not in HORS_MENU and elements[cle])
+def barre_et_panneaux(nb_articles: int, nb_sources: int) -> tuple[str, str]:
+    """Barre du haut (marque, compteurs, recherche, ♡, notifications, bouton Menu) et panneaux communs.
+    Les mêmes sur toutes les pages."""
     barre = remplir("partiels/barre_haut.html", domaine=DOMAINE, nb_articles=nb_articles, nb_sources=nb_sources,
-                    choix_theme=CHOIX_THEME, elements_menu=menu)
+                    choix_theme=CHOIX_THEME)
     panneaux = remplir("partiels/panneaux_communs.html")
     return barre, panneaux
 
-# Sorties du menu ⚙️ : Ressources a son bouton « + » ; Discord, Mastodon et le code de conduite sont dans la page Ressources.
-HORS_MENU = {"ressources", "discord", "mastodon", "conduite"}
 
 
 def render_page(items: list[dict], previews: dict[str, dict],
@@ -454,7 +422,7 @@ def render_page(items: list[dict], previews: dict[str, dict],
          "sources_metadata": sources_metadata, "galerie_panneau": 0})
 
     # Barre du haut et panneaux communs : les mêmes que sur la page Ressources
-    barre_haut, panneaux_communs = barre_et_panneaux(len(items), len(groupes), sur_accueil=True)
+    barre_haut, panneaux_communs = barre_et_panneaux(len(items), len(groupes))
 
     return remplir(
         "accueil.html",
@@ -470,21 +438,10 @@ def render_page(items: list[dict], previews: dict[str, dict],
         css=CSS + "\n" + CSS_FAVORIS + "\n" + CSS_RESSOURCES,
         script_theme=SCRIPT_THEME,
         donnees_json=donnees_json,
-        js_donnees_accueil=JS_DONNEES_ACCUEIL,
-        js_service_worker=JS_SERVICE_WORKER,
         barre_haut=barre_haut,
         panneaux_communs=panneaux_communs,
         galerie=galerie_html,
         nuage=nuage,
-        js_favoris=JS_FAVORIS,
-        js_partage=JS_PARTAGE,
-        js_accueil=JS_ACCUEIL,
-        js_flux_personnalise=JS_FLUX_PERSONNALISE,
-        js_notifications=JS_NOTIFICATIONS,
-        js_rafraichissement=JS_RAFRAICHISSEMENT,
-        js_carte_ouverte=JS_CARTE_OUVERTE,
-        js_retour_app=JS_RETOUR_APP,
-        js_installation_pwa=JS_INSTALLATION_PWA,
     )
 
 
@@ -503,11 +460,7 @@ def render_rss_page(categories: dict[str, str] | None = None, items: list[dict] 
         url_site=URL_SITE,
         css=CSS + "\n" + valeurs_barre()["css_barre"],
         script_theme=SCRIPT_THEME,
-        js_service_worker=JS_SERVICE_WORKER,
         choix_theme=CHOIX_THEME,
         domaine=DOMAINE,
         flux_principal=flux_principal,
-        js_page_rss=JS_PAGE_RSS,
-        js_retour_app=JS_RETOUR_APP,
-        js_installation_pwa=JS_INSTALLATION_PWA,
     )

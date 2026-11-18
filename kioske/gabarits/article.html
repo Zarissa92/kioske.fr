@@ -28,12 +28,10 @@ ${meta_twitter_image}
 <style>${css}</style>
 ${script_theme}
 <script type="application/json" id="kioske-donnees">${donnees_json}</script>
-<script>
-${js_donnees_accueil}</script>
-<script>
-${js_service_worker}</script>
+
+
 </head>
-<body class="page-article">
+<body class="page-article" data-page="article">
 ${barre_haut}
 ${panneaux_communs}
 <main class="panel panel-article" data-summary="${description}">
@@ -47,7 +45,6 @@ ${panneaux_communs}
     ${boutons_navigation}
   </article>
 </main>
-<script>
-${js_barre}${js_retour_app}${js_installation_pwa}${js_page_article}</script>
+${script_bundle}
 </body>
 </html>

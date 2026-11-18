@@ -1,6 +1,7 @@
 // Bouton retour : revient TOUJOURS à la catégorie parente
 // Navigation Précédent/Suivant : préserve le param 'from'
 document.addEventListener('DOMContentLoaded', () => {
+  if (document.body.dataset.page !== 'article') return;   // page d'article seulement (bundle commun)
   const params = new URLSearchParams(window.location.search);
   let fromParam = params.get('from');
   // Retour vers une adresse du site seulement (ni autre site, ni javascript:)

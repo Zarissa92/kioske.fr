@@ -28,7 +28,7 @@ const { attendre, charger, suite } = require('./outils');
   const nomPink = w.sourcesMetadata[nomDe('PinkNews')].name;
   const cloche = d.getElementById('btn-notifications');
 
-  t.verif('sans flux personnalisé : cloche masquée', cloche.hidden === true);
+  t.verif('sans flux personnalisé : cloche visible (changements du site)', cloche.hidden === false);
 
   w.saveCustomFluxSources({ [nomDe('La Déferlante')]: true, [nomDe('Problematik')]: true });
   t.verif('flux personnalisé choisi : cloche visible', cloche.hidden === false);
@@ -43,18 +43,19 @@ const { attendre, charger, suite } = require('./outils');
   t.verif('activation : autorisation accordée', resultat === 'granted' && demandes === 1);
   t.verif('activation : rien d\'envoyé pour l\'existant', envoyees.length === 0, '(' + envoyees.length + ')');
 
+  // Notifications d'articles en pause (NOTIF_ARTICLES = false dans notifications.js) : rien n'est envoyé,
+  // même pour un nouvel article d'une source cochée. Le code reste en place pour plus tard.
   index = index.concat([{ link: 'a2', title: 'Nouvel article déférlante', source: nomDefer }]);
   await w.verifierNouveautes();
-  t.verif('nouvel article d\'une source cochée : une notification', envoyees.length === 1 && envoyees[0].corps.includes('Nouvel article déférlante'), '(' + envoyees.length + ')');
+  t.verif('articles en pause : pas de notification pour un nouvel article', envoyees.length === 0, '(' + envoyees.length + ')');
 
-  index = index.concat([{ link: 'k2', title: 'Nouvel article PinkNews', source: nomPink }]);
-  await w.verifierNouveautes();
-  t.verif('source non cochée : aucune notification', envoyees.length === 1);
+  // Nouveau flux : une notification, seulement si les notifications sont activées.
+  w.notifierNouvellesSources(['Inter-LGBT']);
+  t.verif('nouveau flux : une notification', envoyees.length === 1 && envoyees[0].titre === 'Nouveau flux ajouté' && envoyees[0].corps === 'Inter-LGBT', '(' + envoyees.length + ')');
 
   w.desactiverNotifications();
-  index = index.concat([{ link: 'a3', title: 'Après désactivation', source: nomDefer }]);
-  await w.verifierNouveautes();
-  t.verif('désactivées : plus rien n\'est envoyé', envoyees.length === 1);
+  w.notifierNouvellesSources(['Autre flux']);
+  t.verif('désactivées : plus de notification de nouveau flux', envoyees.length === 1);
 
   // Clic sur la cloche : le panneau s'ouvre, avec l'explication et la case (décochée, désactivé)
   cloche.dispatchEvent(new w.MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));

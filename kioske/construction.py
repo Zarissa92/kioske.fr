@@ -29,6 +29,7 @@ from .historique import Historique
 from .images import appliquer_images, purger_images, telecharger_images
 from .previews import generer_previews
 from .ressources import ecrire_ressources
+from .javascript import JS_BUNDLE, NOM_BUNDLE
 from .rendu import render_page, render_rss_page
 from .rendu_statique import render_article_page, render_category_page
 from .rss import render_rss
@@ -79,6 +80,16 @@ def copier_si_change(source: Path, cible: Path) -> bool:
     return True
 
 
+def ecrire_bundle_js() -> None:
+    """Écrit build/js/kioske.<empreinte>.js (tout le JavaScript des pages) et retire les anciens bundles."""
+    dossier = BUILD / "js"
+    dossier.mkdir(parents=True, exist_ok=True)
+    for ancien in dossier.glob("kioske.*.js"):
+        if ancien.name != NOM_BUNDLE:
+            ancien.unlink()
+    ecrire_si_change(dossier / NOM_BUNDLE, JS_BUNDLE)
+
+
 def ecrire_si_change(cible: Path, texte: str) -> None:
     if not cible.exists() or cible.read_text(encoding="utf-8") != texte:
         cible.parent.mkdir(parents=True, exist_ok=True)
@@ -103,12 +114,34 @@ def copier_css_themes() -> None:
         pass  # kioske.cfg vide ou incohérent, thèmes non disponibles
 
 
+# Robots d'IA (entraînement de modèles, agents, aspirateurs de contenu) : autorisés, mais priés d'aller
+# lentement (Crawl-delay, en secondes entre deux pages). La limite réelle est appliquée par nginx
+# (30 pages/min, réponse 429) puis fail2ban (kioske-debit) pour ceux qui ignorent cette consigne.
+ROBOTS_IA = [
+    "GPTBot", "ChatGPT-User", "ClaudeBot", "Claude-Web", "anthropic-ai", "CCBot", "Google-Extended",
+    "Applebot-Extended", "Bytespider", "PerplexityBot", "Perplexity-User", "Amazonbot", "meta-externalagent",
+    "meta-externalfetcher", "FacebookBot", "cohere-ai", "cohere-training-data-crawler", "Diffbot",
+    "Omgilibot", "omgili", "ImagesiftBot", "YouBot", "AI2Bot", "Timpibot", "MistralAI-User", "img2dataset",
+    "DuckAssistBot", "PanguBot", "Kangaroo Bot", "Webzio-Extended", "VelenPublicWebCrawler",
+]
+DELAI_ROBOTS_IA = 10  # secondes entre deux pages, soit 6 pages/min ; nginx applique la même limite (zone kioske_robots_ia)
+
+
+def texte_robots() -> str:
+    """robots.txt : les robots d'IA sont autorisés avec un délai entre deux pages ; tout est autorisé aux autres."""
+    groupe_ia = ("".join(f"User-agent: {nom}\n" for nom in ROBOTS_IA)
+                 + f"Allow: /\nCrawl-delay: {DELAI_ROBOTS_IA}\n")
+    return (f"# Robots d'IA : autorisés, une page toutes les {DELAI_ROBOTS_IA} secondes au plus, s'il vous plaît. "
+            "Au-delà, le serveur répond 429 puis bannit.\n" + groupe_ia
+            + f"\nUser-agent: *\nAllow: /\nSitemap: {URL_SITE}/sitemap.xml\n")
+
+
 def copier_statiques() -> None:
     """Recopie static/ dans build/ : build/ contient ainsi tout le site, et rien d'autre n'est publié."""
     for source in sorted(STATIC.rglob("*")):
         if source.is_file():
             copier_si_change(source, BUILD / source.relative_to(STATIC))
-    ecrire_si_change(BUILD / "robots.txt", f"User-agent: *\nAllow: /\nSitemap: {URL_SITE}/sitemap.xml\n")
+    ecrire_si_change(BUILD / "robots.txt", texte_robots())
 
 
 # Dossiers du build dont chaque index.html est une page publique à référencer.
@@ -145,6 +178,7 @@ def version_service_worker() -> str:
     """Calcule l'empreinte et l'écrit dans build/sw.js (CACHE_VERSION). Renvoie la version."""
     sources = sorted(f for f in STATIC.rglob("*") if f.is_file() and f.name != "sw.js")
     sources += sorted(PAQUET.glob("style_*.css"))
+    sources += sorted((PAQUET / "js").glob("*.js"))   # bundle : un changement de JS renouvelle le cache du SW
     sources.append(STATIC / "sw.js")  # le texte du service worker compte aussi (liste des fichiers en cache)
     h = hashlib.sha256()
     for f in sources:
@@ -462,6 +496,7 @@ def construire(args: argparse.Namespace) -> None:
 
         # === Fichiers statiques ===
         print("9. COPIE DES FICHIERS STATIQUES")
+        ecrire_bundle_js()
         copier_css_themes()
         copier_statiques()
         print(f"   → Sitemap : {ecrire_sitemap()} adresse(s)")

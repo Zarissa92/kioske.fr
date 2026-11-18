@@ -15,6 +15,9 @@ const attendre = (ms = 60) => new Promise(r => setTimeout(r, ms));
 //   options.avant : fonction appelée avec la fenêtre avant l'exécution des scripts de la page
 function charger(fichier, chemin, options = {}) {
   let html = fs.readFileSync(path.join(BUILD, fichier), 'utf8');
+  // Bundle JavaScript des pages (build/js/kioske.<empreinte>.js) : mis dans la page, comme le ferait le navigateur
+  html = html.replace(/<script src="\/js\/([^"]+)" defer><\/script>/g,
+    (m, nom) => '<script>' + fs.readFileSync(path.join(BUILD, 'js', nom), 'utf8') + '</script>');
   // /theme.js est un fichier à part : le mettre dans la page, jsdom ne le chargerait pas
   html = html.replace(/<script src="\/(theme)\.js"[^>]*><\/script>/g,
     (m, nom) => '<script>' + fs.readFileSync(path.join(BUILD, nom + '.js'), 'utf8') + '</script>');

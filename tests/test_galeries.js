@@ -64,7 +64,9 @@ const { attendre, charger, clic, panneauOuvert, poserHistorique, surAccueil, sui
       '<button class="galerie-arrow-left">&lt;</button><div class="galerie">' +
       '<a class="galerie-carte" id="essai-carte"><img id="essai-img" src="x"></a>' +
       '</div><button class="galerie-arrow-right">&gt;</button></section>');
-    w.retirerCarte(d.getElementById('essai-img'));
+    const essai = d.getElementById('essai-img');
+    essai.setAttribute('data-repli', 'carte');
+    essai.dispatchEvent(new w.Event('error'));   // échec de chargement : images_repli.js prend le relais
     const carte = d.getElementById('essai-carte');
     t.verif('galerie : la carte reste', !!carte);
     t.verif('galerie : l’image est remplacée par le titre de l’article', carte && !carte.querySelector('img') && carte.querySelector('.galerie-carte-texte') && carte.classList.contains('galerie-carte-sans-image'));

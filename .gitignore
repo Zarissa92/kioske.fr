@@ -44,6 +44,8 @@ __pycache__/
 *.swp
 .DS_Store
 *.bak
+# Sauvegardes datées avant modification (deploy/kioske-nginx.conf.bak-…, deployer_nginx.sh.bak-…, jails fail2ban…)
+*.bak-*
 *.tmp
 index.avant_*.html
 # Copies des CSS de thème, générées au build depuis kioske/ (le build les recrée)

@@ -47,7 +47,8 @@ async function verifierNouvelleVersion() {
   }
 }
 
-(function initRafraichissement() {
+// Seulement sur l'accueil : le bundle commun est chargé partout (voir javascript.py)
+if (document.body.dataset.page === 'accueil') (function initRafraichissement() {
   verifierNouvelleVersion();
   setInterval(verifierNouvelleVersion, ACTU_INTERVALLE);
   // Un onglet remis au premier plan vérifie tout de suite

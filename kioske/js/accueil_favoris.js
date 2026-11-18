@@ -11,9 +11,6 @@ function adresseSure(adresse, defaut = '#') {
 }
 
 function openFavoritesPanel() {
-  // Fermer le menu navbar quand on ouvre le panneau des favoris
-  fermerMenuNavbar();
-
   afficherFavoris(getFavorites());
   showPopover('favoris');
   completerFavoris();

@@ -1,11 +1,13 @@
 ---
-description: Accueil
+description:
 ordre: 1
 ---
 ## Bonjour
 
 Ici vous trouverez de la doc utile, pour toustes.
 Egalement tout ce qui est "communication"
+
+Mais c'est ici aussi, dans le menu, que vous pouvez, personnaliser vos réglages. 
 
 N'hésitez pas à m'envoyer vos propositions :
   

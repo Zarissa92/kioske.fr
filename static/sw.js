@@ -3,6 +3,8 @@ const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/rss.html',
+  '/ressources/',            // Menu : disponible hors ligne dès l'installation
+  '/ressources/parametres/', // page Paramètres
   '/theme.js',
   '/pluie.js',
   '/favicon.svg',

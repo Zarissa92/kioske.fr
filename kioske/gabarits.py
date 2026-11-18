@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from string import Template
 
+from .javascript import BALISE_BUNDLE
+
 from .config import PAQUET
 
 DOSSIER_GABARITS = PAQUET / "gabarits"
@@ -22,6 +24,7 @@ def remplir(nom: str, **valeurs) -> str:
     if nom not in _GABARITS:
         texte = (DOSSIER_GABARITS / nom).read_text(encoding="utf-8")
         _GABARITS[nom] = Template(texte.rstrip("\n") + "\n")
+    valeurs.setdefault("script_bundle", BALISE_BUNDLE)
     try:
         return _GABARITS[nom].substitute({cle: str(valeur) for cle, valeur in valeurs.items()})
     except KeyError as manquante:

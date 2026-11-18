@@ -38,6 +38,7 @@ import markdown
 
 from .config import BUILD, NOM_SITE, RESSOURCES
 from .rendu import page_statique
+from .themes import CHOIX_THEME
 from .texte import cle_alphabetique, esc, slug_categorie
 
 DOSSIER_WEB = "ressources"          # build/ressources/ et adresse /ressources/
@@ -46,7 +47,7 @@ EXTENSIONS_IMAGES = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif"}
 FICHIER_INTRO = "index.md"          # texte d'introduction de la page d'index (racine de ressources/)
 FICHIER_DOSSIER = "_dossier.md"     # titre, description et ordre d'une catégorie ou sous-catégorie
 # tableaux, code délimité, listes propres, notes ; nl2br : un saut de ligne dans un paragraphe reste un saut
-EXTENSIONS_MARKDOWN = ["extra", "sane_lists", "nl2br"]
+EXTENSIONS_MARKDOWN = ["extra", "sane_lists", "nl2br", "toc"]  # toc : une ancre par titre
 
 _FRONT_MATTER = re.compile(r"\A---[ \t]*\r?\n(.*?)\r?\n---[ \t]*(?:\r?\n|\Z)", re.S)
 
@@ -95,6 +96,26 @@ def _base_images(fichier: Path, racine: Path) -> str:
     return "/ressources/" + ("" if relatif == "." else relatif + "/")
 
 
+def _choix_theme(html: str) -> str:
+    """Le repère [[choix-theme]] (seul dans son paragraphe) devient les boutons de thème du menu."""
+    return html.replace("<p>[[choix-theme]]</p>", f'<div class="choix-theme">{CHOIX_THEME}</div>')
+
+
+def _liens_externes(html: str) -> str:
+    """Les liens vers un autre site s'ouvrent dans un nouvel onglet, sans accès à la page d'origine."""
+    return re.sub(r'<a (?![^>]*\btarget=)([^>]*\bhref="https?://[^>]*)>',
+                  r'<a \1 target="_blank" rel="noopener noreferrer">', html)
+
+
+def _images_differees(html: str) -> str:
+    """Les images se chargent quand elles approchent de l'écran (pages Ressources longues)."""
+    return re.sub(r'<img\b(?![^>]*\bloading=)', '<img loading="lazy"', html)
+
+
+def _ameliorer(html: str, base: str) -> str:
+    return _images_differees(_liens_externes(_images_relatives(html, base)))
+
+
 def _images_relatives(html: str, base: str) -> str:
     """Les images relatives (<img src='image.png'>) pointent vers le dossier du document, pas vers la page."""
     return re.sub(r'(<img\b[^>]*?\bsrc=")(?![a-zA-Z][a-zA-Z0-9+.-]*:|/|#)([^"]+)"',
@@ -136,7 +157,7 @@ def _entree(fichier: Path, parents: list[str], slug: str, racine: Path) -> dict:
         "chemin": "/".join([*parents, slug]),
         "description": meta.get("description", ""),
         "ordre": _ordre(meta),
-        "html": _images_relatives(html, _base_images(fichier, racine)),
+        "html": _ameliorer(_choix_theme(html), _base_images(fichier, racine)),
     }
 
 
@@ -206,7 +227,7 @@ def sommaire_html(arbre: list[dict], actif: str = "") -> str:
     if intro:  # la page d'index est un lien comme les autres pages
         attribut = ' aria-current="page"' if actif == "" else ""
         blocs.append('<ul class="ressources-liste"><li><a href="/ressources/"' + attribut + ">"
-                     + esc(meta_index.get("titre") or "Ressources") + "</a></li></ul>")
+                     + esc(meta_index.get("titre") or "Menu") + "</a></li></ul>")
     for cat in arbre:
         if cat.get("fichier"):  # un fichier à la racine : un simple lien, pas un bloc repliable
             blocs.append(_liste(cat["entrees"], actif))
@@ -230,19 +251,28 @@ def _intro(racine: Path = RESSOURCES) -> tuple[dict[str, str], str]:
     if not fichier.is_file():
         return {}, ""
     meta, corps = separer_front_matter(fichier.read_text(encoding="utf-8"))
-    return meta, _images_relatives(markdown.markdown(corps, extensions=EXTENSIONS_MARKDOWN), "/ressources/")
+    return meta, _ameliorer(markdown.markdown(corps, extensions=EXTENSIONS_MARKDOWN), "/ressources/")
+
+
+# Bouton 📤 (partage.js, comme sur les articles) : partage l'adresse de la page, ou la copie sans partage système.
+# En bas de page, centré, libellé sous l'icône (comme les boutons du bas d'une carte ouverte).
+BOUTON_PARTAGE = ('<nav class="ressources-partage" aria-label="Partager"><button type="button" class="share-btn" '
+                  'aria-label="Partager cette page" title="Partager cette page">'
+                  '<span class="partage-icone" aria-hidden="true">📤</span>'
+                  '<span class="partage-libelle" aria-hidden="true">Partager</span></button></nav>')
 
 
 def page_index(arbre: list[dict], nb_articles: int, nb_sources: int) -> str:
     meta, intro = _intro()
     if intro:  # la page d'index a la même mise en forme qu'un document : titre, description, texte
-        corps = (f'<h1>{esc(meta.get("titre") or "Ressources")}</h1>'
+        corps = (f'<h1>{esc(meta.get("titre") or "Menu")}</h1>'
                  + (f'<p class="ressources-description">{esc(meta["description"])}</p>' if meta.get("description") else "")
-                 + f'<div class="ressources-texte">{intro}</div>')
+                 + f'<div class="ressources-texte">{intro}</div>'
+                 + BOUTON_PARTAGE)
     else:
         texte = ("Choisissez un document dans le sommaire." if arbre else "Aucune ressource pour le moment.")
-        corps = f"<h1>Ressources</h1><p>{esc(texte)}</p>"
-    return _page(f"Ressources — {NOM_SITE}", "Documents et ressources du " + NOM_SITE + ", classés par catégories.",
+        corps = f"<h1>Menu</h1><p>{esc(texte)}</p>"
+    return _page(f"Menu — {NOM_SITE}", "Documents et ressources du " + NOM_SITE + ", classés par catégories.",
                  "/ressources/", sommaire_html(arbre), corps, nb_articles, nb_sources)
 
 
@@ -252,7 +282,8 @@ def page_document(arbre: list[dict], categorie: dict, sous: dict | None, entree:
     corps = ((f'<p class="ressources-fil">{esc(fil)}</p>' if fil else "") +
              f'<h1>{esc(entree["titre"])}</h1>'
              + (f'<p class="ressources-description">{esc(entree["description"])}</p>' if entree["description"] else "")
-             + f'<div class="ressources-texte">{entree["html"]}</div>')
+             + f'<div class="ressources-texte">{entree["html"]}</div>'
+             + BOUTON_PARTAGE)
     return _page(f"{entree['titre']} — {NOM_SITE}", entree["description"] or entree["titre"], _lien(entree["chemin"]),
                  sommaire_html(arbre, entree["chemin"]), corps, nb_articles, nb_sources)
 

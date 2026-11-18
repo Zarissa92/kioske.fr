@@ -7,10 +7,25 @@ selon le thème (clé `css` optionnelle, défaut : style.css).
 from __future__ import annotations
 
 import configparser
+import hashlib
 import json
 
 from .config import CFG, CONFIG, PAQUET
 from .texte import esc
+
+
+def url_css_versionnee(css: str) -> str:
+    """URL de la feuille de thème suivie de son empreinte (?v=…), calculée sur son contenu.
+
+    Quand le CSS change, l'URL change : le navigateur ne reprend pas sa copie HTTP et un ancien
+    service worker (cache-first) ne retrouve pas l'ancienne feuille. Le nom du fichier ne change pas.
+    """
+    if not css:
+        return css
+    fichier = PAQUET / css.lstrip("/")
+    if not fichier.exists():
+        return css
+    return f"{css}?v={hashlib.sha256(fichier.read_bytes()).hexdigest()[:12]}"
 
 # Fonds possibles (clé `fond` d'un thème). Le dessin est dans style_default.css : html[data-fond="…"].
 FONDS = ("noir",)
@@ -87,7 +102,7 @@ def _morceaux_de_page() -> tuple[str, str, str, str]:
              "fond": t["fond"],
              "pluie": t["pluie"],
              "opacite": t["opacite_panneau"],
-             "css": t.get("css", ""),
+             "css": url_css_versionnee(t.get("css", "")),
              "pluie_tete": t.get("pluie_tete", ""),
              "pluie_haut": t.get("pluie_haut", ""),
              "pluie_moyen": t.get("pluie_moyen", ""),

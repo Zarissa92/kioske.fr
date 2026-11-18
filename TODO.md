@@ -1,3 +1,11 @@
+## Renommer le dossier « ressources » en « menu » (à décider)
+
+Aujourd'hui, seul le libellé affiché est « Menu ». Le dossier source (`ressources/`) et l'URL (`/ressources/`) ne sont pas renommés.
+
+- [ ] **Option A : URL et dossier renommés.** Dossier source `menu/`, URL `/menu/`. Ancienne `/ressources/` redirigée (301) vers `/menu/` pour les liens existants et les notifications. À faire : `config.py` (`RESSOURCES`), `construction.py`, `ressources.py`, `publication.py`, les liens `/ressources/` dans `rendu.py`, `notifications.js`, `donnees_accueil.js`, `accueil_favoris.js`, les tests, `kioske.cfg` ; nginx (`deploy/kioske-nginx.conf` et `deploy/deployer_nginx.sh`, les deux ensemble) : routes `^/ressources`, la redirection, et `root` inchangé ; sur le serveur, supprimer l'ancien dossier `/srv/kioske.fr/ressources/` après déploiement.
+- [ ] **Option B : dossier renommé, URL conservée.** Le dossier source devient `menu/`, mais la sortie reste `build/ressources/` (et `/ressources/`). Moins de changements, aucun lien à rediriger, mais le nom de l'URL ne suit pas le libellé.
+- [ ] Dans les deux cas : le texte `Mise_à_jours.md` (géré à la main) n'est pas touché.
+
 # TODO — kioske.fr
 
 Tâches à implémenter dans les prochaines sessions.
@@ -8,7 +16,7 @@ Tâches à implémenter dans les prochaines sessions.
 - **Recherche en temps réel** : la barre de recherche crée un panneau de résultats (2026-11-12). Implémenter un filtrage dynamique au fur et à mesure de la saisie en option.
 - **Hover galerie satisfaisant** : survol des cartes de galerie sur PC (2026-11-12). À améliorer : gestion des cas limites (souris rapide, multi-toucher).
 
-- **Servir le JavaScript comme fichiers** : les scripts de `kioske/js/` sont aujourd'hui recopiés dans chaque page, entre `<script>` et `</script>`. Les publier dans `build/js/` et les charger par `<script src="/js/…">` allégerait chaque page (1300 pages d'article portent le même code), laisserait le navigateur les mettre en cache et permettrait de retirer `'unsafe-inline'` de `script-src` dans la politique nginx (`deploy/deployer_nginx.sh`). À faire ensemble : copie des fichiers au build (`kioske/construction.py`), gabarits (`kioske/gabarits/`), liste du cache dans `static/sw.js` et durée de cache nginx, puis l'`onclick` du bloc immuable (`accueil/bloc_immuable.html`) à remplacer par un écouteur, sans quoi la politique sans `'unsafe-inline'` le bloquerait. Vérifier avec `bash tests/lancer.sh` (adapter `tests/outils.js`, qui ne charge que les scripts écrits dans la page).
+- **Servir le JavaScript comme fichiers** : les scripts de `kioske/js/` sont aujourd'hui recopiés dans chaque page, entre `<script>` et `</script>`. Les publier dans `build/js/` et les charger par `<script src="/js/…">` allégerait chaque page (1300 pages d'article portent le même code), laisserait le navigateur les mettre en cache et permettrait de retirer `'unsafe-inline'` de `script-src` dans la politique nginx (`deploy/deployer_nginx.sh`). À faire ensemble : copie des fichiers au build (`kioske/construction.py`), gabarits (`kioske/gabarits/`), liste du cache dans `static/sw.js` et durée de cache nginx, puis les `onclick` éventuels des gabarits à remplacer par des écouteurs, sans quoi la politique sans `'unsafe-inline'` les bloquerait. Vérifier avec `bash tests/lancer.sh` (adapter `tests/outils.js`, qui ne charge que les scripts écrits dans la page).
 
 ## Aperçus et images
 

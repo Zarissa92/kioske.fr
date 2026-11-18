@@ -17,13 +17,16 @@ from pathlib import Path
 
 from .config import BUILD, DOSSIER_IMAGES, DOSSIER_RSS_CATEGORIES, NOM_PAGE, RACINE_WEB
 from .construction import analyser_arguments, construire, copier_si_change
+from .javascript import NOM_BUNDLE
 from .verrou import verrou
 
 # Sans ces fichiers, rien n'est publié.
 OBLIGATOIRES = [NOM_PAGE, "favicon.svg", "preview.png", "apple-touch-icon.png", "rss.xml", "fonts/russo-one.woff2", "fonts/inter.woff2",
-               "ressources/index.html", "code-de-conduite.html"]
+               "ressources/index.html", "code-de-conduite.html",
+               f"js/{NOM_BUNDLE}"]   # sans bundle, les pages n'ont aucun JavaScript (plus de script en ligne)
 # Dossiers entièrement générés : un fichier qui n'est plus dans build/ est retiré de la racine web.
-DOSSIERS_PURGES = [DOSSIER_IMAGES, DOSSIER_RSS_CATEGORIES]
+# js/ : les anciens bundles (kioske.<empreinte>.js) sont retirés à chaque publication.
+DOSSIERS_PURGES = [DOSSIER_IMAGES, DOSSIER_RSS_CATEGORIES, "js"]
 
 
 def publier(public: Path) -> None:

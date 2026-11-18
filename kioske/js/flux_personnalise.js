@@ -21,6 +21,107 @@ function sourceVisible(customSources, sourceKey, connues) {
   return !!customSources[sourceKey] || (connues !== null && !connues.includes(sourceKey));
 }
 
+// Sources « nouvelles » dont le bandeau a été fermé par l'utilisateur (« Gérer » ou « OK »). Tant que le bandeau
+// n'a pas été fermé, il revient à chaque visite : une personne qui quitte la page avant de le lire est prévenue
+// au retour. Séparé de SOURCES_CONNUES_KEY : une source annoncée reste visible tant qu'elle n'est pas dans le choix.
+const SOURCES_ANNONCEES_KEY = 'kioske_flux_annonces';
+// Sources pour lesquelles la notification système a déjà été envoyée (une seule fois par source).
+const SOURCES_NOTIFIEES_KEY = 'kioske_flux_notifiees';
+
+// Listes en localStorage : lireTableau() et ecrireTableau() de notifications.js (même bundle).
+
+function getSourcesAnnoncees() {
+  return lireTableau(SOURCES_ANNONCEES_KEY);
+}
+
+// Sources présentes sur le site, absentes du choix enregistré et pas encore signalées : { cle, nom }.
+function nouvellesSources() {
+  const connues = getSourcesConnues();
+  if (connues === null || !isFluxPersonnalise()) return [];
+  const dejaVues = new Set([...connues, ...getSourcesAnnoncees()]);
+  const nouvelles = new Map();
+  document.querySelectorAll('.nuage .tag').forEach(tag => {
+    const cle = tag.getAttribute('data-source-key');
+    if (!dejaVues.has(cle) && !nouvelles.has(cle)) {
+      nouvelles.set(cle, { cle, nom: tag.getAttribute('data-source-name') || cle });
+    }
+  });
+  return [...nouvelles.values()];
+}
+
+// Bandeau « nouveau flux ajouté » ; le bouton ouvre le panneau de personnalisation.
+function afficherBandeauNouvellesSources(nouvelles) {
+  if (document.getElementById('flux-nouveau')) return;
+  const noms = nouvelles.map(n => n.nom);
+  // Fermer le bandeau (« Gérer » ou « OK ») vaut lecture : ces sources ne seront plus annoncées.
+  const fermer = () => { ecrireTableau(SOURCES_ANNONCEES_KEY, [...new Set([...getSourcesAnnoncees(), ...nouvelles.map(n => n.cle)])]); };
+  const bandeau = document.createElement('div');
+  bandeau.id = 'flux-nouveau';
+  bandeau.className = 'flux-nouveau';
+  bandeau.setAttribute('role', 'status');
+
+  const texte = document.createElement('p');
+  const pluriel = noms.length > 1;
+  texte.textContent = (pluriel ? 'Nouveaux flux ajoutés : ' : 'Nouveau flux ajouté : ') + noms.join(', ')
+    + (pluriel ? '. Ils sont activés' : '. Il est activé') + ' dans ton flux personnalisé.';
+
+  const actions = document.createElement('div');
+  actions.className = 'flux-nouveau-actions';
+
+  const gerer = document.createElement('button');
+  gerer.type = 'button';
+  gerer.className = 'panneau-bouton';
+  gerer.textContent = '⚙️ Gérer mon flux';
+  gerer.addEventListener('click', () => {
+    fermer();
+    bandeau.remove();
+    ouvrirPersonnalisation();
+  });
+
+  const ok = document.createElement('button');
+  ok.type = 'button';
+  ok.className = 'panneau-bouton';
+  ok.textContent = 'OK';
+  ok.addEventListener('click', () => { fermer(); bandeau.remove(); });
+
+  actions.append(gerer, ok);
+  bandeau.append(texte, actions);
+  document.body.appendChild(bandeau);
+}
+
+// À chaque ouverture de l'accueil : bandeau pour les sources nouvelles pas encore fermées, point rouge sur la
+// cloche, et notification système seulement pour les sources qui n'en ont pas encore eu une.
+// Une nouvelle source est activée par défaut dans le flux personnalisé, une seule fois : si l'utilisateur la
+// décoche ensuite, elle reste décochée (`kioske_flux_activees_auto` garde la trace).
+const SOURCES_ACTIVEES_AUTO_KEY = 'kioske_flux_activees_auto';
+
+function activerNouvellesSourcesParDefaut(nouvelles) {
+  const dejaActivees = lireTableau(SOURCES_ACTIVEES_AUTO_KEY);
+  const aActiver = nouvelles.filter(n => !dejaActivees.includes(n.cle));
+  if (aActiver.length === 0) return;
+  const choix = getCustomFluxSources();
+  aActiver.forEach(n => { choix[n.cle] = true; });
+  try { localStorage.setItem(CUSTOM_FLUX_KEY, JSON.stringify(choix)); } catch (e) {}
+  ecrireTableau(SOURCES_ACTIVEES_AUTO_KEY, [...new Set([...dejaActivees, ...aActiver.map(n => n.cle)])]);
+  appliquerFiltreAccueil();
+}
+
+function annoncerNouvellesSources() {
+  const nouvelles = nouvellesSources();
+  if (nouvelles.length === 0) return;
+  activerNouvellesSourcesParDefaut(nouvelles);
+  afficherBandeauNouvellesSources(nouvelles);
+  if (typeof ajouterNotif === 'function') {   // liste de la cloche (notifications.js)
+    nouvelles.forEach(n => ajouterNotif('flux:' + n.cle, 'flux', 'Nouveau flux ajouté', n.nom));
+  }
+  const dejaNotifiees = lireTableau(SOURCES_NOTIFIEES_KEY);
+  const aNotifier = nouvelles.filter(n => !dejaNotifiees.includes(n.cle));
+  if (aNotifier.length && typeof notifierNouvellesSources === 'function') {
+    notifierNouvellesSources(aNotifier.map(n => n.nom));   // notifications.js
+    ecrireTableau(SOURCES_NOTIFIEES_KEY, [...new Set([...dejaNotifiees, ...aNotifier.map(n => n.cle)])]);
+  }
+}
+
 function saveCustomFluxSources(sources) {
   localStorage.setItem(CUSTOM_FLUX_KEY, JSON.stringify(sources));
   const connues = [...new Set([...document.querySelectorAll('.nuage .tag')].map(t => t.getAttribute('data-source-key')))];
@@ -322,20 +423,28 @@ function updateFluxPersonnalise() {
 }
 
 // Initialiser quand le DOM est prêt
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    appliquerFiltreAccueil();
-  });
-} else {
+// Démarrage à DOMContentLoaded, donc après tout le bundle : en defer, readyState vaut déjà « interactive »
+// et les constantes de notifications.js (plus bas dans le même fichier) ne seraient pas encore définies.
+function demarrerFluxPersonnalise() {
   appliquerFiltreAccueil();
+  annoncerNouvellesSources();
 }
+if (document.readyState === 'complete') demarrerFluxPersonnalise();
+else document.addEventListener('DOMContentLoaded', demarrerFluxPersonnalise);
 
 // Lien « Personnaliser flux » venu d'une autre page : /?flux=personnaliser ouvre le panneau de l'accueil.
-// En bas du fichier : le panneau a besoin de toutes les fonctions de ce script, et les fichiers accueil_*.js ont déjà posé son bouton.
-if (new URLSearchParams(location.search).get('flux') === 'personnaliser') {
-  const bouton = document.getElementById('btn-custom-flux-navbar');
-  if (bouton) {
-    history.replaceState(null, '', '/');
-    bouton.click();
+// En bas du fichier : le panneau a besoin de toutes les fonctions de ce script.
+// Ouvre le panneau « Personnaliser mon flux ». Il a besoin des sources de l'accueil : ailleurs, on y renvoie.
+function ouvrirPersonnalisation() {
+  if (document.body.dataset.page !== 'accueil') {
+    location.href = '/?flux=personnaliser';
+    return;
   }
+  createCustomFluxPanel();
+  showPopover('custom-flux');
+}
+
+if (document.body.dataset.page === 'accueil' && new URLSearchParams(location.search).get('flux') === 'personnaliser') {
+  history.replaceState(null, '', '/');
+  ouvrirPersonnalisation();
 }

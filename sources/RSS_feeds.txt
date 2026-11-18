@@ -9,7 +9,7 @@
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCNq4kPggEIA_ZCNXhnbIXGg"  #book margorito
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCJd1AFjN9vIgVDDB6UE2UQg" #Marouchka
 "https://www.youtube.com/feeds/videos.xml?channel_id=UC2qGaiV1-sohDXI7bJwefFQ" #paint-media
-
+"https://www.youtube.com/feeds/videos.xml?channel_id=UCar0yo-PpeMk51m116826pQ" #lhuma
 [Vidéo et radio: Economie]
 "https://www.youtube.com/feeds/videos.xml?channel_id=UC7sXGI8p8PvKosLWagkK9wQ"  #heureka
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCyJDHgrsUKuWLe05GvC2lng" #stupid eco
@@ -17,6 +17,7 @@
 [Vidéo et radio: Podcasts]
 "https://www.mediapart.fr/journal/podcasts/rss"
 "https://feeds.audiomeans.fr/feed/d9cd7538-7491-4873-b0c4-90ccba60ccf6.xml"  #lescouillessurlatbale
+"https://www.infolibertaire.net/feed/podcasts/"
 
 
 
@@ -50,6 +51,8 @@
 "https://infokiosques.net/spip.php?page=backend"
 "https://splann.org/feed/integral-fr" #ecologie bretonne
 "https://editionslibertalia.com/spip.php?page=backend"
+"https://www.revolutionpermanente.fr/spip.php?page=backend&id_mot=151"
+"https://www.revolutionpermanente.fr/spip.php?page=backend&id_mot=16"
 
 [Panneau: International]
 [International: Presse]
@@ -86,3 +89,4 @@
 "https://www.thepinknews.com/feed/"
 "https://www.youtube.com/feeds/videos.xml?channel_id=UCAsbcajgc4tlzwInKWSdeyg"  #Matt
 "https://www.them.us/feeds/feed.rss"
+"https://www.erininthemorning.com/feed"

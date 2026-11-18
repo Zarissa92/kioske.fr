@@ -27,15 +27,19 @@
     try { return localStorage.getItem(CLE_SOBRE) === '1'; } catch (e) { return false; }
   }
 
-  // Galeries de l'accueil, un interrupteur par type : affichées par défaut, masquées si « 0 » (mémorisé)
+  // Galeries de l'accueil, un interrupteur par type. Par défaut : seule la grande galerie est affichée.
+  // Un choix mémorisé (« 1 » affichée, « 0 » masquée) l'emporte sur le défaut.
   const GALERIES = [
     { id: 'btn-grande-galerie', attribut: 'grandeGalerie', cle: 'kioske-grande-galerie',
-      libelle: 'Grande galerie', etat: ['affichée', 'masquée'] },
+      libelle: 'Grande galerie', etat: ['affichée', 'masquée'], defaut: true },
     { id: 'btn-galeries-blocs', attribut: 'galeriesBlocs', cle: 'kioske-galeries-blocs',
-      libelle: 'Galeries des catégories', etat: ['affichées', 'masquées'] },
+      libelle: 'Galeries des catégories', etat: ['affichées', 'masquées'], defaut: false },
   ];
   function lireGalerie(g) {
-    try { return localStorage.getItem(g.cle) !== '0'; } catch (e) { return true; }
+    try {
+      const choix = localStorage.getItem(g.cle);
+      return choix === null ? g.defaut : choix !== '0';
+    } catch (e) { return g.defaut; }
   }
   function appliquerGalerie(g, affichee) { racine.dataset[g.attribut] = affichee ? 'oui' : 'non'; }
 
@@ -88,6 +92,12 @@
       return;
     }
     if (!lien) {
+      if (document.readyState === 'loading') {
+        // Pendant l'analyse de <head> : la feuille est écrite tout de suite, bloquante. Sinon le navigateur
+        // affiche d'abord le thème par défaut, puis le thème choisi (flash, surtout sur les pages statiques).
+        document.write('<link id="theme-css-link" rel="stylesheet" href="' + theme.css + '">');
+        return;
+      }
       lien = document.createElement('link');
       lien.id = 'theme-css-link';
       lien.rel = 'stylesheet';
@@ -142,8 +152,8 @@
     });
 
     // Bouton « Mode sobre » du menu ≡ (accueil seulement) : l'effet vaut pour toutes les pages
-    const boutonSobre = document.getElementById('btn-sobre');
-    if (boutonSobre) {
+    // Boutons « Mode sobre » (menu ⚙️ et page Paramètres) : même effet, repérés par data-reglage
+    document.querySelectorAll('[data-reglage="sobre"]').forEach(boutonSobre => {
       const majSobre = () => {
         const actif = racine.dataset.sobre === 'oui';
         boutonSobre.setAttribute('aria-pressed', String(actif));
@@ -157,6 +167,6 @@
         if (!actif) appliquer(racine.dataset.theme); // remet la pluie du thème, s'il en a une
         majSobre();
       });
-    }
+    });
   });
 })();

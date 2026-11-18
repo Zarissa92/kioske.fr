@@ -240,7 +240,7 @@ class ImagesDesSources(unittest.TestCase):
     def test_repli_sur_la_lettre(self):
         from kioske.rendu_statique import image_avec_repli
         html = image_avec_repli("https://exemple.test/a.jpg", "Titre", "A")
-        self.assertIn('onerror="this.onerror=null;this.hidden=true;this.nextElementSibling.hidden=false"', html)
+        self.assertIn('data-repli="image"', html)   # repli sans onerror : images_repli.js
         self.assertIn('<span class="lettre" hidden>A</span>', html)
 
 
@@ -303,7 +303,7 @@ class RessourcesDuDossier(unittest.TestCase):
         self.assertEqual([c["titre"] for c in arbre], ["Le guide", "Cat"])
         guide = arbre[0]
         self.assertEqual(guide["entrees"][0]["chemin"], "guide")
-        self.assertIn("<h1>Texte</h1>", guide["entrees"][0]["html"])
+        self.assertIn('<h1 id="texte">Texte</h1>', guide["entrees"][0]["html"])  # toc : une ancre par titre
 
     def test_titre_du_nom_tirets_et_soulignes_comme_espaces(self):
         from kioske.ressources import _titre_du_nom
@@ -364,41 +364,6 @@ class RessourcesDuDossier(unittest.TestCase):
         from kioske.rendu import render_code_de_conduite
         self.assertIn("<h1>Code de conduite</h1>", render_code_de_conduite(0, 0))
 
-
-class OrdreDuMenu(unittest.TestCase):
-    """Clé [menu] ordre de kioske.cfg : ordre demandé, clés absentes à la fin, refus des clés inconnues."""
-
-    def setUp(self):
-        import configparser
-        from kioske import config
-        self.config = config
-        self.sauve = config.CFG
-        self.cfg = configparser.ConfigParser()
-
-    def tearDown(self):
-        self.config.CFG = self.sauve
-
-    def ordre(self, valeur):
-        self.cfg.add_section("menu")
-        self.cfg.set("menu", "ordre", valeur)
-        self.config.CFG = self.cfg
-        return self.config.ordre_menu()
-
-    def test_ordre_demande_puis_absentes_a_la_fin(self):
-        self.assertEqual(self.ordre("conduite, ressources"),
-                         ["conduite", "ressources", "sobre", "grande-galerie", "galeries-blocs", "flux", "installer", "rss", "discord", "mastodon"])
-
-    def test_doublons_ignores(self):
-        self.assertEqual(self.ordre("rss, rss, discord")[:3], ["rss", "discord", "sobre"])
-
-    def test_cle_inconnue_arrete_le_build(self):
-        with self.assertRaises(SystemExit) as erreur:
-            self.ordre("rss, inconnue")
-        self.assertIn("inconnue", str(erreur.exception))
-
-    def test_sans_section_ordre_par_defaut(self):
-        self.config.CFG = self.cfg
-        self.assertEqual(self.config.ordre_menu(), self.config.MENU_CLES)
 
 
 class OrdreDesPanneaux(unittest.TestCase):
@@ -472,6 +437,23 @@ class GalerieSansImage(unittest.TestCase):
         self.assertIn("galerie-carte-sans-image", html)
         self.assertIn('<span class="galerie-carte-texte">Article texte</span>', html)
 
+
+
+class RobotsTxt(unittest.TestCase):
+    """robots.txt : les robots d'IA sont autorisés avec un délai, les autres sans restriction."""
+
+    def test_robots_ia_autorises_avec_delai(self):
+        from kioske.construction import DELAI_ROBOTS_IA, ROBOTS_IA, texte_robots
+        texte = texte_robots()
+        groupe_ia, reste = texte.split("\n\nUser-agent: *\n")
+        for nom in ("GPTBot", "ClaudeBot", "CCBot", "Google-Extended"):
+            self.assertIn(nom, ROBOTS_IA)
+            self.assertIn(f"User-agent: {nom}\n", groupe_ia)
+        self.assertIn("Allow: /\n", groupe_ia)
+        self.assertNotIn("Disallow", groupe_ia)
+        self.assertTrue(groupe_ia.rstrip().endswith(f"Crawl-delay: {DELAI_ROBOTS_IA}"))
+        self.assertTrue(reste.startswith("Allow: /"))
+        self.assertIn("Sitemap: ", reste)
 
 if __name__ == "__main__":
     unittest.main()
