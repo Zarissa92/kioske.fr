@@ -4,7 +4,7 @@
 // ne vide que les notifications et les effacées ne reviennent pas. La page est remplacée par une version de test.
 const { attendre, charger, suite } = require('./outils');
 
-const page = (points) => '<div class="ressources-texte"><ul><li>18/11/2026 :<ul>'
+const page = (points) => '<div class="menu-texte"><ul><li>18/11/2026 :<ul>'
   + points.map(p => '<li>' + p + '</li>').join('') + '</ul></li></ul></div>';
 
 class FauxNotification {

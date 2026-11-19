@@ -6,5 +6,5 @@ yt-dlp==2026.10.26
 legacy-cgi
 # Génération des previews au format "carte Pokémon" pour les réseaux sociaux
 Pillow==11.0.0
-# Rendu du Markdown des ressources (kioske/ressources.py)
+# Rendu du Markdown des ressources (kioske/menu.py)
 markdown==3.7

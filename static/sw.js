@@ -3,8 +3,9 @@ const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/rss.html',
-  '/ressources/',            // Menu : disponible hors ligne dès l'installation
-  '/ressources/parametres/', // page Paramètres
+  '/hors-ligne.html',        // page montrée sans réseau quand la page demandée n'est pas en cache
+  '/menu/',                  // Menu : disponible hors ligne dès l'installation
+  '/menu/parametres/',       // page Paramètres
   '/theme.js',
   '/pluie.js',
   '/favicon.svg',
@@ -45,6 +46,16 @@ self.addEventListener('activate', (event) => {
   );
   self.clients.claim();
 });
+
+// Sans réseau : la copie en cache, sinon, pour une page (navigation), la page « Hors ligne ».
+const PAGE_HORS_LIGNE = '/hors-ligne.html';
+function repliHorsLigne(request) {
+  return caches.match(request).then((copie) => {
+    if (copie) return copie;
+    if (request.mode === 'navigate' || request.destination === 'document') return caches.match(PAGE_HORS_LIGNE);
+    return Response.error();
+  });
+}
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
@@ -88,9 +99,7 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() => {
-          return caches.match(event.request);
-        })
+        .catch(() => repliHorsLigne(event.request))
     );
     return;
   }
@@ -111,11 +120,7 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() => {
-          if (event.request.destination === 'document') {
-            return caches.match('/index.html');
-          }
-        });
+        .catch(() => repliHorsLigne(event.request));
     })
   );
 });

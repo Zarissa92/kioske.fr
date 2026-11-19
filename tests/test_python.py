@@ -191,23 +191,31 @@ class EditeurCfg(unittest.TestCase):
 
 
 class DispositionsLegales(unittest.TestCase):
-    """Page « Dispositions légales » : publiée, liée sous GitHub en bas de l'accueil, servie par nginx."""
+    """Dispositions légales : document du Menu, à sa racine (menu/Dispositions-legales.md, adresse
+    /menu/dispositions-legales/, thème du visiteur). Liée sous GitHub en bas de l'accueil ; l'ancienne
+    adresse /dispositions-legales.html est redirigée par nginx."""
 
     RACINE = Path(__file__).resolve().parent.parent
 
-    def test_page_publiee_sans_script(self):
-        html = (self.RACINE / "static" / "dispositions-legales.html").read_text(encoding="utf-8")
-        self.assertIn('lang="fr"', html)
-        self.assertNotIn("<script", html)
+    def test_document_a_la_racine_du_menu(self):
+        from kioske.menu import charger_arbre
+        arbre = charger_arbre(self.RACINE / "menu")
+        racine = [c for c in arbre if c.get("fichier")]
+        self.assertIn("dispositions-legales", [e["chemin"] for c in racine for e in c["entrees"]])
+
+    def test_plus_de_page_statique(self):
+        self.assertFalse((self.RACINE / "static" / "dispositions-legales.html").exists())
 
     def test_lien_sous_github(self):
         gabarit = (self.RACINE / "kioske" / "gabarits" / "accueil.html").read_text(encoding="utf-8")
-        self.assertIn('href="/dispositions-legales.html"', gabarit)
-        self.assertLess(gabarit.index("GitHub du projet"), gabarit.index("/dispositions-legales.html"))
+        self.assertIn('href="/menu/dispositions-legales/"', gabarit)
+        self.assertLess(gabarit.index("GitHub du projet"), gabarit.index("/menu/dispositions-legales/"))
 
-    def test_nginx_laisse_passer_la_page(self):
-        conf = (self.RACINE / "deploy" / "deployer_nginx.sh").read_text(encoding="utf-8")
-        self.assertIn("dispositions-legales\\.html", conf)
+    def test_nginx_redirige_l_ancienne_adresse(self):
+        for nom in ("deployer_nginx.sh", "kioske-nginx.conf"):
+            conf = (self.RACINE / "deploy" / nom).read_text(encoding="utf-8")
+            self.assertIn("location = /dispositions-legales.html {", conf, nom)
+            self.assertIn("return 301 /menu/dispositions-legales/;", conf, nom)
 
 
 class CheminsSansPersonne(unittest.TestCase):
@@ -216,7 +224,7 @@ class CheminsSansPersonne(unittest.TestCase):
     RACINE = Path(__file__).resolve().parent.parent
     FICHIERS = ["kioske/config.py", "kioske.cfg", "deploy/kioske.sh", "deploy/lib_config.sh",
                 "deploy/installer_serveur.sh", "deploy/verifier_serveur.sh", "deploy/deployer_nginx.sh",
-                "deploy/deployer-nginx-simple.sh", "deploy/kioske-nginx-simple.conf",
+                "deploy/deployer_nginx_simple.sh", "deploy/kioske-nginx.conf",
                 "deploy/systemd/kioske-veille.service"]
 
     def test_pas_de_chemin_personnel(self):
@@ -244,13 +252,13 @@ class ImagesDesSources(unittest.TestCase):
         self.assertIn('<span class="lettre" hidden>A</span>', html)
 
 
-class RessourcesDuDossier(unittest.TestCase):
-    """Page Ressources : lecture de ressources/ (catégories, sous-catégories, front matter) et rendu Markdown."""
+class MenuDuDossier(unittest.TestCase):
+    """Page Menu : lecture de menu/ (catégories, sous-catégories, front matter) et rendu Markdown."""
 
     def setUp(self):
         import tempfile
         self.tmp = tempfile.TemporaryDirectory()
-        self.racine = Path(self.tmp.name) / "ressources"
+        self.racine = Path(self.tmp.name) / "menu"
         self.racine.mkdir()
 
     def tearDown(self):
@@ -262,17 +270,17 @@ class RessourcesDuDossier(unittest.TestCase):
         fichier.write_text(texte, encoding="utf-8")
 
     def test_front_matter(self):
-        from kioske.ressources import separer_front_matter
+        from kioske.menu import separer_front_matter
         meta, corps = separer_front_matter('---\ntitre: "Bonjour"\nordre: 3\n---\n# Texte\n')
         self.assertEqual(meta, {"titre": "Bonjour", "ordre": "3"})
         self.assertEqual(corps, "# Texte\n")
 
     def test_sans_front_matter_tout_est_corps(self):
-        from kioske.ressources import separer_front_matter
+        from kioske.menu import separer_front_matter
         self.assertEqual(separer_front_matter("# Seul\n"), ({}, "# Seul\n"))
 
     def test_arborescence_categories_sous_categories_et_ordre(self):
-        from kioske.ressources import charger_arbre
+        from kioske.menu import charger_arbre
         self.ecrire("Zeta/a.md", "# A\n")
         self.ecrire("Alpha/sous/b.md", "---\ntitre: Bee\nordre: 2\n---\nTexte **gras**\n")
         self.ecrire("Alpha/sous/c.md", "---\nordre: 1\n---\nTexte\n")
@@ -287,7 +295,7 @@ class RessourcesDuDossier(unittest.TestCase):
         self.assertIn("<strong>gras</strong>", sous["entrees"][1]["html"])
 
     def test_fichiers_et_dossiers_caches_ignores(self):
-        from kioske.ressources import charger_arbre
+        from kioske.menu import charger_arbre
         self.ecrire("Cat/_brouillon.md", "# Non\n")
         self.ecrire("Cat/.cache/x.md", "# Non\n")
         self.ecrire("Cat/ok.md", "# Oui\n")
@@ -295,7 +303,7 @@ class RessourcesDuDossier(unittest.TestCase):
         self.assertEqual([e["titre"] for e in arbre[0]["entrees"]], ["ok"])
 
     def test_fichier_a_la_racine_est_une_categorie(self):
-        from kioske.ressources import charger_arbre
+        from kioske.menu import charger_arbre
         self.ecrire("Guide.md", "---\ntitre: Le guide\nordre: 1\n---\n# Texte\n")
         self.ecrire("index.md", "# Introduction\n")
         self.ecrire("Cat/doc.md", "# A\n")
@@ -306,12 +314,12 @@ class RessourcesDuDossier(unittest.TestCase):
         self.assertIn('<h1 id="texte">Texte</h1>', guide["entrees"][0]["html"])  # toc : une ancre par titre
 
     def test_titre_du_nom_tirets_et_soulignes_comme_espaces(self):
-        from kioske.ressources import _titre_du_nom
+        from kioske.menu import _titre_du_nom
         self.assertEqual(_titre_du_nom("mon_guide-2026"), "mon guide 2026")
         self.assertEqual(_titre_du_nom("a__b--c"), "a b c")
 
     def test_dossier_img_n_est_pas_une_categorie(self):
-        from kioske.ressources import charger_arbre
+        from kioske.menu import charger_arbre
         self.ecrire("img/photo.png", "x")
         self.ecrire("Cat/img/autre.png", "x")
         self.ecrire("Cat/doc.md", "# A\n")
@@ -320,41 +328,41 @@ class RessourcesDuDossier(unittest.TestCase):
         self.assertEqual(arbre[0]["sous"], [])
 
     def test_image_relative_pointe_vers_le_dossier_du_document(self):
-        from kioske.ressources import charger_arbre
+        from kioske.menu import charger_arbre
         self.ecrire("Cat/Sous/doc.md", "![alt](photo.png)\n\n![web](https://exemple.org/a.png)\n")
         html = charger_arbre(self.racine)[0]["sous"][0]["entrees"][0]["html"]
-        self.assertIn('src="/ressources/Cat/Sous/photo.png"', html)
+        self.assertIn('src="/menu/Cat/Sous/photo.png"', html)
         self.assertIn('src="https://exemple.org/a.png"', html)
 
     def test_dossier_trop_profond_ignore(self):
-        from kioske.ressources import charger_arbre
+        from kioske.menu import charger_arbre
         self.ecrire("Cat/Sous/Trop/profond.md", "# Non\n")
         arbre = charger_arbre(self.racine)
         self.assertEqual(arbre[0]["sous"][0]["entrees"], [])
 
     def test_slugs_uniques_dans_un_dossier(self):
-        from kioske.ressources import charger_arbre
+        from kioske.menu import charger_arbre
         self.ecrire("Cat/Mon doc.md", "# A\n")
         self.ecrire("Cat/mon-doc.md", "# B\n")
         slugs = [e["slug"] for e in charger_arbre(self.racine)[0]["entrees"]]
         self.assertEqual(len(set(slugs)), 2)
 
     def test_saut_de_ligne_garde(self):
-        from kioske.ressources import charger_arbre
+        from kioske.menu import charger_arbre
         self.ecrire("Cat/saut.md", "Première ligne\nSeconde ligne\n")
         html = charger_arbre(self.racine)[0]["entrees"][0]["html"]
         self.assertIn("<br", html)
 
     def test_racine_absente_donne_une_arborescence_vide(self):
-        from kioske.ressources import charger_arbre
+        from kioske.menu import charger_arbre
         self.assertEqual(charger_arbre(Path(self.tmp.name) / "absent"), [])
 
     def test_pages_statiques_sommaire_et_retour(self):
-        from kioske.ressources import charger_arbre, page_document, page_index
+        from kioske.menu import charger_arbre, page_document, page_index
         self.ecrire("Cat/doc.md", "# A\n")
         arbre = charger_arbre(self.racine)
         index = page_index(arbre, 0, 0)
-        self.assertIn('href="/ressources/cat/doc/"', index)
+        self.assertIn('href="/menu/cat/doc/"', index)
         self.assertNotIn("onclick=", index)
         doc = page_document(arbre, arbre[0], None, arbre[0]["entrees"][0], 0, 0)
         self.assertIn('aria-current="page"', doc)
@@ -457,3 +465,215 @@ class RobotsTxt(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MenuEtHorsLigne(unittest.TestCase):
+    """Menu à /menu/ (ancienne /ressources/ redirigée), page hors ligne et raccourcis de l'app installée."""
+
+    RACINE = Path(__file__).resolve().parent.parent
+    CONFS = ["deploy/kioske-nginx.conf", "deploy/deployer_nginx.sh"]   # à modifier ensemble
+
+    def test_nginx_menu_et_redirection(self):
+        for nom in self.CONFS:
+            conf = (self.RACINE / nom).read_text(encoding="utf-8")
+            self.assertIn("location ~ ^/menu(/[a-z0-9-]+)?", conf, nom)
+            self.assertIn("return 301 /menu$1$is_args$args;", conf, nom)
+            self.assertIn("hors-ligne\\.html", conf, nom)
+
+    def test_page_hors_ligne_sans_script_ni_ressource_externe(self):
+        html = (self.RACINE / "static" / "hors-ligne.html").read_text(encoding="utf-8")
+        self.assertIn('lang="fr"', html)
+        self.assertNotIn("<script", html)
+        self.assertNotIn("https://", html)
+
+    def test_service_worker_met_en_cache_menu_et_hors_ligne(self):
+        sw = (self.RACINE / "static" / "sw.js").read_text(encoding="utf-8")
+        for adresse in ("'/menu/'", "'/menu/parametres/'", "'/hors-ligne.html'"):
+            self.assertIn(adresse, sw)
+        self.assertNotIn("/ressources/", sw)
+
+    def test_raccourcis_du_manifeste(self):
+        import json
+        manifeste = json.loads((self.RACINE / "static" / "manifest.json").read_text(encoding="utf-8"))
+        adresses = [r["url"] for r in manifeste.get("shortcuts", [])]
+        self.assertEqual(adresses, ["/?recherche", "/?favoris", "/?flux=personnaliser", "/menu/"])
+        for r in manifeste["shortcuts"]:
+            self.assertTrue(r["name"] and r["icons"][0]["src"].startswith("/"))
+
+
+class NginxAligne(unittest.TestCase):
+    """deploy/kioske-nginx.conf (utilisé par « kioske.sh --certificat-ok nginx ») et deploy/deployer_nginx.sh
+    servent les mêmes adresses : les blocs location du HTTPS sont identiques (le domaine mis à part)."""
+
+    RACINE = Path(__file__).resolve().parent.parent
+    MARQUE = "    # Le site est statique : seules les adresses"
+
+    def test_memes_emplacements(self):
+        sh = (self.RACINE / "deploy" / "deployer_nginx.sh").read_text(encoding="utf-8")
+        bloc = sh.split("EMPLACEMENTS=\"$(cat <<'NGINX'\n", 1)[1].split("\nNGINX\n", 1)[0]
+        attendu = bloc[bloc.index(self.MARQUE):].replace("__DOMAINE__", "kioske.fr").rstrip()
+        conf = (self.RACINE / "deploy" / "kioske-nginx.conf").read_text(encoding="utf-8")
+        https = conf[conf.index(self.MARQUE):]
+        self.assertTrue(https.startswith(attendu), "blocs location différents entre les deux fichiers")
+
+    def test_page_404_perso(self):
+        conf = (self.RACINE / "deploy" / "kioske-nginx.conf").read_text(encoding="utf-8")
+        self.assertIn("error_page 404 /404.html;", conf)
+        self.assertIn("return 301 /menu/dispositions-legales/;", conf)
+        self.assertIn("img/previews", conf)
+
+
+class CartesDePartage(unittest.TestCase):
+    """Cartes de partage (kioske/previews.py) : police du site, lettre de repli, version dans le nom, cartes
+    d'une version précédente refaites par lots."""
+
+    def setUp(self):
+        import tempfile
+        import kioske.previews as previews
+        self.p = previews
+        self.tmp = tempfile.TemporaryDirectory()
+        self.build_origine = previews.BUILD
+        previews.BUILD = Path(self.tmp.name)
+        (previews.BUILD / previews.DOSSIER_PREVIEWS).mkdir(parents=True)
+
+    def tearDown(self):
+        self.p.BUILD = self.build_origine
+        self.tmp.cleanup()
+
+    def test_police_du_site(self):
+        from PIL import ImageFont
+        self.assertIsInstance(self.p.FONT_TITLE, ImageFont.FreeTypeFont)
+        self.assertEqual(self.p.FONT_TITLE.getname()[0], "Inter Variable")
+        self.assertTrue(self.p.POLICE_SITE.is_relative_to(Path(__file__).resolve().parent.parent / "static"))
+
+    def test_lettre_de_repli(self):
+        self.assertEqual(self.p.lettre_repli("19/11/2026 · The Pink Times", "Tim Asato"), "T")
+        self.assertEqual(self.p.lettre_repli("19/11/2026 · « Basta! »", "x"), "B")
+        self.assertEqual(self.p.lettre_repli("19/11/2026 · ", "élan"), "É")
+        self.assertNotEqual(self.p.lettre_repli("01/01/2026 · Les Jours", ""), "H")   # plus le « h » de https
+
+    def test_version_dans_le_nom(self):
+        self.assertTrue(self.p.nom_preview("https://a.org/x").endswith(f"-v{self.p.VERSION_PREVIEW}.png"))
+
+    def test_anciennes_cartes_refaites_par_lots(self):
+        from datetime import datetime, timezone
+        dossier = self.p.BUILD / self.p.DOSSIER_PREVIEWS
+        articles = [{"link": f"https://a.org/{i}", "title": f"Titre {i}", "source": "Source",
+                     "date": datetime(2026, 11, 10 + i, tzinfo=timezone.utc)} for i in range(3)]
+        for a in articles:   # cartes de l'ancienne version (sans suffixe)
+            (dossier / f"{self.p.chemin_preview(a['link'])}.png").write_bytes(b"ancienne")
+        resultat = self.p.generer_previews(articles, {}, telecharger=True, refaites_max=1)
+        recent = articles[2]["link"]   # la plus récente est refaite d'abord
+        self.assertEqual(resultat[recent], f"{self.p.DOSSIER_PREVIEWS}/{self.p.nom_preview(recent)}")
+        self.assertFalse((dossier / f"{self.p.chemin_preview(recent)}.png").exists(), "ancienne carte retirée")
+        for a in articles[:2]:   # au-delà de la limite : l'ancienne carte reste servie
+            self.assertEqual(resultat[a["link"]], f"{self.p.DOSSIER_PREVIEWS}/{self.p.chemin_preview(a['link'])}.png")
+        nouveau = {"link": "https://a.org/neuf", "title": "Neuf", "source": "S", "date": None}
+        resultat = self.p.generer_previews([nouveau], {}, telecharger=True, refaites_max=0)
+        self.assertIn("-v", resultat["https://a.org/neuf"], "une carte neuve n'est pas limitée")
+
+    def test_build_simple_ne_refait_rien(self):
+        from datetime import datetime, timezone
+        dossier = self.p.BUILD / self.p.DOSSIER_PREVIEWS
+        a = {"link": "https://a.org/s", "title": "T", "source": "S", "date": datetime(2026, 11, 1, tzinfo=timezone.utc)}
+        (dossier / f"{self.p.chemin_preview(a['link'])}.png").write_bytes(b"ancienne")
+        resultat = self.p.generer_previews([a], {}, telecharger=True, refaites_max=0)
+        self.assertTrue(resultat[a["link"]].endswith(f"{self.p.chemin_preview(a['link'])}.png"))
+        self.assertFalse((dossier / self.p.nom_preview(a["link"])).exists())
+
+    def test_duree_bornee(self):
+        from datetime import datetime, timezone
+        dossier = self.p.BUILD / self.p.DOSSIER_PREVIEWS
+        a = {"link": "https://a.org/d", "title": "T", "source": "S", "date": datetime(2026, 11, 1, tzinfo=timezone.utc)}
+        (dossier / f"{self.p.chemin_preview(a['link'])}.png").write_bytes(b"ancienne")
+        self.p.generer_previews([a], {}, telecharger=True, duree_max=0)
+        self.assertFalse((dossier / self.p.nom_preview(a["link"])).exists())
+
+    def test_build_simple_passe_la_consigne(self):
+        source = (Path(__file__).resolve().parent.parent / "kioske" / "construction.py").read_text(encoding="utf-8")
+        self.assertIn("ecrire_pages_articles(items, previews, simple=args.simple)", source)
+        self.assertIn("refaites_max=0 if simple else REFAITES_PAR_BUILD", source)
+
+    def test_carte_prend_l_image_de_l_apercu(self):
+        source = (Path(__file__).resolve().parent.parent / "kioske" / "construction.py").read_text(encoding="utf-8")
+        self.assertIn('previews.get(item["link"], {}).get("image") or item.get("image")', source)
+
+
+class PlusLus(unittest.TestCase):
+    """Galerie « Les plus lus » : comptage dans le journal d'accès de nginx (kioske/plus_lus.py)."""
+
+    def setUp(self):
+        import tempfile
+        self.tmp = tempfile.TemporaryDirectory()
+        self.journal = Path(self.tmp.name) / "kioske.fr.access.log"
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    @staticmethod
+    def ligne(ip, quand, chemin, code=200, agent="Mozilla/5.0 (X11)"):
+        return f'{ip} - - [{quand} +0100] "GET {chemin} HTTP/2.0" {code} 10 "-" "{agent}"\n'
+
+    def test_comptage(self):
+        import gzip
+        from datetime import datetime, timezone
+        from kioske.plus_lus import compter
+        A, B = "/articles/aaaaaaaaaaaa-un-titre-11111111/", "/articles/bbbbbbbbbbbb-autre-22222222/"
+        self.journal.write_text(
+            self.ligne("1.1.1.1", "18/Nov/2026:10:00:00", A)
+            + self.ligne("1.1.1.1", "18/Nov/2026:11:00:00", A)                      # même visiteur : une fois
+            + self.ligne("2.2.2.2", "18/Nov/2026:10:00:00", A + "?from=%2F")         # variante de l'adresse
+            + self.ligne("3.3.3.3", "18/Nov/2026:10:00:00", A + "index.html")
+            + self.ligne("4.4.4.4", "18/Nov/2026:10:00:00", A, agent="GPTBot/1.0")   # robot
+            + self.ligne("5.5.5.5", "18/Nov/2026:10:00:00", A, code=404)             # page absente
+            + self.ligne("127.0.0.1", "18/Nov/2026:10:00:00", A)                     # serveur (ip_jamais_bannies)
+            + self.ligne("6.6.6.6", "01/Nov/2026:10:00:00", B)                       # trop ancien
+            + "ligne illisible\n", encoding="utf-8")
+        with gzip.open(str(self.journal) + ".2.gz", "wt", encoding="utf-8") as f:   # archive tournée
+            f.write(self.ligne("7.7.7.7", "17/Nov/2026:10:00:00", B))
+        compte = compter(self.journal, 7, "127.0.0.1/8 ::1", maintenant=datetime(2026, 11, 19, tzinfo=timezone.utc))
+        self.assertEqual(compte, {"aaaaaaaaaaaa": 3, "bbbbbbbbbbbb": 1})
+
+    def test_sans_journal(self):
+        from kioske.plus_lus import compter
+        self.assertEqual(compter(Path(self.tmp.name) / "absent.log", 7), {})
+
+    def test_classement(self):
+        from datetime import datetime, timezone
+        from kioske.plus_lus import plus_lus
+        from kioske.texte import article_id
+        items = [{"link": f"https://a.org/{i}", "date": datetime(2026, 11, i + 1, tzinfo=timezone.utc)} for i in range(4)]
+        ids = [article_id(i["link"]) for i in items]
+        compte = {ids[0]: 5, ids[1]: 9, ids[2]: 5, "inconnu00000": 50}   # « inconnu » : plus affiché par le site
+        classement = plus_lus(items, compte, 2, article_id)
+        self.assertEqual([(i["link"], n) for i, n in classement], [("https://a.org/1", 9), ("https://a.org/2", 5)])
+
+    def test_galerie(self):
+        from datetime import datetime, timezone
+        from kioske.rendu import render_galerie_plus_lus
+        item = {"link": "https://a.org/x", "title": "Un <titre>", "image": "", "source": "S",
+                "date": datetime(2026, 11, 1, tzinfo=timezone.utc)}
+        html = render_galerie_plus_lus([(item, 3)], {}, 7)
+        self.assertIn('class="galerie-plus-lus"', html)
+        self.assertIn(">Les + vus de la semaine</h2>", html)
+        self.assertIn('aria-label="Les plus vus de la semaine"', html)
+        self.assertIn("Un &lt;titre&gt;", html)
+        self.assertIn("galerie-carte-sans-image", html)
+        self.assertEqual(render_galerie_plus_lus([], {}, 7), "")
+
+    def test_date_sans_dependre_de_la_langue(self):
+        import locale
+        from datetime import datetime, timedelta, timezone
+        from kioske.plus_lus import lire_date
+        attendu = datetime(2026, 11, 19, 10, 0, 0, tzinfo=timezone(timedelta(hours=1)))
+        ancienne = locale.setlocale(locale.LC_TIME)
+        try:
+            try:
+                locale.setlocale(locale.LC_TIME, "fr_FR.UTF-8")   # comme un serveur en français, si disponible
+            except locale.Error:
+                pass
+            self.assertEqual(lire_date("19/Nov/2026:10:00:00 +0100"), attendu)
+        finally:
+            locale.setlocale(locale.LC_TIME, ancienne)
+        self.assertIsNone(lire_date("19/nov./2026:10:00:00 +0100"))
+

@@ -1,0 +1,165 @@
+/* Menu : bouton de la barre du haut, page Menu (sommaire à gauche, document à droite).
+   Fichier partagé : themes.py le ajoute à l'accueil et à la page Menu. Couleurs prises dans les
+   variables du thème ; pas de police ici (elle vient du thème). */
+
+/* Les deux panneaux (sommaire, document) sont des cases de la grille : la largeur et les marges de
+   « .panel » du thème (1100 px centrés au-dessus de 1024 px) les feraient se chevaucher. */
+.menu-page > .panel {
+  width: auto;
+  max-width: none;
+  margin: 0;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.menu-page {
+  display: grid;
+  grid-template-columns: minmax(12rem, 17rem) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+  margin: 0 auto;
+  /* Mêmes bords que la barre du haut (même marge horizontale que .kioske-navbar à chaque largeur) */
+  padding: 1rem 1.5rem;
+  box-sizing: border-box;
+}
+@media (min-width: 1100px) {
+  .menu-page { padding-inline: calc((100vw - min(1100px, calc((100vw - 2rem) / 1.25))) / 2); }
+}
+@media (max-width: 900px) {
+  .menu-page { padding-inline: 1rem; }
+}
+@media (max-width: 480px) {
+  .menu-page { padding-inline: 0.5rem; }
+}
+/* Sommaire à sa hauteur naturelle : la page défile, rien n'est coupé (pas de zone à défilement interne). */
+.menu-sommaire {
+  padding: 0.8rem;
+  box-sizing: border-box;
+}
+.menu-contenu {
+  min-width: 0;
+  padding: 1.2rem;
+  box-sizing: border-box;
+}
+.menu-contenu:focus { outline: none; }
+.menu-sommaire a {
+  color: var(--color-light);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.menu-sommaire ul { list-style: none; margin: 0.2rem 0 0.4rem; padding: 0 0 0 0.7rem; }
+.menu-sommaire li { margin: 0.15rem 0; }
+.menu-sommaire li a {
+  display: block;
+  padding: 0.25rem 0.4rem;
+  border-left: 2px solid transparent;
+}
+.menu-sommaire li a:hover, .menu-sommaire li a:focus-visible {
+  color: var(--color-text-main);
+  border-left-color: var(--color-text-main);
+  outline: none;
+}
+.menu-sommaire li a[aria-current="page"] {
+  color: #000;
+  background: var(--color-text-main);
+  border-left-color: var(--color-text-main);
+}
+.menu-sommaire details { margin: 0.3rem 0; }
+.menu-sommaire summary {
+  cursor: pointer;
+  padding: 0.3rem 0.4rem;
+  color: var(--color-text-main);
+  font-weight: bold;
+  overflow-wrap: anywhere;
+}
+.menu-sommaire details details summary { font-weight: normal; color: var(--color-light); }
+.menu-sommaire summary:focus-visible { outline: 2px solid var(--color-text-main); outline-offset: 2px; }
+/* Menu ≡ (accueil et Menu) : prend presque toute la hauteur de la fenêtre ; s'il ne tient pas, il défile
+   à l'intérieur (sans faire défiler la page). */
+/* Le body couvre toute la fenêtre : il est aussi conteneur à défilement (overflow-y dans le thème), donc il
+   coupait le menu ≡ à sa propre hauteur quand la page est courte (page Menu). */
+body { min-height: 100vh; }
+
+/* Sur petit écran, le bouton Menu est souvent près du bord gauche (barre sur deux lignes) : ancré à droite de
+   son bouton, le menu sortait de l'écran à gauche. Il part alors du bord de la barre du haut, sur la largeur de l'écran. */
+@media (max-width: 900px) {
+  .kioske-navbar .navbar-button-group, .kioske-navbar .navbar-controls { position: static; }  /* le menu se place par rapport à la barre entière */
+  .kioske-navbar .navbar-button-group .navbar-menu {
+    left: 0.5rem;
+    right: 0.5rem;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+  }
+}
+/* Largeur du menu fixée par son contenu (et 250 px au moins), pas par la largeur de la fenêtre :
+   sans cela, le navigateur la recalcule à chaque redimensionnement (plus étroit = plus large). */
+.kioske-navbar .navbar-button-group .navbar-menu {
+  width: max-content;
+  min-width: min(250px, calc(100vw - 1rem));
+  max-width: calc(100vw - 1rem);
+  /* La barre passe sur deux lignes sur petit écran (recherche dessous) : le menu commence alors vers 110 px. */
+  max-height: calc(100vh - 8rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.menu-fil { font-size: 0.85rem; color: var(--color-light); opacity: 0.8; margin: 0 0 0.4rem; overflow-wrap: anywhere; }
+.menu-contenu h1 { font-size: clamp(1.4rem, 4vw, 2rem); line-height: 1.2; margin: 0 0 0.6rem; overflow-wrap: anywhere; }
+.menu-description { color: var(--color-light); margin: 0 0 1rem; }
+.menu-texte { color: var(--color-light); line-height: 1.6; overflow-wrap: anywhere; }
+.menu-texte h2 { font-size: 1.3rem; margin: 1.4rem 0 0.5rem; }
+.menu-texte h3 { font-size: 1.1rem; margin: 1.2rem 0 0.4rem; }
+.menu-texte p, .menu-texte ul, .menu-texte ol { margin: 0 0 0.9rem; }
+.menu-texte a { color: var(--color-text-main); }
+.menu-texte img { max-width: 100%; height: auto; }
+.menu-texte li { margin: 0.25rem 0; }
+.menu-texte li > ul, .menu-texte li > ol { margin: 0.3rem 0 0.2rem 1.2rem; }
+.menu-texte h2[id], .menu-texte h3[id] { scroll-margin-top: 1rem; }
+.menu-texte blockquote { margin: 0.9rem 0; padding-left: 0.8rem; border-left: 3px solid var(--color-text-accent); }
+.menu-texte pre {
+  overflow-x: auto;
+  padding: 0.6rem;
+  background: #0a0000;
+  border: 1px solid var(--color-text-accent);
+}
+.menu-texte code { overflow-wrap: anywhere; }
+.menu-texte table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; }
+.menu-texte th, .menu-texte td { border: 1px solid var(--color-text-accent); padding: 0.3rem 0.5rem; text-align: left; }
+.menu-chargement, .menu-message { color: var(--color-light); }
+
+/* Téléphone : le sommaire passe au-dessus du document, sur toute la largeur */
+@media (max-width: 700px) {
+  .menu-page { grid-template-columns: minmax(0, 1fr); padding-block: 0.6rem; }
+  .menu-sommaire { position: static; }
+  .menu-contenu { padding: 0.9rem; }
+}
+
+/* Galerie des blocs : carte sans image (ou dont l'image ne charge pas) : le titre à la place de la vignette */
+.galerie-carte.galerie-carte-sans-image { display: flex; align-items: center; justify-content: center; padding: 0.3rem; background: #0a0000; }
+.galerie-bloc .galerie-carte.galerie-carte-sans-image { flex-basis: 7.5rem; height: 4.2rem; }
+.galerie-carte-texte { font-size: 0.6rem; line-height: 1.25; color: var(--color-light); text-align: center; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow-wrap: anywhere; hyphens: auto; }
+
+/* Nom du site et drapeau de la barre, plus grands. Sélecteurs à « .kioske-navbar » : ils l'emportent sur les
+   feuilles de thème (voir la note sur la spécificité dans CLAUDE.md). */
+.kioske-navbar .navbar-brand { font-size: 1.5rem; }
+.kioske-navbar .navbar-brand .flag { font-size: 1.9rem; }
+@media (max-width: 768px) {
+  .kioske-navbar .navbar-brand { font-size: 1.25rem; }
+  .kioske-navbar .navbar-brand .flag { font-size: 1.55rem; }
+}
+@media (max-width: 480px) {
+  .kioske-navbar .navbar-brand { font-size: 1.1rem; }
+  .kioske-navbar .navbar-brand .flag { font-size: 1.3rem; }
+}
+
+/* Pages de texte (Menu, Paramètres) : le bloc des thèmes reste dans le flux, sans la remontée de la barre */
+.menu-texte .choix-theme { margin: 0.6rem 0 1rem; justify-content: flex-start; }
+/* Boutons d'action dans le texte : en ligne, à leur taille (pas pleine largeur) */
+.menu-texte .menu-button { display: inline-block; width: auto; margin: 0.2rem 0.3rem 0.2rem 0; }
+
+/* Bouton 📤 des pages du Menu : en bas de page, centré, sous un trait (comme le bas d'une carte ouverte),
+   libellé « Partager » sous l'icône */
+.menu-partage { display: flex; justify-content: center; margin-top: 1.5rem; padding-top: 1.2rem; border-top: var(--border-article-lien); }
+.menu-partage .share-btn { display: inline-flex; flex-direction: column; align-items: center; gap: 0.25rem; margin: 0; }
+.menu-partage .partage-libelle { font-size: 0.75rem; }

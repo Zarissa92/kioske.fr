@@ -7,8 +7,6 @@
 
 # Fichiers avec chemin serveur en dur (racine web)
 - kioske.cfg
-- deploy/deployer-nginx-simple.sh
-- deploy/kioske-nginx-simple.conf
 
 # Build et données locales
 - data/historique.db

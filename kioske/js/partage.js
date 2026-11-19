@@ -10,7 +10,7 @@ function shareArticle(e) {
     navigator.share({ title: titre, url: adresse }).catch(() => {});
   } else if (navigator.clipboard) {
     navigator.clipboard.writeText(adresse).then(() => {
-      const contenu = btn.innerHTML;   // icône et libellé éventuels (pages Ressources)
+      const contenu = btn.innerHTML;   // icône et libellé éventuels (pages du Menu)
       btn.textContent = '✓';
       btn.classList.add('est-copie');
       setTimeout(() => {

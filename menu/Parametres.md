@@ -16,7 +16,8 @@ Ces réglages sont gardés dans ton navigateur : rien n'est envoyé.
 
 Galeries de l'accueil :
 
-<p><button type="button" class="menu-button" id="btn-grande-galerie" aria-pressed="true">🖼️ Grande galerie : affichée</button>
+<p><button type="button" class="menu-button" id="btn-galerie-plus-lus" aria-pressed="true">🖼️ Les plus lus : affichée</button>
+<button type="button" class="menu-button" id="btn-grande-galerie" aria-pressed="false">🖼️ Grande galerie : masquée</button>
 <button type="button" class="menu-button" id="btn-galeries-blocs" aria-pressed="false">🖼️ Galeries des catégories : masquées</button></p>
 
 ### Flux

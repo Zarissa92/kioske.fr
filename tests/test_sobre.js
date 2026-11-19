@@ -3,7 +3,7 @@ const { attendre, charger, suite } = require('./outils');
 
 (async () => {
   const t = suite('Mode sobre (page Paramètres)');
-  const { w, d, erreurs } = charger('ressources/parametres/index.html', '/ressources/parametres/');
+  const { w, d, erreurs } = charger('menu/parametres/index.html', '/menu/parametres/');
   await attendre(200);
   const bouton = d.querySelector('main [data-reglage="sobre"]');
   t.verif('bouton présent sur la page', !!bouton);

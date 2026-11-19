@@ -61,5 +61,59 @@
       "type": "image/png",
       "form_factor": "narrow"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Rechercher",
+      "short_name": "Recherche",
+      "description": "Chercher dans les articles de la veille",
+      "url": "/?recherche",
+      "icons": [
+        {
+          "src": "/icon-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Mes favoris",
+      "short_name": "Favoris",
+      "description": "Les articles gardés en favoris",
+      "url": "/?favoris",
+      "icons": [
+        {
+          "src": "/icon-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Personnaliser mon flux",
+      "short_name": "Mon flux",
+      "description": "Choisir les sources affichées",
+      "url": "/?flux=personnaliser",
+      "icons": [
+        {
+          "src": "/icon-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Menu",
+      "short_name": "Menu",
+      "description": "Paramètres, documents et mises à jour du site",
+      "url": "/menu/",
+      "icons": [
+        {
+          "src": "/icon-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
   ]
 }

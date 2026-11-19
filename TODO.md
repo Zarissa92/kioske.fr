@@ -1,68 +1,68 @@
-## Renommer le dossier « ressources » en « menu » (à décider)
-
-Aujourd'hui, seul le libellé affiché est « Menu ». Le dossier source (`ressources/`) et l'URL (`/ressources/`) ne sont pas renommés.
-
-- [ ] **Option A : URL et dossier renommés.** Dossier source `menu/`, URL `/menu/`. Ancienne `/ressources/` redirigée (301) vers `/menu/` pour les liens existants et les notifications. À faire : `config.py` (`RESSOURCES`), `construction.py`, `ressources.py`, `publication.py`, les liens `/ressources/` dans `rendu.py`, `notifications.js`, `donnees_accueil.js`, `accueil_favoris.js`, les tests, `kioske.cfg` ; nginx (`deploy/kioske-nginx.conf` et `deploy/deployer_nginx.sh`, les deux ensemble) : routes `^/ressources`, la redirection, et `root` inchangé ; sur le serveur, supprimer l'ancien dossier `/srv/kioske.fr/ressources/` après déploiement.
-- [ ] **Option B : dossier renommé, URL conservée.** Le dossier source devient `menu/`, mais la sortie reste `build/ressources/` (et `/ressources/`). Moins de changements, aucun lien à rediriger, mais le nom de l'URL ne suit pas le libellé.
-- [ ] Dans les deux cas : le texte `Mise_à_jours.md` (géré à la main) n'est pas touché.
-
 # TODO — kioske.fr
 
 Tâches à implémenter dans les prochaines sessions.
 
 ## JavaScript/Interactions
 
-- **Fermeture du menu "+" avec Échap** : actuellement, seuls les panneaux d'articles/catégories se ferment avec Échap. Le menu "+" devrait aussi répondre à cette touche.
-- **Recherche en temps réel** : la barre de recherche crée un panneau de résultats (2026-11-12). Implémenter un filtrage dynamique au fur et à mesure de la saisie en option.
 - **Hover galerie satisfaisant** : survol des cartes de galerie sur PC (2026-11-12). À améliorer : gestion des cas limites (souris rapide, multi-toucher).
-
-- **Servir le JavaScript comme fichiers** : les scripts de `kioske/js/` sont aujourd'hui recopiés dans chaque page, entre `<script>` et `</script>`. Les publier dans `build/js/` et les charger par `<script src="/js/…">` allégerait chaque page (1300 pages d'article portent le même code), laisserait le navigateur les mettre en cache et permettrait de retirer `'unsafe-inline'` de `script-src` dans la politique nginx (`deploy/deployer_nginx.sh`). À faire ensemble : copie des fichiers au build (`kioske/construction.py`), gabarits (`kioske/gabarits/`), liste du cache dans `static/sw.js` et durée de cache nginx, puis les `onclick` éventuels des gabarits à remplacer par des écouteurs, sans quoi la politique sans `'unsafe-inline'` les bloquerait. Vérifier avec `bash tests/lancer.sh` (adapter `tests/outils.js`, qui ne charge que les scripts écrits dans la page).
 
 ## Aperçus et images
 
-- **Aperçus Discord sans image d'article** (2026-11-18) : la carte affiche la lettre de repli au lieu de l'image (exemple : article « seven trans actresses », 18/11). Cause non confirmée. Piste : images AVIF acceptées par `kioske/images.py` mais non décodées par Pillow (`features.check('avif')` = False en local) ; l'échec était silencieux. Le journal de build affiche désormais `[preview] image non utilisée … : raison` (`kioske/previews.py`). À faire : relever cette raison sur le serveur ; si c'est l'AVIF, décider entre `pillow-avif-plugin` dans le venv (`requirements.txt`) ou le refus des AVIF. Vérifier aussi si Discord garde une ancienne version de la carte en cache.
+- **Aperçus sans image : à revérifier après la mise en ligne de la v3** (2026-11-18, causes trouvées le 2026-11-19).
+  - Corrigé : nginx ne servait pas `/img/previews/…` (404) ; police absente du serveur (texte minuscule) ; lettre de repli toujours « H » ; et surtout, la carte ne prenait que l'image du flux RSS, pas celle de l'aperçu de la page (`construction.py`, `images_map`) : The Pink Times, dont le flux n'a pas d'image, avait des cartes sans photo alors que ses pages en ont une. Cartes en version 3, refaites par lots.
+  - À vérifier : une carte récente de The Pink Times en ligne doit avoir sa photo (plusieurs centaines de Ko). Les rares cartes encore sans photo laissent une ligne `[preview] image non utilisée … : raison` (`journalctl -u kioske-veille.service | grep "image non utilisée"`) ; si la raison est le format AVIF (non lu par Pillow), décider entre `pillow-avif-plugin` dans `requirements.txt` ou le refus des AVIF. Discord peut garder une ancienne carte en cache quelque temps.
+- **Retirer le patch de transition des cartes (v1/v2 → v3)**, une fois toutes les cartes refaites. Vérifier d'abord sur le serveur qu'il ne reste plus de carte sans `-v3` : `ls ~/kioske.fr/build/img/previews | grep -vc -- '-v3.png'` doit donner 0 (le journal de build n'affiche alors plus `[previews] … carte(s) refaite(s)`).
+  - `kioske/previews.py` : retirer `_anciennes_cartes()`, `REFAITES_PAR_BUILD`, `REFAITES_DUREE_MAX`, le compteur et la minuterie de `generer_previews()` (paramètres `refaites_max`, `duree_max`), et le repli sur l'ancienne carte dans `preview_local()` ; garder `VERSION_PREVIEW` et `nom_preview()` (utiles pour une prochaine refonte).
+  - `kioske/construction.py` : retirer le paramètre `simple` de `ecrire_pages_articles()` et l'import de `REFAITES_PAR_BUILD`.
+  - `tests/test_python.py`, classe `CartesDePartage` : retirer les tests des lots (`test_anciennes_cartes_refaites_par_lots`, `test_build_simple_ne_refait_rien`, `test_duree_bornee`, `test_build_simple_passe_la_consigne`).
+  - `README.md` (« Cartes de partage », point « Version ») et `CHANGELOG.md`.
+  - Sur le serveur : supprimer les anciennes cartes restées dans la racine web (`/srv/kioske.fr/img/previews/`, fichiers sans `-v3`), ou ajouter `img/previews` à `DOSSIERS_PURGES` (`kioske/publication.py`) ; la publication ne les retire pas aujourd'hui.
 
 ## Configuration (kioske.cfg)
 
 - **Espacements réglables** : rendre les marges et padding configurables pour permettre d'ajuster facilement le layout sans modifier le CSS :
   - Marges du panneau principal (`.panel`)
   - Espacement des groupes/sections (`.groupes`, `.groupe`)
-  - Padding du menu "+" (`.popover-contenu`)
   - Gap des éléments (cartes, étiquettes, etc.)
 
 - **Layout compacté réglable** : créer un paramètre de configuration (ex: `densité` ou `espacements`) pour passer rapidement entre différents niveaux de compacité sans retoucher le CSS en dur.
 
-## Progressive Web App (PWA)
+## Mise en ligne du 2026-11-19 (Menu, dispositions légales, nginx réaligné)
 
-Le site est déjà 90% compatible. Travail estimé :
+Dans cet ordre :
 
-**Minimal (1-2h) — point d'entrée rapide :**
-- Créer `manifest.json` (métadonnées PWA : nom, icônes, thème, couleur)
-- Générer icônes (192×192 et 512×512) à partir de `favicon.svg`
-- Ajouter lien `<link rel="manifest">` dans le `<head>`
+- [ ] `kioske_update --dry-run` puis `kioske_update` (la fonction envoie déjà `menu/` au lieu de `ressources/`).
+- [ ] Sur le serveur : `deploy/kioske.sh --certificat-ok nginx` **avant** de publier, sinon `/menu/…` et `/hors-ligne.html` comptent comme des sondes pour fail2ban.
+- [ ] Publier : `bin/kioske publier --simple` (ou attendre le timer).
+- [ ] Vérifier : `/dispositions-legales.html` et `/ressources/` répondent 301 vers `/menu/…` ; une adresse inexistante montre la 404 perso ; un aperçu de partage (`/img/previews/…`) répond 200.
+- [ ] Nettoyer le serveur (la publication et rsync ne les retirent pas) :
+  - `rm -r ~/kioske.fr/ressources` (ancienne source, exclue de rsync) ;
+  - `sudo rm -r /srv/kioske.fr/ressources` (ancienne version publiée) ;
+  - `sudo rm /srv/kioske.fr/dispositions-legales.html` (ancienne page statique, plus servie : nginx redirige).
 
-**Modéré (2-4h) — vrai offline :**
-- Service Worker pour cacher assets (CSS, JS, images)
-- Stratégie : cache-first pour statiques, network-first pour RSS
-- Message d'offline pour l'utilisateur
+## Redirections à retirer plus tard
 
-**Optionnel :**
-- Web app shortcuts (accès rapide à la recherche)
-- Notifications (nouvelles sources)
-- Installation prompt personnalisé
+À garder tant que des liens partagés, des favoris ou des notifications enregistrées pointent vers les anciennes adresses. À retirer dans `deploy/kioske-nginx.conf` et `deploy/deployer_nginx.sh` (les deux ensemble ; le test `NginxAligne` le vérifie) :
 
-## Découverte des flux RSS
+- `/ressources/…` → `/menu/…` (2026-11-19).
+- `/dispositions-legales.html` → `/menu/dispositions-legales/` (2026-11-19).
 
-- **Page rss.html** ✅ terminée (2026-11-12) : page de découverte avec lien vers le flux principal et tous les flux par catégorie (icônes RSS aux couleurs du drapeau trans).
-- **Lien vers rss.html** ✅ terminé (2026-11-12) : ajouté au bloc immuable, visible dans le popover d'infos et sur toutes les pages.
+## Sécurité du compte du timer (à décider)
 
-## En savoir plus
+Depuis la galerie « Les + vus » (2026-11-19), le compte du timer est dans le groupe `adm` : le build lit le journal de nginx.
+`adm` donne aussi la lecture de tout `/var/log` (auth.log, syslog…), sans mot de passe. Le build traite du contenu
+venu d'ailleurs (flux RSS, pages, images décodées par Pillow) : une faille là-dedans donnerait ces journaux à
+l'attaquant, en plus de ce que le compte lit déjà. Pistes, du plus simple au plus solide :
 
-**afficher plus de texte** sur une carte **ouverte**
-## Documentation
-
-- Mettre à jour README.md avec un schéma du nouveau layout (menu "+", popover d'infos).
-- Ajouter un guide d'utilisation du menu "+" pour les contributeurs.
+- [ ] **Remplacer `adm` par un droit limité à nginx** : `sudo gpasswd -d <compte> adm`, puis une ACL sur
+      `/var/log/nginx` (lecture des fichiers existants, et ACL par défaut pour ceux que logrotate créera). Le compte
+      ne lit plus auth.log ni syslog.
+- [ ] **Durcir l'unité `kioske-veille`** (`deploy/systemd/kioske-veille.service`) : `NoNewPrivileges=yes`,
+      `PrivateTmp=yes`, `ProtectSystem=strict` avec `ReadWritePaths=` (dossier du projet, racine web),
+      `ProtectHome=read-only` sauf le dossier du projet, `ProtectKernelTunables=yes`, `RestrictSUIDSGID=yes`.
+      Un build compromis ne pourrait plus écrire ailleurs. Tester avec `systemd-analyze security kioske-veille`.
+- [ ] **Compte dédié au timer** (`kioske`, sans shell ni sudo) au lieu du compte d'administration :
+      le plus solide, mais demande de revoir les droits du projet, de `data/` et de la racine web.
 
 ## Flux RSS par catégorie : adresse instable
 

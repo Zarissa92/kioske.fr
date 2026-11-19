@@ -73,8 +73,8 @@ map $uri $kioske_cache_control {
     # Page d'accueil : revérifiée à chaque visite (304 si elle n'a pas changé, donc léger)
     /                                 "no-cache, must-revalidate, max-age=0";
     /index.html                       "no-cache, must-revalidate, max-age=0";
-    # Pages Ressources (statiques) : revérifiées, le contenu change à chaque publication
-    ~^/ressources(/|$)                "no-cache, must-revalidate, max-age=0";
+    # Pages du Menu (statiques) : revérifiées, le contenu change à chaque publication
+    ~^/menu(/|$)                      "no-cache, must-revalidate, max-age=0";
     # Pages HTML (articles, catégories, flux, dossiers) : revérifiées à chaque visite. Sinon une page en cache
     # garde l'ancien JavaScript (notifications, thèmes) jusqu'à 30 min, et Ctrl+Maj+R ne suffit pas toujours.
     # Bundle JavaScript (/js/kioske.<empreinte>.js) : le nom change avec le contenu, donc cache longue durée
@@ -146,7 +146,7 @@ EMPLACEMENTS="$(cat <<'NGINX'
     }
 
     # Pages et données à la racine : accueil, page des flux, flux RSS, plan du site, index de recherche
-    location ~ ^/(index\.html|rss\.html|code-de-conduite\.html|dispositions-legales\.html|rss\.xml|sitemap\.xml|robots\.txt|articles-index\.json)$ {
+    location ~ ^/(index\.html|rss\.html|hors-ligne\.html|code-de-conduite\.html|rss\.xml|sitemap\.xml|robots\.txt|articles-index\.json)$ {
         limit_req zone=kioske_pages burst=40 nodelay;
         limit_req zone=kioske_robots burst=10 nodelay;
         limit_req zone=kioske_robots_ia burst=3 nodelay;
@@ -161,22 +161,39 @@ EMPLACEMENTS="$(cat <<'NGINX'
         try_files $uri $uri/ =404;
     }
 
-    # Images des documents Ressources (copiées au build, à côté des documents : ressources/img/, image.png…)
-    location ~* ^/ressources/.+\.(png|jpe?g|gif|webp|avif)$ {
+    # Images des documents du Menu (copiées au build, à côté des documents : menu/img/, image.png…)
+    location ~* ^/menu/.+\.(png|jpe?g|gif|webp|avif)$ {
         limit_req zone=kioske_fichiers burst=300 nodelay;
         try_files $uri =404;
     }
 
-    # Pages Ressources (statiques, produites par le build) : /ressources/ (index) et un dossier par document,
-    # /ressources/<catégorie>/[<sous-catégorie>/]<document>/index.html. Segments limités aux caractères des
+    # Pages du Menu (statiques, produites par le build) : /menu/ (index) et un dossier par document,
+    # /menu/<catégorie>/[<sous-catégorie>/]<document>/index.html. Segments limités aux caractères des
     # slugs (a-z, 0-9, -) et trois niveaux au plus. Pas d'accolades dans cette expression (nginx les
     # prendrait pour un bloc).
     # index.html nommé : dans un bloc « location ~ », « $uri/ » seul ne sert pas l'index du dossier (404).
-    location ~ ^/ressources(/[a-z0-9-]+)?(/[a-z0-9-]+)?(/[a-z0-9-]+)?/?$ {
+    location ~ ^/menu(/[a-z0-9-]+)?(/[a-z0-9-]+)?(/[a-z0-9-]+)?/?$ {
         limit_req zone=kioske_pages burst=40 nodelay;
         limit_req zone=kioske_robots burst=10 nodelay;
         limit_req zone=kioske_robots_ia burst=3 nodelay;
         try_files $uri $uri/index.html =404;
+    }
+
+    # Ancienne adresse du Menu (/ressources/…, renommée /menu/… le 2026-11-19) : redirection permanente.
+    # Garde les liens déjà partagés et les notifications enregistrées dans les navigateurs.
+    location ~ ^/ressources(/.*)?$ {
+        limit_req zone=kioske_pages burst=40 nodelay;
+        limit_req zone=kioske_robots burst=10 nodelay;
+        limit_req zone=kioske_robots_ia burst=3 nodelay;
+        return 301 /menu$1$is_args$args;
+    }
+
+    # Ancienne page des dispositions légales (static/, avant le 2026-11-19) : elle est dans le Menu.
+    location = /dispositions-legales.html {
+        limit_req zone=kioske_pages burst=40 nodelay;
+        limit_req zone=kioske_robots burst=10 nodelay;
+        limit_req zone=kioske_robots_ia burst=3 nodelay;
+        return 301 /menu/dispositions-legales/;
     }
 
     # Anciens flux RSS par catégorie (/rss/<nom>.xml, supprimés) : redirection vers le flux unique

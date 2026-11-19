@@ -7,19 +7,19 @@ const path = require('path');
 const BUILD = path.join(__dirname, '..', 'build');
 const ICONE_FIXE = path.join(__dirname, '..', 'static', 'icon-96.png');
 
-// Pages : l'accueil, une page d'article, une page de catégorie, les Ressources, le code de conduite
+// Pages : l'accueil, une page d'article, une page de catégorie, les Menu, le code de conduite
 const premier = (dossier) => fs.readdirSync(path.join(BUILD, dossier)).sort()[0];
 const PAGES = {
   accueil: '/',
   article: `/articles/${premier('articles')}/`,
   categorie: `/categories/${premier('categories')}/`,
-  ressources: '/ressources/',
+  menu: '/menu/',
   conduite: '/code-de-conduite.html',
 };
 
 // Thèmes : le défaut et chaque surcouche de build/
 const THEMES = ['default', ...fs.readdirSync(BUILD)
-  .filter(f => /^style_.+\.css$/.test(f) && !['style_sobre.css', 'style_favoris.css', 'style_ressources.css', 'style_default.css'].includes(f))
+  .filter(f => /^style_.+\.css$/.test(f) && !['style_sobre.css', 'style_favoris.css', 'style_menu.css', 'style_default.css'].includes(f))
   .map(f => f.replace(/^style_|\.css$/g, ''))];
 const LARGEURS = { mobile: [320, 640], tablette: [768, 1024], bureau: [1100, 800] };
 

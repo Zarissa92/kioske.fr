@@ -3,13 +3,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import time
 from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-from .config import BUILD, CACHE_DIR, DELAI_ECHEC, DOSSIER_IMAGES
+from .config import BUILD, CACHE_DIR, DELAI_ECHEC, DOSSIER_IMAGES, STATIC
 from .images import telecharger_en_memoire
 
 ECHECS_PREVIEWS = CACHE_DIR / "previews_echecs.json"
@@ -27,19 +28,60 @@ COLOR_RED_DIM = (153, 26, 26)  # Rouge dim
 COLOR_RED_LIGHT = (255, 153, 153)  # Rouge clair
 COLOR_WHITE = (255, 255, 255)
 
-# Polices (utiliser des polices du système si disponibles)
-try:
-    FONT_TITLE = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 60)
-    FONT_META = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 40)
-except OSError:
-    # Fallback sur les polices par défaut
-    FONT_TITLE = ImageFont.load_default()
-    FONT_META = ImageFont.load_default()
+# Police : Inter, celle du site (static/fonts/inter.woff2), fournie par le dépôt. Les cartes ne dépendent plus
+# des polices installées sur la machine : sur le serveur, DejaVu manquait et Pillow écrivait en police minuscule.
+# Inter est variable (graisse 100 à 900) : un seul fichier pour le titre en gras et la ligne de date.
+# Couverture : français et Europe de l'Ouest ; les lettres d'Europe centrale (ł, č, ő…) sortent en carré vide.
+POLICE_SITE = STATIC / "fonts" / "inter.woff2"
+
+
+def _police(taille: int, graisse: int = 400) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    """Inter à la taille et à la graisse demandées. Fichier illisible : la police de Pillow à la même taille,
+    avec un avertissement dans le journal de build (plus de repli silencieux)."""
+    try:
+        police = ImageFont.truetype(str(POLICE_SITE), taille)
+    except OSError as e:
+        print(f"[preview] police {POLICE_SITE} illisible ({e}) : police de Pillow à la place", flush=True)
+        return ImageFont.load_default(taille)
+    try:
+        axes = police.get_variation_axes()
+        police.set_variation_by_axes([graisse if a["name"] in (b"Weight", "Weight") else a["default"] for a in axes])
+    except (OSError, AttributeError):
+        pass  # police non variable : graisse par défaut
+    return police
+
+
+FONT_TITLE = _police(60, 700)
+FONT_META = _police(40)
+FONT_LETTRE = _police(360, 800)   # lettre de repli, au centre de la zone d'image
+
+# Version des cartes : elle entre dans le nom du fichier (<empreinte>-v3.png). L'augmenter fait refaire toutes
+# les cartes, par lots (REFAITES_PAR_BUILD par build, les plus récentes d'abord) ; une carte pas encore refaite
+# garde son ancien fichier. v2 (2026-11-19) : police du site, lettre de repli tirée de la source.
+# Refaire une carte télécharge l'image de l'article (jusqu'à 15 s si le site est lent) : nombre ET durée bornés,
+# pour rester loin de la limite du timer (TimeoutStartSec=900). Rien n'est refait en build --simple (sans réseau).
+VERSION_PREVIEW = 3   # v3 (2026-11-19) : image de l'aperçu de la page quand le flux n'en donne pas
+REFAITES_PAR_BUILD = 150
+REFAITES_DUREE_MAX = 180   # secondes par build
 
 
 def chemin_preview(link: str) -> str:
-    """Nom de base du preview d'une URL : un hash stable de l'adresse (sans l'extension)."""
+    """Nom de base du preview d'une URL : un hash stable de l'adresse (sans l'extension ni la version)."""
     return hashlib.sha256(link.encode("utf-8")).hexdigest()[:20]
+
+
+def nom_preview(link: str) -> str:
+    """Nom du fichier de la carte, version comprise (img/previews/<nom>)."""
+    return f"{chemin_preview(link)}-v{VERSION_PREVIEW}.png"
+
+
+def lettre_repli(meta: str, titre: str) -> str:
+    """Lettre affichée sans image : la première lettre ou chiffre du nom de la source (après « · »), sinon du titre."""
+    for texte in (meta.split("·", 1)[-1] if "·" in meta else "", titre):
+        for c in texte:
+            if c.isalnum():
+                return c.upper()
+    return "•"
 
 
 def generer_preview(image_path: str | None, titre: str, meta: str, link: str) -> bytes:
@@ -92,16 +134,17 @@ def generer_preview(image_path: str | None, titre: str, meta: str, link: str) ->
         except Exception as e:
             # Fallback vers la lettre ; la raison part dans le journal de build (image absente du preview sinon)
             print(f"[preview] image non utilisée pour {link} ({image_path}) : {e}", flush=True)
+    elif image_path:
+        print(f"[preview] image non utilisée pour {link} ({image_path}) : fichier introuvable", flush=True)
 
     # Si l'image n'a pas pu être chargée, dessiner une lettre
     if not image_loaded:
         draw.rectangle(image_box, fill=COLOR_RED_DIM)
-        lettre = link[0].upper() if link else "•"
         draw.text(
             (PREVIEW_WIDTH // 2, image_height // 2),
-            lettre,
+            lettre_repli(meta, titre),
             fill=COLOR_WHITE,
-            font=FONT_TITLE,
+            font=FONT_LETTRE,
             anchor="mm"
         )
 
@@ -143,32 +186,36 @@ def generer_preview(image_path: str | None, titre: str, meta: str, link: str) ->
     return buffer.getvalue()
 
 
+def _anciennes_cartes(link: str) -> list[Path]:
+    """Cartes d'une version précédente pour ce lien (<empreinte>.png, <empreinte>-v1.png…)."""
+    dossier = BUILD / DOSSIER_PREVIEWS
+    base = chemin_preview(link)
+    return [f for f in [dossier / f"{base}.png", *dossier.glob(f"{base}-v*.png")]
+            if f.exists() and f.name != nom_preview(link)]
+
+
 def preview_local(link: str, image_path: str | None, titre: str, meta: str, telecharger: bool = True) -> str:
-    """Chemin relatif à la racine du preview d'un lien. Génère le preview s'il n'existe pas.
-
-    Retourne un chemin relatif (ex. img/previews/abc.png) ou une chaîne vide en cas d'erreur.
-    """
-    nom_base = chemin_preview(link)
-    preview_path = BUILD / DOSSIER_PREVIEWS / f"{nom_base}.png"
-
-    # Si le preview existe, retourner son chemin
+    """Chemin relatif à la racine de la carte d'un lien (ex. img/previews/<empreinte>-v2.png). La génère si elle
+    n'existe pas dans la version actuelle ; une fois générée, les cartes des versions précédentes sont retirées
+    de build/. Chaîne vide en cas d'erreur, ou si telecharger est faux et qu'aucune carte n'existe."""
+    nom = nom_preview(link)
+    preview_path = BUILD / DOSSIER_PREVIEWS / nom
     if preview_path.exists():
-        return f"{DOSSIER_PREVIEWS}/{nom_base}.png"
+        return f"{DOSSIER_PREVIEWS}/{nom}"
 
     if not telecharger:
-        return ""
+        anciennes = _anciennes_cartes(link)
+        return f"{DOSSIER_PREVIEWS}/{anciennes[0].name}" if anciennes else ""
 
     try:
-        # Générer le preview
         preview_path.parent.mkdir(parents=True, exist_ok=True)
         data = generer_preview(image_path, titre, meta, link)
-
-        # Sauvegarder le preview
         tmp = preview_path.with_name(preview_path.name + ".tmp")
         tmp.write_bytes(data)
         tmp.replace(preview_path)
-
-        return f"{DOSSIER_PREVIEWS}/{nom_base}.png"
+        for ancienne in _anciennes_cartes(link):
+            ancienne.unlink(missing_ok=True)
+        return f"{DOSSIER_PREVIEWS}/{nom}"
     except Exception as exc:
         print(f"[preview] erreur lors de la génération du preview pour {link} : {exc}", flush=True)
         # Marquer l'erreur dans le cache
@@ -176,30 +223,51 @@ def preview_local(link: str, image_path: str | None, titre: str, meta: str, tele
         echecs[link] = datetime.now(timezone.utc).timestamp()
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
         ECHECS_PREVIEWS.write_text(json.dumps(echecs, indent=1), encoding="utf-8")
-        return ""
+        anciennes = _anciennes_cartes(link)
+        return f"{DOSSIER_PREVIEWS}/{anciennes[0].name}" if anciennes else ""
 
 
-def generer_previews(articles: list[dict], images: dict[str, str], telecharger: bool = True) -> dict[str, str]:
-    """Génère les previews pour une liste d'articles.
+def generer_previews(articles: list[dict], images: dict[str, str], telecharger: bool = True,
+                     refaites_max: int = REFAITES_PAR_BUILD, duree_max: float = REFAITES_DUREE_MAX) -> dict[str, str]:
+    """Génère les cartes d'une liste d'articles (les plus récents d'abord).
 
     articles : liste des articles avec 'link', 'title', 'source', 'date'
     images : dict qui mappe link -> chemin_local_image
-    telecharger : si True, génère les previews ; si False, retourne seulement les existants
+    telecharger : si True, génère les cartes manquantes ; si False, retourne seulement les existantes
+    refaites_max : au plus ce nombre de cartes d'une version précédente refaites dans ce build (les autres
+                   gardent leur ancien fichier jusqu'aux builds suivants). Les cartes neuves ne sont pas limitées.
+                   0 en build --simple.
+    duree_max : au-delà de ce nombre de secondes passées à refaire des cartes, on s'arrête pour ce build.
 
     Retourne un dict qui mappe link -> chemin_relatif_preview
     """
     previews = {}
     echecs = json.loads(ECHECS_PREVIEWS.read_text(encoding="utf-8")) if ECHECS_PREVIEWS.exists() else {}
     maintenant = datetime.now(timezone.utc).timestamp()
+    refaites = 0
+    debut = time.monotonic()
+    plus_ancienne = datetime.min.replace(tzinfo=timezone.utc)
 
-    for article in articles:
+    def date_tri(article):
+        d = article.get("date")
+        return d if isinstance(d, datetime) and d.tzinfo else plus_ancienne
+
+    for article in sorted(articles, key=date_tri, reverse=True):
         link = article["link"]
 
         # Vérifier le cache des erreurs
         if link in echecs and maintenant - echecs[link] < DELAI_ECHEC:
+            anciennes = _anciennes_cartes(link)
+            if anciennes:
+                previews[link] = f"{DOSSIER_PREVIEWS}/{anciennes[0].name}"
             continue
 
-        # Générer le preview
+        # Carte d'une version précédente : refaite seulement dans la limite du build
+        a_refaire = telecharger and not (BUILD / DOSSIER_PREVIEWS / nom_preview(link)).exists() and bool(_anciennes_cartes(link))
+        generer = telecharger and (not a_refaire or (refaites < refaites_max and time.monotonic() - debut < duree_max))
+        if a_refaire and generer:
+            refaites += 1
+
         image_path = images.get(link)
         # Corriger le chemin de l'image (BUILD/ / dossier)
         if image_path and not image_path.startswith("https://"):
@@ -211,8 +279,10 @@ def generer_previews(articles: list[dict], images: dict[str, str], telecharger: 
         meta = f"{date_str} · {article.get('source', '')}"[:60]
         titre = article.get('title', '')
 
-        preview = preview_local(link, image_path, titre, meta, telecharger)
+        preview = preview_local(link, image_path, titre, meta, generer)
         if preview:
             previews[link] = preview
 
+    if refaites:
+        print(f"[previews] {refaites} carte(s) refaite(s) en version {VERSION_PREVIEW}", flush=True)
     return previews

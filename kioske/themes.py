@@ -125,9 +125,9 @@ def _morceaux_de_page() -> tuple[str, str, str, str]:
 CSS = charger_css_theme()
 # CSS_FAVORIS : halo et reflet des cartes de favoris (kioske/style_favoris.css), ajouté à la page d'accueil seule.
 CSS_FAVORIS = (PAQUET / "style_favoris.css").read_text(encoding="utf-8")
-# CSS_RESSOURCES : mise en page de la page Ressources et de la barre du haut (kioske/style_ressources.css),
-# ajouté à l'accueil et à la page Ressources.
-CSS_RESSOURCES = (PAQUET / "style_ressources.css").read_text(encoding="utf-8")
+# CSS_MENU : mise en page de la page Menu et de la barre du haut (kioske/style_menu.css),
+# ajouté à l'accueil et à la page Menu.
+CSS_MENU = (PAQUET / "style_menu.css").read_text(encoding="utf-8")
 # ATTRIBUTS_HTML : attributs du thème par défaut, à poser sur <html>.
 # VARIABLES_HTML : sa variable CSS, à mettre dans l'attribut style de <html>.
 # SCRIPT_THEME   : à mettre dans <head> — liste des thèmes, puis static/theme.js.

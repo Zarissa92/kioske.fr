@@ -25,7 +25,7 @@ const PAGES = {
 const themes = ['default', ...fs.readdirSync(BUILD)
   .filter(f => /^style_.+\.css$/.test(f) && f !== 'style_sobre.css')
   .map(f => f.replace(/^style_|\.css$/g, ''))
-  .filter(t => t !== 'default' && t !== 'favoris' && t !== 'ressources')];
+  .filter(t => t !== 'default' && t !== 'favoris' && t !== 'menu')];
 
 function html(page, theme) {
   let texte = fs.readFileSync(PAGES[page], 'utf8').replace(/<script[\s\S]*?<\/script>/g, '');

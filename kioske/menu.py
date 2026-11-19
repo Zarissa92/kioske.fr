@@ -1,9 +1,9 @@
-"""Page Ressources : des documents Markdown, écrits en pages statiques au build (comme les articles).
+"""Page Menu : des documents Markdown, écrits en pages statiques au build (comme les articles).
 
-Arborescence (dossier ressources/ à la racine du projet) :
+Arborescence (dossier menu/ à la racine du projet) :
 
-    ressources/<categorie>/<document>.md
-    ressources/<categorie>/<sous-categorie>/<document>.md
+    menu/<categorie>/<document>.md
+    menu/<categorie>/<sous-categorie>/<document>.md
 
 Le dossier de premier niveau est une catégorie, celui de second niveau une sous-catégorie. Un dossier
 plus profond est ignoré (signalé au build). Le nom du fichier .md donne l'adresse du document.
@@ -20,13 +20,13 @@ Un dossier peut avoir un fichier _dossier.md, dont seul le bloc de tête compte 
 ordre de la catégorie ou de la sous-catégorie. Sans ordre, les éléments suivent l'ordre alphabétique,
 après ceux qui en ont un. Les fichiers et dossiers dont le nom commence par un point ou un _ sont ignorés.
 
-Un fichier .md à la racine de ressources/ devient une catégorie, comme un dossier : son titre et son ordre
+Un fichier .md à la racine de menu/ devient une catégorie, comme un dossier : son titre et son ordre
 viennent de son bloc de tête (ou de son nom), et son contenu est l'unique document de la catégorie, à
-l'adresse /ressources/<nom>/. Exception : ressources/index.md (facultatif) est le texte d'introduction de la
+l'adresse /menu/<nom>/. Exception : menu/index.md (facultatif) est le texte d'introduction de la
 page d'index, rendu en Markdown au-dessus du sommaire ; il n'est pas une catégorie.
 
-Sorties (dans build/ressources/) : index.html (la liste, avec le sommaire) et une page par document,
-ressources/<catégorie>/[<sous-catégorie>/]<document>/index.html, avec le même sommaire.
+Sorties (dans build/menu/) : index.html (la liste, avec le sommaire) et une page par document,
+menu/<catégorie>/[<sous-catégorie>/]<document>/index.html, avec le même sommaire.
 """
 from __future__ import annotations
 
@@ -36,15 +36,16 @@ from pathlib import Path
 
 import markdown
 
-from .config import BUILD, NOM_SITE, RESSOURCES
+from .config import BUILD, NOM_SITE, MENU
 from .rendu import page_statique
 from .themes import CHOIX_THEME
 from .texte import cle_alphabetique, esc, slug_categorie
 
-DOSSIER_WEB = "ressources"          # build/ressources/ et adresse /ressources/
-DOSSIER_IMAGES = "img"              # ressources/img/ : images des documents, jamais une catégorie
+DOSSIER_WEB = "menu"                # build/menu/ et adresse /menu/ (ancienne /ressources/ : 301 dans nginx)
+URL_MENU = "/" + DOSSIER_WEB + "/"
+DOSSIER_IMAGES = "img"              # menu/img/ : images des documents, jamais une catégorie
 EXTENSIONS_IMAGES = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif"}
-FICHIER_INTRO = "index.md"          # texte d'introduction de la page d'index (racine de ressources/)
+FICHIER_INTRO = "index.md"          # texte d'introduction de la page d'index (racine de menu/)
 FICHIER_DOSSIER = "_dossier.md"     # titre, description et ordre d'une catégorie ou sous-catégorie
 # tableaux, code délimité, listes propres, notes ; nl2br : un saut de ligne dans un paragraphe reste un saut
 EXTENSIONS_MARKDOWN = ["extra", "sane_lists", "nl2br", "toc"]  # toc : une ancre par titre
@@ -91,9 +92,9 @@ def _dossiers(dossier: Path) -> list[Path]:
 
 
 def _base_images(fichier: Path, racine: Path) -> str:
-    """Adresse de base des images relatives d'un document : son dossier source, sous /ressources/."""
+    """Adresse de base des images relatives d'un document : son dossier source, sous /menu/."""
     relatif = fichier.parent.relative_to(racine).as_posix()
-    return "/ressources/" + ("" if relatif == "." else relatif + "/")
+    return URL_MENU + ("" if relatif == "." else relatif + "/")
 
 
 def _choix_theme(html: str) -> str:
@@ -108,7 +109,7 @@ def _liens_externes(html: str) -> str:
 
 
 def _images_differees(html: str) -> str:
-    """Les images se chargent quand elles approchent de l'écran (pages Ressources longues)."""
+    """Les images se chargent quand elles approchent de l'écran (pages du Menu longues)."""
     return re.sub(r'<img\b(?![^>]*\bloading=)', '<img loading="lazy"', html)
 
 
@@ -178,7 +179,7 @@ def _groupe(dossier: Path, parents: list[str], slug: str, racine: Path) -> dict:
     }
 
 
-def charger_arbre(racine: Path = RESSOURCES) -> list[dict]:
+def charger_arbre(racine: Path = MENU) -> list[dict]:
     """Catégories triées, chacune avec ses entrées directes et ses sous-catégories."""
     if not racine.is_dir():
         return []
@@ -204,7 +205,7 @@ def charger_arbre(racine: Path = RESSOURCES) -> list[dict]:
 
 
 def _lien(chemin: str) -> str:
-    return "/ressources/" + chemin + "/"
+    return URL_MENU + chemin + "/"
 
 
 def _liste(entrees: list[dict], actif: str) -> str:
@@ -212,7 +213,7 @@ def _liste(entrees: list[dict], actif: str) -> str:
     for e in entrees:
         attribut = ' aria-current="page"' if e["chemin"] == actif else ""
         items.append('<li><a href="' + esc(_lien(e["chemin"])) + '"' + attribut + ">" + esc(e["titre"]) + "</a></li>")
-    return '<ul class="ressources-liste">' + "".join(items) + "</ul>"
+    return '<ul class="menu-liste">' + "".join(items) + "</ul>"
 
 
 def _bloc(titre: str, ouvert: bool, corps: str) -> str:
@@ -226,7 +227,7 @@ def sommaire_html(arbre: list[dict], actif: str = "") -> str:
     meta_index, intro = _intro()
     if intro:  # la page d'index est un lien comme les autres pages
         attribut = ' aria-current="page"' if actif == "" else ""
-        blocs.append('<ul class="ressources-liste"><li><a href="/ressources/"' + attribut + ">"
+        blocs.append('<ul class="menu-liste"><li><a href="' + URL_MENU + '"' + attribut + ">"
                      + esc(meta_index.get("titre") or "Menu") + "</a></li></ul>")
     for cat in arbre:
         if cat.get("fichier"):  # un fichier à la racine : un simple lien, pas un bloc repliable
@@ -241,22 +242,22 @@ def sommaire_html(arbre: list[dict], actif: str = "") -> str:
 
 
 def _page(titre: str, description: str, adresse: str, sommaire: str, corps: str, nb_articles: int, nb_sources: int) -> str:
-    return page_statique("ressources.html", nb_articles, nb_sources, titre=titre, description=description,
+    return page_statique("menu.html", nb_articles, nb_sources, titre=titre, description=description,
                          adresse=adresse, sommaire=sommaire, corps=corps)
 
 
-def _intro(racine: Path = RESSOURCES) -> tuple[dict[str, str], str]:
-    """(bloc de tête, corps en HTML) de ressources/index.md. Sans fichier : ({}, "")."""
+def _intro(racine: Path = MENU) -> tuple[dict[str, str], str]:
+    """(bloc de tête, corps en HTML) de menu/index.md. Sans fichier : ({}, "")."""
     fichier = racine / FICHIER_INTRO
     if not fichier.is_file():
         return {}, ""
     meta, corps = separer_front_matter(fichier.read_text(encoding="utf-8"))
-    return meta, _ameliorer(markdown.markdown(corps, extensions=EXTENSIONS_MARKDOWN), "/ressources/")
+    return meta, _ameliorer(markdown.markdown(corps, extensions=EXTENSIONS_MARKDOWN), URL_MENU)
 
 
 # Bouton 📤 (partage.js, comme sur les articles) : partage l'adresse de la page, ou la copie sans partage système.
 # En bas de page, centré, libellé sous l'icône (comme les boutons du bas d'une carte ouverte).
-BOUTON_PARTAGE = ('<nav class="ressources-partage" aria-label="Partager"><button type="button" class="share-btn" '
+BOUTON_PARTAGE = ('<nav class="menu-partage" aria-label="Partager"><button type="button" class="share-btn" '
                   'aria-label="Partager cette page" title="Partager cette page">'
                   '<span class="partage-icone" aria-hidden="true">📤</span>'
                   '<span class="partage-libelle" aria-hidden="true">Partager</span></button></nav>')
@@ -266,23 +267,23 @@ def page_index(arbre: list[dict], nb_articles: int, nb_sources: int) -> str:
     meta, intro = _intro()
     if intro:  # la page d'index a la même mise en forme qu'un document : titre, description, texte
         corps = (f'<h1>{esc(meta.get("titre") or "Menu")}</h1>'
-                 + (f'<p class="ressources-description">{esc(meta["description"])}</p>' if meta.get("description") else "")
-                 + f'<div class="ressources-texte">{intro}</div>'
+                 + (f'<p class="menu-description">{esc(meta["description"])}</p>' if meta.get("description") else "")
+                 + f'<div class="menu-texte">{intro}</div>'
                  + BOUTON_PARTAGE)
     else:
         texte = ("Choisissez un document dans le sommaire." if arbre else "Aucune ressource pour le moment.")
         corps = f"<h1>Menu</h1><p>{esc(texte)}</p>"
     return _page(f"Menu — {NOM_SITE}", "Documents et ressources du " + NOM_SITE + ", classés par catégories.",
-                 "/ressources/", sommaire_html(arbre), corps, nb_articles, nb_sources)
+                 URL_MENU, sommaire_html(arbre), corps, nb_articles, nb_sources)
 
 
 def page_document(arbre: list[dict], categorie: dict, sous: dict | None, entree: dict,
                   nb_articles: int, nb_sources: int) -> str:
     fil = "" if categorie.get("fichier") else categorie["titre"] + (" › " + sous["titre"] if sous else "")
-    corps = ((f'<p class="ressources-fil">{esc(fil)}</p>' if fil else "") +
+    corps = ((f'<p class="menu-fil">{esc(fil)}</p>' if fil else "") +
              f'<h1>{esc(entree["titre"])}</h1>'
-             + (f'<p class="ressources-description">{esc(entree["description"])}</p>' if entree["description"] else "")
-             + f'<div class="ressources-texte">{entree["html"]}</div>'
+             + (f'<p class="menu-description">{esc(entree["description"])}</p>' if entree["description"] else "")
+             + f'<div class="menu-texte">{entree["html"]}</div>'
              + BOUTON_PARTAGE)
     return _page(f"{entree['titre']} — {NOM_SITE}", entree["description"] or entree["titre"], _lien(entree["chemin"]),
                  sommaire_html(arbre, entree["chemin"]), corps, nb_articles, nb_sources)
@@ -296,8 +297,8 @@ def ecrire_fichier(cible: Path, texte: str) -> None:
     tmp.replace(cible)
 
 
-def copier_images(dossier: Path, racine: Path = RESSOURCES) -> int:
-    """Copie les images de ressources/ (dossier img/ et images à côté des documents) dans build/ressources/,
+def copier_images(dossier: Path, racine: Path = MENU) -> int:
+    """Copie les images de menu/ (dossier img/ et images à côté des documents) dans build/menu/,
     au même endroit : un lien relatif y mène. Renvoie le nombre d'images."""
     n = 0
     if not racine.is_dir():
@@ -314,8 +315,8 @@ def copier_images(dossier: Path, racine: Path = RESSOURCES) -> int:
     return n
 
 
-def ecrire_ressources(nb_articles: int, nb_sources: int) -> int:
-    """Écrit build/ressources/ : l'index et une page par document (ressources/<cat>/[<sous>/]<doc>/index.html).
+def ecrire_menu(nb_articles: int, nb_sources: int) -> int:
+    """Écrit build/menu/ : l'index et une page par document (menu/<cat>/[<sous>/]<doc>/index.html).
     Le dossier est reconstruit à chaque build, pour qu'un document supprimé ne reste pas en ligne.
     Renvoie le nombre de documents."""
     arbre = charger_arbre()

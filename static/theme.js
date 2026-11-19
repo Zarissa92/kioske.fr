@@ -27,11 +27,13 @@
     try { return localStorage.getItem(CLE_SOBRE) === '1'; } catch (e) { return false; }
   }
 
-  // Galeries de l'accueil, un interrupteur par type. Par défaut : seule la grande galerie est affichée.
+  // Galeries de l'accueil, un interrupteur par type. Par défaut : seule « Les plus lus » est affichée.
   // Un choix mémorisé (« 1 » affichée, « 0 » masquée) l'emporte sur le défaut.
   const GALERIES = [
+    { id: 'btn-galerie-plus-lus', attribut: 'galeriePlusLus', cle: 'kioske-galerie-plus-lus',
+      libelle: 'Les plus lus', etat: ['affichée', 'masquée'], defaut: true },
     { id: 'btn-grande-galerie', attribut: 'grandeGalerie', cle: 'kioske-grande-galerie',
-      libelle: 'Grande galerie', etat: ['affichée', 'masquée'], defaut: true },
+      libelle: 'Grande galerie', etat: ['affichée', 'masquée'], defaut: false },
     { id: 'btn-galeries-blocs', attribut: 'galeriesBlocs', cle: 'kioske-galeries-blocs',
       libelle: 'Galeries des catégories', etat: ['affichées', 'masquées'], defaut: false },
   ];
@@ -133,7 +135,7 @@
       });
     });
 
-    // Boutons « Grande galerie » et « Galeries des blocs » du menu ⚙️ (accueil seulement)
+    // Boutons des galeries (page Paramètres) : « Les plus lus », « Grande galerie », « Galeries des catégories »
     GALERIES.forEach(g => {
       const bouton = document.getElementById(g.id);
       if (!bouton) return;

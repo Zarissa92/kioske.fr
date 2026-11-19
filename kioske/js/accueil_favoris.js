@@ -120,7 +120,7 @@ function clearFavorites() {
 document.getElementById('fav-export-btn')?.addEventListener('click', exportFavorites);
 document.getElementById('fav-file-input')?.addEventListener('change', importFavorites);
 // ♡ de la barre ouvre le panneau des favoris ; « Charger des favoris » ouvre le choix de fichier.
-// button.btn-favs : les liens qui ont la même classe (📚 Ressources) ne sont pas des boutons de favoris
+// button.btn-favs : les liens qui ont la même classe (📚 Menu) ne sont pas des boutons de favoris
 document.querySelectorAll('button.btn-favs').forEach(b => b.addEventListener('click', () => openFavoritesPanel()));
 document.getElementById('fav-import-btn')?.addEventListener('click', () => document.getElementById('fav-file-input').click());
 document.getElementById('fav-clear-btn')?.addEventListener('click', clearFavorites);

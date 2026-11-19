@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Hors ligne · KiosKe</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <!-- Page montrée par le service worker (static/sw.js) quand le réseau manque et que la page demandée
+       n'est pas en cache. Autonome : styles dans la page, aucun script (la politique de sécurité les interdit). -->
+  <style>
+    @font-face {
+      font-family: "Russo One";
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url("/fonts/russo-one.woff2") format("woff2");
+    }
+    :root {
+      --color-text-main: #f0f4f6;
+      --neon-coeur: #7FE5FF;   /* bleu trans */
+      --neon-halo: #FFD0DD;    /* rose trans */
+      --color-text-accent: #FF0054;
+    }
+    html, body { margin: 0; min-height: 100%; background: #000; color: var(--color-text-main); }
+    body {
+      font-family: "Russo One", "Courier New", monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 16px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    main { max-width: 36rem; }
+    .code {
+      font-size: clamp(3rem, 14vw, 6rem);
+      line-height: 1;
+      margin: 0;
+      color: #fff;
+      text-shadow: 0 0 8px var(--neon-coeur), 0 0 16px var(--neon-halo);
+    }
+    h1 {
+      font-size: clamp(1.2rem, 4vw, 1.6rem);
+      font-weight: 400;
+      margin: .8rem 0 1rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: #fff;
+    }
+    p { line-height: 1.5; margin: 0 0 1.4rem; font-size: .95rem; }
+    .liens { display: flex; flex-wrap: wrap; gap: .8rem; justify-content: center; }
+    a {
+      color: var(--color-text-main);
+      border: 2px solid var(--color-text-accent);
+      border-radius: 12px;
+      padding: .5rem 1rem;
+      text-decoration: none;
+      background: #000;
+    }
+    a:hover, a:focus-visible {
+      border-color: var(--neon-coeur);
+      color: var(--neon-coeur);
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="code" aria-hidden="true">Hors ligne</p>
+    <h1>Pas de connexion</h1>
+    <p>Cette page n'a pas encore été enregistrée sur cet appareil. Les pages déjà visitées, l'accueil et le Menu restent lisibles sans réseau.</p>
+    <p>Reviens quand la connexion est rétablie, ou recharge la page.</p>
+    <nav class="liens" aria-label="Pages disponibles">
+      <a href="/">Accueil</a>
+      <a href="/menu/">Menu</a>
+    </nav>
+  </main>
+</body>
+</html>

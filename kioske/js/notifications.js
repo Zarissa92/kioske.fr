@@ -1,6 +1,6 @@
 // Notifications. Désactivées par défaut ; la cloche est toujours là (barre du haut). Deux types :
 //  - les nouveaux flux ajoutés au site (si un flux personnalisé est choisi) ;
-//  - les changements du site : nouveaux points de la page Mise à jour (ressources/Mises_à_jours.md).
+//  - les changements du site : nouveaux points de la page Mise à jour (menu/Mise_à_jours.md).
 // Le site n'a pas de serveur qui pousse les nouveautés : les notifications arrivent pendant que le site
 // est ouvert (dans un onglet ou dans l'app installée). Rien ne passe par un service tiers.
 //
@@ -10,11 +10,15 @@ const NOTIF_ARTICLES = false;                        // notifications des nouvea
 
 const NOTIF_ACTIVEES_KEY = 'kioske_notifications';   // « 1 » si l'utilisateur veut les nouveaux flux
 const NOTIF_SITE_KEY = 'kioske_notif_site';          // « 1 » si l'utilisateur veut les changements du site
-const MAJ_URL = '/ressources/mise-a-jours/';         // page Mise à jour, construite par le build
+const MAJ_URL = '/menu/mise-a-jours/';               // page Mise à jour, construite par le build
 const MAJ_VUES_KEY = 'kioske_maj_vues';              // points de la page Mise à jour déjà connus
 const MAJ_EFFACEES_KEY = 'kioske_maj_effacees';      // points effacés avec « Tout effacer » : ils ne reviennent pas
-const RESSOURCES_URL = '/ressources/';               // sommaire de la page Ressources (documents et catégories)
-const RESSOURCES_VUES_KEY = 'kioske_ressources_vues'; // documents Ressources déjà connus
+const MENU_URL = '/menu/';                           // sommaire de la page Menu (documents et catégories)
+const MENU_VUES_KEY = 'kioske_menu_vues';            // documents du Menu déjà connus
+// Avant le 2026-11-19, le Menu s'appelait Ressources : ancienne clé et ancienne adresse (redirigée par nginx),
+// reprises une fois pour ne pas notifier tout le Menu comme nouveau.
+const ANCIENNE_MENU_VUES_KEY = 'kioske_ressources_vues';
+const ANCIENNE_URL_MENU = /^\/ressources\//;
 const NOTIF_VUES_KEY = 'kioske_notifications_vues';  // adresses des articles déjà vus (articles, en pause)
 const NOTIF_INTERVALLE = 30 * 60 * 1000;             // ms entre deux vérifications (articles, en pause)
 const NOTIF_MAX_VUES = 5000;                         // au-delà, les plus anciennes sont oubliées
@@ -111,7 +115,7 @@ function notifierNouvellesSources(noms) {
 async function chargerMisesAJour() {
   const html = await fetch(MAJ_URL, { cache: 'no-cache' }).then(r => r.text());
   const doc = new DOMParser().parseFromString(html, 'text/html');
-  const zone = doc.querySelector('.ressources-texte');
+  const zone = doc.querySelector('.menu-texte');
   if (!zone) return null;
   const points = [...zone.querySelectorAll('li')]
     .filter(li => !li.querySelector('li'))
@@ -169,27 +173,39 @@ async function afficherMisesAJour() {
   zone.append(...contenu.childNodes);
 }
 
-// Nouveaux documents dans Ressources : une notification (effaçable avec « Tout effacer »). Première lecture
+// Nouveaux documents dans le Menu : une notification (effaçable avec « Tout effacer »). Première lecture
 // silencieuse. La page Mise à jour est exclue (ses points sont déjà notifiés) ; les catégories aussi, car un lien
 // qui sert de préfixe à un autre lien est une catégorie.
-async function verifierRessources() {
+// Reprise des documents connus sous l'ancien nom (clé kioske_ressources_vues, adresses /ressources/…) :
+// copiés dans la nouvelle clé, adresses ramenées à /menu/, puis l'ancienne clé est effacée.
+function reprendreAnciennesVuesMenu() {
+  let anciennes = null;
+  try { anciennes = localStorage.getItem(ANCIENNE_MENU_VUES_KEY); } catch (e) { return; }
+  if (anciennes === null) return;
+  const repris = lireTableau(ANCIENNE_MENU_VUES_KEY).map(h => String(h).replace(ANCIENNE_URL_MENU, MENU_URL));
+  ecrireTableau(MENU_VUES_KEY, [...new Set([...lireTableau(MENU_VUES_KEY), ...repris])]);
+  try { localStorage.removeItem(ANCIENNE_MENU_VUES_KEY); } catch (e) {}
+}
+
+async function verifierMenu() {
+  reprendreAnciennesVuesMenu();
   let html;
-  try { html = await fetch(RESSOURCES_URL, { cache: 'no-cache' }).then(r => r.text()); } catch (e) { return; }
+  try { html = await fetch(MENU_URL, { cache: 'no-cache' }).then(r => r.text()); } catch (e) { return; }
   const doc = new DOMParser().parseFromString(html, 'text/html');
   const liens = new Map();
-  doc.querySelectorAll('a[href^="/ressources/"]').forEach(a => {
+  doc.querySelectorAll('a[href^="' + MENU_URL + '"]').forEach(a => {
     const href = a.getAttribute('href');
-    if (href === RESSOURCES_URL || href.startsWith('/ressources/mise-a-jours/') || liens.has(href)) return;
+    if (href === MENU_URL || href.startsWith(MAJ_URL) || liens.has(href)) return;
     liens.set(href, a.textContent.replace(/\s+/g, ' ').trim());
   });
   const cles = [...liens.keys()];
   const documents = cles.filter(h => !cles.some(autre => autre !== h && autre.startsWith(h)));
-  const connus = lireTableau(RESSOURCES_VUES_KEY);
+  const connus = lireTableau(MENU_VUES_KEY);
   if (connus.length > 0) {
     documents.filter(h => !connus.includes(h))
-      .forEach(h => ajouterNotif('ressource:' + h, 'ressource', 'Nouveau dans Menu', liens.get(h) || h, h));
+      .forEach(h => ajouterNotif('menu:' + h, 'menu', 'Nouveau dans Menu', liens.get(h) || h, h));
   }
-  ecrireTableau(RESSOURCES_VUES_KEY, [...new Set([...connus, ...documents])]);
+  ecrireTableau(MENU_VUES_KEY, [...new Set([...connus, ...documents])]);
 }
 
 // Vérifie l'index des articles (en pause tant que NOTIF_ARTICLES est faux).
@@ -252,7 +268,7 @@ async function activerNotifSite() {
   if (autorisation !== 'granted') return autorisation;
   setSiteNotifActive(true);
   await verifierMisesAJour(true);
-  await verifierRessources();   // documents déjà présents : mémorisés sans notification s'ils sont inconnus
+  await verifierMenu();   // documents déjà présents : mémorisés sans notification s'ils sont inconnus
   return 'granted';
 }
 
@@ -477,7 +493,7 @@ function createNotificationsPanel() {
   titreMaj.textContent = 'Mises à jour du site';
   const contenuMaj = document.createElement('div');
   contenuMaj.id = 'notif-maj-contenu';
-  contenuMaj.className = 'ressources-texte';
+  contenuMaj.className = 'menu-texte';
   contenuMaj.textContent = 'Chargement…';
   maj.append(titreMaj, contenuMaj);
 
@@ -524,8 +540,8 @@ function ouvrirPanneauNotifications() {
   if (siteNotifActive() && permissionNotifications() === 'granted') {
     verifierMisesAJour();
   }
-  // Nouveaux documents de Ressources : seulement si « changements du site » est activé (désactivé par défaut)
-  if (siteNotifActive()) verifierRessources();
+  // Nouveaux documents du Menu : seulement si « changements du site » est activé (désactivé par défaut)
+  if (siteNotifActive()) verifierMenu();
   if (NOTIF_ARTICLES && isFluxPersonnalise() && notificationsActivees() && permissionNotifications() === 'granted') {
     verifierNouveautes();
     demarrerVerification();

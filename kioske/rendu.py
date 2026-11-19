@@ -15,7 +15,7 @@ from .gabarits import remplir
 from .javascript import json_pour_page
 from .sources import AUTRES, ordre_des_categories
 from .texte import cle_alphabetique, esc, truncate_label, article_id, slug_article
-from .themes import ATTRIBUTS_HTML, CHOIX_THEME, CSS, CSS_FAVORIS, CSS_RESSOURCES, SCRIPT_THEME, VARIABLES_HTML
+from .themes import ATTRIBUTS_HTML, CHOIX_THEME, CSS, CSS_FAVORIS, CSS_MENU, SCRIPT_THEME, VARIABLES_HTML
 
 # Chemin vers le code de conduite
 CODE_DE_CONDUITE_PATH = Path(__file__).parent.parent / "accueil" / "code-de-conduite.html"
@@ -90,6 +90,42 @@ def render_galerie_bloc(categorie: str, items: list[dict], previews: dict[str, d
         f'<div class="galerie galerie-bloc">{"".join(cartes)}</div>'
         '<button class="galerie-arrow-right" type="button" aria-label="Défiler vers la droite">&gt;</button>'
         '</section>'
+    )
+
+
+def render_galerie_plus_lus(classement: list[tuple[dict, int]], previews: dict[str, dict], jours: int) -> str:
+    """Galerie « Les plus lus » de l'accueil, au-dessus de la grande galerie : les articles les plus consultés
+    (kioske/plus_lus.py), du plus lu au moins lu. Même balisage et mêmes cartes que la grande galerie ; un
+    article sans image affiche son titre. Classement vide (pas de journal) : rien n'est écrit."""
+    if not classement:
+        return ""
+    cartes = []
+    for item, visiteurs in classement:
+        apercu = previews.get(item["link"], {})
+        title = apercu.get("title") or item["title"]
+        image = apercu.get("image") or item["image"] or ""
+        article_url = f'/articles/{article_id(item["link"])}-{slug_article(title, item["link"])}/'
+        if image:
+            media = (f'<img src="{esc(image)}" alt="{esc(title)}" loading="lazy" referrerpolicy="no-referrer" '
+                     'data-repli="carte">')
+            classe = "galerie-carte"
+        else:
+            media = f'<span class="galerie-carte-texte">{esc(title)}</span>'
+            classe = "galerie-carte galerie-carte-sans-image"
+        cartes.append(
+            f'<div class="galerie-carte-wrapper" data-source="{esc(item.get("source", ""))}">'
+            f'<a href="{esc(article_url)}" class="{classe}" title="{esc(title)}">{media}'
+            f'<div class="galerie-carte-titre">{esc(truncate_label(title))}</div></a></div>'
+        )
+    titre_galerie = "Les + vus " + ("de la semaine" if jours == 7 else f"des {jours} derniers jours")
+    return (
+        '<div class="galerie-plus-lus">'
+        f'<h2 class="galerie-plus-lus-titre">{titre_galerie}</h2>'
+        f'<section class="galerie-slider" aria-label="{titre_galerie.replace("+", "plus")}">'
+        '<button class="galerie-arrow-left" type="button" aria-label="Défiler vers la gauche">&lt;</button>'
+        f'<div class="galerie">{"".join(cartes)}</div>'
+        '<button class="galerie-arrow-right" type="button" aria-label="Défiler vers la droite">&gt;</button>'
+        '</section></div>'
     )
 
 
@@ -188,11 +224,11 @@ def render_code_de_conduite(nb_articles: int, nb_sources: int) -> str:
     """Page statique du code de conduite (accueil/code-de-conduite.html), comme la page RSS."""
     return page_statique("texte.html", nb_articles, nb_sources, titre=f"Code de conduite — {NOM_SITE}",
                          description="Code de conduite du Discord du " + NOM_SITE, adresse="/code-de-conduite.html",
-                         corps=f'<h1>Code de conduite</h1><div class="ressources-texte">{_code_de_conduite()}</div>')
+                         corps=f'<h1>Code de conduite</h1><div class="menu-texte">{_code_de_conduite()}</div>')
 
 
 def valeurs_barre(nb_articles: int = 0, nb_sources: int = 0) -> dict[str, str]:
-    """Tout ce que les gabarits reçoivent pour la barre du haut partagée (accueil, Ressources, article,
+    """Tout ce que les gabarits reçoivent pour la barre du haut partagée (accueil, Menu, article,
     catégorie, RSS) : le HTML de la barre et des panneaux, les données vides attendues par les scripts
     (le code de conduite y est), les scripts de la barre et leur feuille de style."""
     barre, panneaux = barre_et_panneaux(nb_articles, nb_sources)
@@ -200,7 +236,7 @@ def valeurs_barre(nb_articles: int = 0, nb_sources: int = 0) -> dict[str, str]:
         "barre_haut": barre,
         "panneaux_communs": panneaux,
         "donnees_json": json_pour_page({"sources": {}, "categories": {}, "sources_metadata": {}, "galerie_panneau": 0}),
-        "css_barre": CSS_FAVORIS + "\n" + CSS_RESSOURCES,
+        "css_barre": CSS_FAVORIS + "\n" + CSS_MENU,
     }
 
 
@@ -216,7 +252,8 @@ def barre_et_panneaux(nb_articles: int, nb_sources: int) -> tuple[str, str]:
 
 def render_page(items: list[dict], previews: dict[str, dict],
                 categories: dict[str, str] | None = None,
-                panneaux: dict[str, str] | None = None) -> str:
+                panneaux: dict[str, str] | None = None,
+                plus_lus: list[tuple[dict, int]] | None = None, jours_plus_lus: int = 7) -> str:
     """La page d'accueil complète (le KiosKe) : étiquettes par panneau/catégorie, fenêtres et articles."""
     categories = categories or {}
     panneaux = panneaux or {}
@@ -327,7 +364,7 @@ def render_page(items: list[dict], previews: dict[str, dict],
                 )
     nuage = f'<div class="groupes">{blocs}</div>'
 
-    galerie_html = render_galerie(items, previews)
+    galerie_html = render_galerie_plus_lus(plus_lus or [], previews, jours_plus_lus) + render_galerie(items, previews)
     # Référencement : le titre et la description décrivent le contenu réel (sources et catégories du jour).
     titre_page = NOM_SITE
     description = "Le KiosKe : une veille automatique des médias indépendants, des luttes et des voix LGBTQIA+. Une seule page statique (HTML5, CSS et JavaScript minimal), reconstruite toutes les 30 minutes sur le serveur à partir de flux RSS et de chaînes Twitch. Les images sont hébergées par le site : la page ne charge rien d'un autre site, sans publicité ni pistage."
@@ -421,7 +458,7 @@ def render_page(items: list[dict], previews: dict[str, dict],
         {"sources": groupes_json, "categories": categories_json,
          "sources_metadata": sources_metadata, "galerie_panneau": 0})
 
-    # Barre du haut et panneaux communs : les mêmes que sur la page Ressources
+    # Barre du haut et panneaux communs : les mêmes que sur la page Menu
     barre_haut, panneaux_communs = barre_et_panneaux(len(items), len(groupes))
 
     return remplir(
@@ -435,7 +472,7 @@ def render_page(items: list[dict], previews: dict[str, dict],
         nom_site=esc(NOM_SITE),
         domaine=DOMAINE,
         date_maj=datetime.now(ZoneInfo("Europe/Paris")).strftime("%d/%m/%Y"),
-        css=CSS + "\n" + CSS_FAVORIS + "\n" + CSS_RESSOURCES,
+        css=CSS + "\n" + CSS_FAVORIS + "\n" + CSS_MENU,
         script_theme=SCRIPT_THEME,
         donnees_json=donnees_json,
         barre_haut=barre_haut,

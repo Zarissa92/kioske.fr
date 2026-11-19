@@ -219,8 +219,23 @@ html, body {
   border-radius: 2px;
   white-space: nowrap;
 }
-/* Galeries masquées par les boutons du menu ⚙️ : une par type */
+/* Galeries masquées par les boutons de la page Paramètres : une par type.
+   Par défaut : « Les plus lus » affichée, grande galerie masquée (static/theme.js, GALERIES). */
 html[data-grande-galerie="non"] .galerie-principale { display: none; }
+html[data-galerie-plus-lus="non"] .galerie-plus-lus { display: none; }
+/* Galerie « Les plus lus » (au-dessus de la grande galerie) : un titre court, puis les vignettes */
+.galerie-plus-lus-titre {
+  font-family: "Russo One", "Courier New", monospace;
+  font-size: 0.95rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-main);
+  margin: 0 0 0.4rem;
+  text-align: center;
+}
+.galerie-plus-lus .galerie-carte.galerie-carte-sans-image { padding: 0.6rem; }
+.galerie-plus-lus .galerie-carte-texte { font-size: 0.8rem; -webkit-line-clamp: 5; }
 /* Galeries des catégories masquées par défaut (seule la grande galerie est affichée) : affichées seulement si oui */
 html:not([data-galeries-blocs="oui"]) .galerie-slider-bloc { display: none; }
 
@@ -265,7 +280,7 @@ html:not([data-galeries-blocs="oui"]) .galerie-slider-bloc { display: none; }
 /* Icône « menu sandwich » du bouton Menu : tracée en CSS, couleur du texte du thème (currentColor) */
 .icone-sandwich { display: inline-block; position: relative; width: 1.1rem; height: 0.85rem; border-top: 2px solid; border-bottom: 2px solid; box-sizing: content-box; }
 .icone-sandwich::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 2px solid; transform: translateY(-50%); }
-/* Libellés visibles à côté des icônes ➕ (Ressources) et ⚙️ (Paramètres), sur grand écran seulement (la barre y a la place).
+/* Libellés visibles à côté des icônes ➕ (Menu) et ⚙️ (Paramètres), sur grand écran seulement (la barre y a la place).
    Sur téléphone et tablette, ce sont des icônes : le nom reste lu par les lecteurs d'écran (aria-label, sr-only). */
 .btn-libelle { display: none; }
 @media (min-width: 1100px) {
@@ -498,6 +513,10 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 /* conteneur pour le backdrop et le panneau */
 .categorie-container { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 100; }
 .categorie-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .7); cursor: pointer; }
+/* Résultats de recherche : le panneau s'ouvre sous la barre du haut (top posé par accueil_recherche.js),
+   le champ reste visible pendant la recherche en direct. Le panneau tient dans la place restante. */
+#container-search-results .categorie-panneau { max-height: min(85vh, calc(100% - 1rem)); }
+.recherche-message { color: var(--color-light); margin: 0.5rem 0; }
 .categorie-panneau {
     position: relative;
     z-index: 1;

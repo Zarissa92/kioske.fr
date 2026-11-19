@@ -30,3 +30,13 @@ function ouvrirDepuisAdresse(historique = 'remplacer') {
   }
 }
 ouvrirDepuisAdresse();
+
+// Raccourcis de l'app installée (static/manifest.json) : /?recherche place le curseur dans la recherche,
+// /?favoris ouvre les favoris. Après DOMContentLoaded : tout le bundle est alors lu (fonctions et constantes).
+function ouvrirRaccourci() {
+  const params = new URLSearchParams(location.search);
+  if (params.has('favoris') && typeof openFavoritesPanel === 'function') openFavoritesPanel();
+  else if (params.has('recherche') && rechercheInput) rechercheInput.focus();
+}
+if (document.readyState === 'complete') ouvrirRaccourci();
+else document.addEventListener('DOMContentLoaded', ouvrirRaccourci);

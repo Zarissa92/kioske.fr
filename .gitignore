@@ -28,8 +28,8 @@
 !/kioske/**
 !/outils/
 !/outils/**
-!/ressources/
-!/ressources/**
+!/menu/
+!/menu/**
 !/sources/
 !/sources/**
 !/static/
@@ -61,4 +61,4 @@ index.avant_*.html
 
 # Éditeurs et notes personnelles
 CLAUDE.md
-ressources/Mastodon.md
+menu/Mastodon.md

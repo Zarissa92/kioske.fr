@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Point d'entrée unique du KiosKe : choisit le venv du projet et lance la bonne commande.
+# Marche sur le PC (venv_blog/) comme sur le serveur (venv/), depuis n'importe quel dossier.
+#
+#   bin/kioske simple              build local sans réseau (bin/build_site.py --simple)
+#   bin/kioske build [options]     build complet ; options transmises (--no-twitch, --no-previews, --no-cache…)
+#   bin/kioske test [--sans-build] tous les tests (tests/lancer.sh) — sur le PC seulement
+#   bin/kioske publier [options]   construit puis copie dans la racine web (--simple, --sans-build) — sur le serveur
+#   bin/kioske serveur [port]      sert build/ en local sur http://localhost:8000/ (Ctrl+C pour arrêter)
+#   bin/kioske aide                cette aide
+set -euo pipefail
+
+BIN="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+RACINE="$(dirname "$BIN")"
+
+aide() {
+    sed -n '2,10p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+}
+
+# Le Python du projet : venv_blog/ sur le PC, venv/ sur le serveur. Jamais le Python système.
+trouver_python() {
+    local candidat
+    for candidat in "$RACINE/venv_blog/bin/python" "$RACINE/venv/bin/python"; do
+        [[ -x "$candidat" ]] && { echo "$candidat"; return 0; }
+    done
+    echo "Aucun venv du projet (venv_blog/ ou venv/). Voir « Construire et publier » dans le README." >&2
+    return 2
+}
+
+commande="${1:-aide}"
+(( $# )) && shift
+
+case "$commande" in
+    simple)
+        PYTHON="$(trouver_python)"
+        cd "$RACINE" && exec "$PYTHON" bin/build_site.py --simple "$@"
+        ;;
+    build)
+        PYTHON="$(trouver_python)"
+        cd "$RACINE" && exec "$PYTHON" bin/build_site.py "$@"
+        ;;
+    test|tests)
+        exec bash "$RACINE/tests/lancer.sh" "$@"
+        ;;
+    publier)
+        PYTHON="$(trouver_python)"
+        cd "$RACINE" && exec "$PYTHON" bin/publier_public.py "$@"
+        ;;
+    serveur)
+        PYTHON="$(trouver_python)"
+        [[ -d "$RACINE/build" ]] || { echo "Pas de build/ : lance d'abord « bin/kioske simple »." >&2; exit 1; }
+        echo "http://localhost:${1:-8000}/  (Ctrl+C pour arrêter)"
+        exec "$PYTHON" -m http.server "${1:-8000}" -d "$RACINE/build"
+        ;;
+    aide|-h|--help)
+        aide
+        ;;
+    *)
+        echo "Commande inconnue : $commande" >&2
+        aide >&2
+        exit 2
+        ;;
+esac

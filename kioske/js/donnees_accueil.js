@@ -2,7 +2,7 @@
 // (kioske/rendu.py) ; ce script les lit et les range là où le reste du code les attend.
 (function () {
   const element = document.getElementById('kioske-donnees');
-  if (!element) return;   // page sans données (Ressources, texte) : rien à ranger
+  if (!element) return;   // page sans données (Menu, texte) : rien à ranger
   const donnees = JSON.parse(element.textContent);
   window.sourcesData = donnees.sources;           // articles groupés par source (clé du flux)
   window.categoriesData = donnees.categories;     // articles groupés par catégorie

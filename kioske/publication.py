@@ -22,7 +22,7 @@ from .verrou import verrou
 
 # Sans ces fichiers, rien n'est publié.
 OBLIGATOIRES = [NOM_PAGE, "favicon.svg", "preview.png", "apple-touch-icon.png", "rss.xml", "fonts/russo-one.woff2", "fonts/inter.woff2",
-               "ressources/index.html", "code-de-conduite.html",
+               "menu/index.html", "code-de-conduite.html",
                f"js/{NOM_BUNDLE}"]   # sans bundle, les pages n'ont aucun JavaScript (plus de script en ligne)
 # Dossiers entièrement générés : un fichier qui n'est plus dans build/ est retiré de la racine web.
 # js/ : les anciens bundles (kioske.<empreinte>.js) sont retirés à chaque publication.

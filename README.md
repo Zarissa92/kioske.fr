@@ -17,7 +17,7 @@ Projet autonome depuis le 2026-11-11, réorganisé depuis : code dans le paquet 
 
 <p align="center"><img src="docs/img/kioske-accueil.png" width="640" alt="Page d'accueil, thème par défaut : titre, recherche, et étiquettes des sources rangées par catégorie"></p>
 
-Les réglages (thèmes, mode sobre, galeries de l'accueil, personnalisation des flux, installation, flux RSS) sont dans la page Paramètres, à l'intérieur de Ressources (`/ressources/parametres/`). Ressources, Discord, Mastodon et le code de conduite sont aussi dans la page Ressources, accessible par le bouton Menu de la barre.
+Les réglages (thèmes, mode sobre, galeries de l'accueil, personnalisation des flux, installation, flux RSS) sont dans la page Paramètres, à l'intérieur du Menu (`/menu/parametres/`). Discord, Mastodon, le code de conduite et les dispositions légales sont aussi dans le Menu, accessible par le bouton Menu de la barre.
 
 <!-- Capture de l'ancien menu ≡ (retiré de la barre) : à remplacer par une capture de la page Paramètres -->
 <p align="center"><img src="docs/img/kioske-menu.png" width="640" alt="Ancien menu ≡ (retiré de la barre)"></p>
@@ -57,9 +57,9 @@ L'image est une capture figée : l'animation se voit dans la page.
 | Fichier / dossier | Rôle |
 | --- | --- |
 | `kioske.cfg` | **Tous les réglages** : domaine, thèmes, veille, serveur. Lu par Python et par les scripts bash. |
-| `ressources/` | **Les documents de la page Ressources**, en Markdown (`.md`). Un dossier = une catégorie, un sous-dossier = une sous-catégorie. Écrit à la main, suivi par git. Voir « Page Ressources ». |
+| `menu/` | **Les documents de la page Menu**, en Markdown (`.md`). Un dossier = une catégorie, un sous-dossier = une sous-catégorie. Écrit à la main, suivi par git. Voir « Page Menu ». |
 | `sources/` | Ce que la veille suit : `RSS_feeds.txt`, `Twitch_feeds.txt`, `flux_corrige_main.txt`. Écrits à la main. |
-| `static/` | Fichiers publiés tels quels : `404.html` (page d'erreur, servie par nginx pour toute adresse inexistante), `dispositions-legales.html` (mentions légales, liée en bas de l'accueil ; emplacements à compléter), `favicon.svg`, `apple-touch-icon.png`, `preview.png`, `fonts/` (Russo One pour les titres et la navigation, Inter pour le texte courant ; chemins absolus `/fonts/…` dans les CSS, pour que les pages d'article et de catégorie les trouvent), `theme.js` (thème choisi par le visiteur, pluie matricielle et mode sobre, sur toutes les pages), `style_sobre.css` (feuille du mode sobre, chargée seulement quand il est activé), `sw.js` et `manifest.json` (PWA), icônes `icon-*.png`. |
+| `static/` | Fichiers publiés tels quels : `404.html` (page d'erreur, servie par nginx pour toute adresse inexistante), `hors-ligne.html` (page du service worker sans réseau), `favicon.svg`, `apple-touch-icon.png`, `preview.png`, `fonts/` (Russo One pour les titres et la navigation, Inter pour le texte courant ; chemins absolus `/fonts/…` dans les CSS, pour que les pages d'article et de catégorie les trouvent), `theme.js` (thème choisi par le visiteur, pluie matricielle et mode sobre, sur toutes les pages), `style_sobre.css` (feuille du mode sobre, chargée seulement quand il est activé), `sw.js` et `manifest.json` (PWA), icônes `icon-*.png`. |
 | `kioske/` | Le code (paquet Python), la feuille de style `style.css`, les squelettes HTML des pages (`gabarits/`) et leur JavaScript (`js/`). Voir ci-dessous. |
 | `tests/` | Tests du site, lancés sur le PC par `bash tests/lancer.sh` (voir « Tests »). |
 | `outils/` | Outils locaux, jamais envoyés au serveur. `parametres_gui.py` : fenêtre pour régler `kioske.cfg` (tkinter, bibliothèque standard). Lancement : `venv_blog/bin/python outils/parametres_gui.py`. Commentaires du fichier conservés, copie `kioske.cfg.bak` avant chaque enregistrement. `cfg_editeur.py` : la logique (lecture, validation, écriture), testée par `tests/test_python.py`. |
@@ -83,11 +83,11 @@ Le paquet `kioske/` :
 | `themes.py`, `style_default.css`, `style_<thème>.css` | Thèmes et CSS. `themes.py` lit les thèmes de `kioske.cfg` et prépare ce que chaque page reprend (attributs de `<html>`, liste des thèmes pour `static/theme.js`, boutons de choix). `style_default.css` est la base de tout le CSS du site, inséré dans chaque page. Chaque autre thème est une surcouche (`style_<thème>.css`) : des variables (couleurs, bordures, halos…) et quelques exceptions, chargées après la base. Les variables de thème sont définies en tête de `style_default.css`. Le build copie les surcouches dans `build/`.|
 | `style_favoris.css` | Halo et reflet des cartes de favoris (classe `carte-favori`) des vignettes de la grande galerie (section `galerie-principale`) et de la carte d'article ouverte (`.carte-ouverte .panel-article`). Fichier partagé : `rendu.py` l'ajoute à la page d'accueil seule, tous thèmes confondus. Couleurs prises dans les variables du thème ; animation coupée pour « réduire les animations », effets retirés en contraste renforcé. |
 | `rendu.py`, `rss.py`, `texte.py` | Contenu de la page d'accueil et de `rss.html` (étiquettes, galeries, données ; le squelette est dans `gabarits/`), flux RSS produits, outils de texte (slugs, IDs, échappement HTML). |
-| `ressources.py` | Page Ressources : lit `ressources/`, rend le Markdown (bibliothèque `markdown`), écrit `build/ressources/` : `index.html` (liste et sommaire) et une page par document. Le sommaire est du HTML rendu au build (`sommaire_html()`). |
+| `menu.py` | Page Menu : lit `menu/`, rend le Markdown (bibliothèque `markdown`), écrit `build/menu/` : `index.html` (liste et sommaire) et une page par document. Le sommaire est du HTML rendu au build (`sommaire_html()`). |
 | `rendu_statique.py` | Contenu des pages statiques d'articles et de catégories (image, navigation, cartes ; le squelette est dans `gabarits/`). Aucun CSS (il est dans `style.css`) ni JavaScript (il est dans `js/`). |
 | `gabarits.py`, `gabarits/` | Squelettes HTML des pages : `accueil.html`, `article.html`, `categorie.html`, `rss.html`. `${nom}` marque l'endroit d'une valeur ; ni boucle ni condition dans un gabarit. `gabarits.py` fournit `remplir("page.html", nom=valeur, …)` : une valeur manquante arrête le build, et le texte est échappé par Python (`esc()`) avant d'être passé. Un vrai signe dollar s'écrit `$$`. Pour modifier le HTML fixe d'une page, éditer son gabarit ; pour y ajouter une valeur, écrire `${nom}` dans le gabarit et passer `nom=…` dans l'appel `remplir()` de `rendu.py` ou `rendu_statique.py`. |
-| `gabarits/ressources.html`, `gabarits/texte.html`, `gabarits/partiels/`, `style_ressources.css` | Pages statiques : `ressources.html` (index et documents, un seul gabarit), `texte.html` (code de conduite). `partiels/` : en-tête commun (`tete_page.html`), barre du haut et panneaux communs (`barre_haut.html`, `panneaux_communs.html`), remplis par `barre_et_panneaux()` et `valeurs_barre()` (`rendu.py`). `style_ressources.css` : sommaire, document, menu ≡ sur petit écran. |
-| `javascript.py`, `js/` | Tout le JavaScript écrit dans les pages. `js/` : un fichier par rôle — `accueil_*.js` (l'accueil, découpé en sept fichiers concaténés dans cet ordre : `accueil_historique` panneaux et adresse, `accueil_clavier`, `accueil_cartes`, `accueil_panneaux`, `accueil_recherche`, `accueil_adresse`, `accueil_favoris` ; la liste est dans `javascript.py`), `notifications.js` (cloche et notifications des flux personnalisés, désactivées par défaut ; elles arrivent pendant que le site est ouvert ; aujourd'hui seuls les **nouveaux flux** notifient (`notifierNouvellesSources()`) ; si « Me prévenir des changements du site » est activé, les nouveaux points de la page Mise à jour et les nouveaux documents de Ressources notifient aussi (`verifierMisesAJour()`, `verifierRessources()`) ; les notifications d'**articles** sont en pause (`NOTIF_ARTICLES = false`, code gardé pour plus tard) ; la cloche est toujours visible ; point rouge en haut à droite tant qu'une notification est non lue ; les notifications restent dans la liste « Mes notifications » jusqu'à « Tout effacer » (qui n'efface que les notifications) ; la page Mise à jour est relue (`/ressources/mise-a-jours/`) : un nouveau point déclenche une notification « Mise à jour du site »), `rafraichissement.js` (l'accueil se recharge seul quand une nouvelle version est publiée, sauf si un panneau est ouvert), `favoris.js` (♡ et favoris enregistrés dans le navigateur, sur toutes les pages qui montrent un article), `partage.js` (bouton 📤), `galerie.js` (flèches des galeries), `carte_ouverte.js` (carte d'article par-dessus la page), `retour_app.js` (bouton précédent dans l'app installée), `installation_pwa.js`, `donnees_accueil.js` (lit le JSON des articles), `service_worker.js`, `page_article.js`, `page_categorie.js`, `page_rss.js`. `javascript.py` les lit (constantes `JS_…`) et fournit `json_pour_page()` pour les données. Pour ajouter un script : créer le fichier dans `js/`, ajouter sa constante dans `javascript.py` et l'inscrire dans `ORDRE_BUNDLE`. Tout le JavaScript des pages est dans un seul bundle, `build/js/kioske.<empreinte>.js`, chargé en `defer` par chaque page ; les pages n'ont plus de script en ligne. |
+| `gabarits/menu.html`, `gabarits/texte.html`, `gabarits/partiels/`, `style_menu.css` | Pages statiques : `menu.html` (index et documents, un seul gabarit), `texte.html` (code de conduite). `partiels/` : en-tête commun (`tete_page.html`), barre du haut et panneaux communs (`barre_haut.html`, `panneaux_communs.html`), remplis par `barre_et_panneaux()` et `valeurs_barre()` (`rendu.py`). `style_menu.css` : sommaire, document, menu ≡ sur petit écran. |
+| `javascript.py`, `js/` | Tout le JavaScript écrit dans les pages. `js/` : un fichier par rôle — `accueil_*.js` (l'accueil, découpé en sept fichiers concaténés dans cet ordre : `accueil_historique` panneaux et adresse, `accueil_clavier`, `accueil_cartes`, `accueil_panneaux`, `accueil_recherche`, `accueil_adresse`, `accueil_favoris` ; la liste est dans `javascript.py`), `notifications.js` (cloche et notifications des flux personnalisés, désactivées par défaut ; elles arrivent pendant que le site est ouvert ; aujourd'hui seuls les **nouveaux flux** notifient (`notifierNouvellesSources()`) ; si « Me prévenir des changements du site » est activé, les nouveaux points de la page Mise à jour et les nouveaux documents de Menu notifient aussi (`verifierMisesAJour()`, `verifierMenu()`) ; les notifications d'**articles** sont en pause (`NOTIF_ARTICLES = false`, code gardé pour plus tard) ; la cloche est toujours visible ; point rouge en haut à droite tant qu'une notification est non lue ; les notifications restent dans la liste « Mes notifications » jusqu'à « Tout effacer » (qui n'efface que les notifications) ; la page Mise à jour est relue (`/menu/mise-a-jours/`) : un nouveau point déclenche une notification « Mise à jour du site »), `rafraichissement.js` (l'accueil se recharge seul quand une nouvelle version est publiée, sauf si un panneau est ouvert), `favoris.js` (♡ et favoris enregistrés dans le navigateur, sur toutes les pages qui montrent un article), `partage.js` (bouton 📤), `galerie.js` (flèches des galeries), `carte_ouverte.js` (carte d'article par-dessus la page), `retour_app.js` (bouton précédent dans l'app installée), `installation_pwa.js`, `donnees_accueil.js` (lit le JSON des articles), `service_worker.js`, `page_article.js`, `page_categorie.js`, `page_rss.js`. `javascript.py` les lit (constantes `JS_…`) et fournit `json_pour_page()` pour les données. Pour ajouter un script : créer le fichier dans `js/`, ajouter sa constante dans `javascript.py` et l'inscrire dans `ORDRE_BUNDLE`. Tout le JavaScript des pages est dans un seul bundle, `build/js/kioske.<empreinte>.js`, chargé en `defer` par chaque page ; les pages n'ont plus de script en ligne. |
 | `verrou.py` | Un seul build ou une seule publication à la fois. |
 | `construction.py`, `publication.py` | Le build (`build/`) et la copie vers la racine web. |
 
@@ -135,13 +135,13 @@ parcours des visiteurs dans jsdom, sans navigateur, sur les pages de `build/` :
 
 | Fichier | Ce qu'il vérifie |
 |---|---|
-| `test_python.py` | Gabarits (valeur manquante, valeur insérée telle quelle), JSON des données, galerie des blocs, chaque fichier de `js/` utilisé, Ressources (front matter, arborescence, sommaire, pages statiques), code de conduite, ordre du menu (`[menu] ordre`). |
+| `test_python.py` | Gabarits (valeur manquante, valeur insérée telle quelle), JSON des données, galerie des blocs, chaque fichier de `js/` utilisé, Menu (front matter, arborescence, sommaire, pages statiques), code de conduite, ordre du menu (`[menu] ordre`). |
 | `test_styles.js` | Non-régression des styles : style calculé de chaque élément de l'accueil et d'un article, dans les 7 thèmes, comparé à `tests/reference/styles.json`. Après une modification voulue : `node tests/test_styles.js --mettre-a-jour`. Ne voit ni les cartes créées par JavaScript, ni `:hover`, ni les largeurs d'écran. |
-| `test_partage_ressources.js` | Bouton 📤 des pages Ressources : partage de l'adresse (sans paramètre) et du titre de la page. |
+| `test_partage_menu.js` | Bouton 📤 des pages du Menu : partage de l'adresse (sans paramètre) et du titre de la page. |
 | `test_parametres.js` | `/?flux=personnaliser` ouvre le panneau de personnalisation sur l'accueil ; page Paramètres : lien de personnalisation, interrupteurs des galeries (affichage et mémorisation). |
-| `test_menu.js` | Barre : bouton Menu vers `/ressources/`, absence du menu ⚙️ et de son bouton. |
+| `test_menu.js` | Barre : bouton Menu vers `/menu/`, absence du menu ⚙️ et de son bouton. |
 | `test_sobre.js` | Mode sobre : activation, mémorisation, feuille de style, pluie retirée. |
-| `test_ressources.js` | Pages statiques : index et document des Ressources (sommaire, document actif, retour), code de conduite, barre du haut identique à l'accueil. |
+| `test_menu_pages.js` | Pages statiques : index et document du Menu (sommaire, document actif, retour), code de conduite, barre du haut identique à l'accueil. |
 | `test_fermeture.js` | ×, double appui, Échap, fond sombre, bouton précédent : aucune fermeture ne remonte plus loin que l'accueil. |
 | `test_galeries.js` | Panneaux ouverts sans galerie ; galerie des blocs de l'accueil : contenu, flèches, cartes sans image : le titre à la place de la vignette. |
 | `test_pages.js` | Favoris, partage, données et recherche sur l'accueil, une page d'article, une page de catégorie et `rss.html` ; le lien vers le code de conduite. |
@@ -159,6 +159,20 @@ serveur ; `tests/node_modules/` est à exclure de la synchronisation.
 ## Construire et publier
 
 Le Python est toujours celui du venv du projet : `venv_blog/` sur le PC, `venv/` sur le serveur.
+
+**Raccourci : `bin/kioske`.** Il choisit lui-même le venv (`venv_blog/` puis `venv/`) et marche depuis
+n'importe quel dossier, sur le PC comme sur le serveur :
+
+```bash
+bin/kioske simple              # build local sans réseau
+bin/kioske build [options]     # build complet ; options transmises (--no-twitch, --no-previews, --no-cache)
+bin/kioske test [--sans-build] # tous les tests (tests/lancer.sh), sur le PC
+bin/kioske publier [options]   # construit puis copie dans la racine web (--simple, --sans-build), sur le serveur
+bin/kioske serveur [port]      # sert build/ sur http://localhost:8000/
+bin/kioske aide
+```
+
+Les commandes complètes, sans le raccourci :
 
 ```bash
 python3 -m venv venv_blog && venv_blog/bin/pip install -r requirements.txt   # une fois
@@ -198,7 +212,7 @@ venv/bin/python bin/publier_public.py --sans-build   # copie build/ tel quel
   passage du timer attend la fin de l'autre au lieu d'écrire les mêmes fichiers.
 
 **Changer le thème ou la mise en page sans toucher aux articles** : `kioske_update` depuis le PC, puis
-sur le serveur `venv/bin/python bin/publier_public.py --simple`. Un build seul ne publie rien.
+sur le serveur `bin/kioske publier --simple` (ou `venv/bin/python bin/publier_public.py --simple`). Un build seul ne publie rien.
 
 ## Sources de la veille
 
@@ -230,8 +244,8 @@ jusqu'à la ligne `[…]` suivante. Une source sans catégorie tombe dans le blo
 
 ### Accueil
 
-- **Barre du haut** (fixe en haut de l'écran) : le nom « kioske.fr » (lien vers l'index) avec le nombre d'articles et de sources, champ de recherche, bouton ♡ (favoris), bouton 🔔 (notifications, point rouge en cas de notification non lue) et bouton Menu (menu sandwich, lien vers `/ressources/`). Le bouton ⚙️ et le menu déroulant ont été retirés ; les réglages sont dans la page Paramètres. Sur petit écran, les compteurs sont masqués et le nom et les boutons tiennent sur une ligne.
-  Le nom du site et le drapeau sont agrandis (1,5 rem et 1,9 rem sur ordinateur, réduits sur tablette et téléphone) par `style_ressources.css`, avec des sélecteurs `.kioske-navbar` pour passer devant les feuilles de thème.
+- **Barre du haut** (fixe en haut de l'écran) : le nom « kioske.fr » (lien vers l'index) avec le nombre d'articles et de sources, champ de recherche, bouton ♡ (favoris), bouton 🔔 (notifications, point rouge en cas de notification non lue) et bouton Menu (menu sandwich, lien vers `/menu/`). Le bouton ⚙️ et le menu déroulant ont été retirés ; les réglages sont dans la page Paramètres. Sur petit écran, les compteurs sont masqués et le nom et les boutons tiennent sur une ligne.
+  Le nom du site et le drapeau sont agrandis (1,5 rem et 1,9 rem sur ordinateur, réduits sur tablette et téléphone) par `style_menu.css`, avec des sélecteurs `.kioske-navbar` pour passer devant les feuilles de thème.
 - **Thème au choix du visiteur** : boutons `.theme-bouton`, gérés par `static/theme.js`. Le choix est gardé
   dans `localStorage` (clé `kioske-theme`, aucun cookie) et s'applique à toutes les pages. Le build pose le
   thème par défaut sur `<html>` (`data-fond`, `data-pluie`, `--panneau-opacite`) : sans JavaScript, c'est
@@ -244,11 +258,28 @@ jusqu'à la ligne `[…]` suivante. Une source sans catégorie tombe dans le blo
   `!important` pour passer par-dessus les feuilles de thème). Le bouton n'existe que sur l'accueil ; l'effet
   vaut sur toutes les pages. Pas encore de réglage par défaut dans `kioske.cfg`. Test : `tests/test_sobre.js`.
 - **`theme.js` est mis en cache** par le service worker : sa version change toute seule au build (voir ci-dessous).
-- **Recherche** : taper puis Entrée. Le script charge `/articles-index.json` et cherche dans les titres,
-  les résumés et les noms de sources ; les résultats s'affichent en cartes dans un panneau. Depuis une page
-  d'article ou de catégorie, la recherche renvoie vers l'accueil (`/?q=…`), qui l'exécute.
-- **Galerie horizontale** : les 12 derniers articles ayant une image. Les flèches < et > font défiler au
-  survol.
+- **Recherche** : en direct pendant la frappe (dès 2 caractères, après 300 ms sans frappe), ou tout de suite
+  avec Entrée ou la loupe. Le script charge `/articles-index.json` une fois par page (au premier clic dans le
+  champ) et cherche dans les titres, les résumés et les noms de sources ; les résultats s'affichent en cartes
+  dans un panneau ouvert sous la barre du haut, pour que le champ reste visible. Aucun résultat : un message dans
+  le panneau (plus d'alerte). Champ vidé : le panneau se ferme. Depuis une page d'article ou de catégorie, la
+  recherche renvoie vers l'accueil (`/?q=…`), qui l'exécute. Test : `tests/test_recherche_directe.js`.
+- **Galerie « Les + vus de la semaine »** (`kioske/plus_lus.py`, `render_galerie_plus_lus()` dans `kioske/rendu.py`) :
+  en haut de l'accueil, au-dessus de la grande galerie, avec son titre visible. Les 10 articles les plus consultés
+  ces 7 derniers jours, du plus vu au moins vu, recalculés à chaque build (toutes les 30 min avec le timer).
+  - Source : le journal d'accès de nginx que le serveur tient déjà (aucun pistage ajouté au site). Comptent les
+    `GET /articles/<id>-<titre>/` servis (200) ; une adresse IP compte une fois par article ; robots déclarés et
+    adresses de `ip_jamais_bannies` retirés ; seuls les articles encore affichés sont gardés. Journal du jour et
+    archives tournées (`.1`, `.gz`) lus ; dates de nginx lues sans dépendre de la langue du système.
+  - Réglages (`kioske.cfg`, `[site]`) : `plus_lus_journal` (vide : `/var/log/nginx/<domaine>.access.log`),
+    `plus_lus_jours` (7), `plus_lus_nombre` (10).
+  - Sans journal lisible (poste de développement, droits manquants) : galerie non écrite, une ligne dans le
+    journal de build. Sur le serveur, le compte du timer lit le journal par le groupe `adm`.
+  - Mêmes vignettes que la grande galerie (halo de `style_favoris.css`) ; un article sans image montre son titre.
+  - Tests : classe `PlusLus` de `tests/test_python.py`.
+- **Galerie horizontale** (grande galerie) : les 12 derniers articles ayant une image. Les flèches < et > font
+  défiler au survol. **Masquée par défaut** depuis le 2026-11-19 : « Les + vus » la remplace ; elle se réaffiche
+  dans les Paramètres.
   Les flèches prennent les couleurs du thème (fond, bordure, survol) : règle `.galerie-arrow-left/right` dans chaque `kioske/style_<thème>.css`.
 - **Barre du haut sur petit écran** : sous 768 px, elle passe en flex (marque et boutons, puis la recherche sur sa propre ligne). Règle dans le bloc `@media (max-width: 768px)` de chaque `kioske/style_<thème>.css`.
 - **Galerie des blocs de catégorie** : dans chaque bloc de l'accueil, entre le titre et les étiquettes, une
@@ -264,7 +295,7 @@ jusqu'à la ligne `[…]` suivante. Une source sans catégorie tombe dans le blo
   cartes des favoris, export et import en JSON, effacement. Les favoris enregistrés par une ancienne version
   (lien du site d'origine seul) sont complétés à l'ouverture du panneau à partir de `articles-index.json` ;
   un article qui n'est plus dans l'index garde son lien d'origine.
-- **Code de conduite** : page statique `/code-de-conduite.html`, ouverte depuis la page Ressources.
+- **Code de conduite** : page statique `/code-de-conduite.html`, ouverte depuis la page Menu.
 - **Heures en Paris** : toutes les dates affichées sont en heure de Paris (CET/CEST). L'attribut HTML
   `datetime` reste en UTC.
 - **Page de découverte des flux** : `rss.html` propose le flux général (`rss.xml`), avec une icône RSS aux couleurs du drapeau trans. Les flux sont aussi déclarés dans l'en-tête de l'accueil. Il n'y a plus de flux par catégorie : leur adresse dépendait du nom de la catégorie et disparaissait à chaque réorganisation.
@@ -294,13 +325,13 @@ jusqu'à la ligne `[…]` suivante. Une source sans catégorie tombe dans le blo
   `<html>`, non modifiable par les visiteurs) ; ce zoom est annulé sur la carte ouverte pour qu'elle ait
   la taille de la page statique.
 
-### Page Ressources et code de conduite (pages statiques)
+### Page Menu et code de conduite (pages statiques)
 
-- **Adresses** : `/ressources/` (index, avec le sommaire) et `/ressources/<catégorie>/[<sous-catégorie>/]<document>/` : une page HTML par document, produite au build (comme les articles). `/code-de-conduite.html` : page statique, comme la page RSS.
-- **Partage** : chaque page Ressources (index et documents) a un bouton 📤 en bas de page, centré, avec « Partager » sous l'icône (`BOUTON_PARTAGE` dans `kioske/ressources.py`, géré par `partage.js` comme sur les articles) : partage système, ou copie de l'adresse.
-- **Accès** : le bouton Menu (menu sandwich) de la barre mène à `/ressources/`, sur toutes les pages. Le code de conduite, Discord et Mastodon sont dans la page Ressources. Ce sont des liens, pas des panneaux.
+- **Adresses** : `/menu/` (index, avec le sommaire) et `/menu/<catégorie>/[<sous-catégorie>/]<document>/` : une page HTML par document, produite au build (comme les articles). `/code-de-conduite.html` : page statique, comme la page RSS.
+- **Partage** : chaque page Menu (index et documents) a un bouton 📤 en bas de page, centré, avec « Partager » sous l'icône (`BOUTON_PARTAGE` dans `kioske/menu.py`, géré par `partage.js` comme sur les articles) : partage système, ou copie de l'adresse.
+- **Accès** : le bouton Menu (menu sandwich) de la barre mène à `/menu/`, sur toutes les pages. Le code de conduite, Discord, Mastodon et les dispositions légales (`menu/Dispositions-legales.md`, à la racine du Menu, liées aussi en bas de l’accueil) sont dans le Menu, au thème choisi par le visiteur. Ce sont des liens, pas des panneaux.
 - **Mise en page** : sommaire à gauche (catégories et sous-catégories repliables, document courant surligné), document à droite. Sur téléphone, le sommaire passe au-dessus du document.
-- **Écrire un document** : un fichier `.md` dans `ressources/<catégorie>/` (ou `ressources/<catégorie>/<sous-catégorie>/`). En tête, un bloc facultatif :
+- **Écrire un document** : un fichier `.md` dans `menu/<catégorie>/` (ou `menu/<catégorie>/<sous-catégorie>/`). En tête, un bloc facultatif :
 
   ```
   ---
@@ -310,13 +341,13 @@ jusqu'à la ligne `[…]` suivante. Une source sans catégorie tombe dans le blo
   ---
   ```
 
-  Sans `titre`, le nom du fichier sert de titre. Sans `ordre`, l'ordre est alphabétique, après les éléments qui ont un `ordre` (plus petit = plus haut). Un fichier `_dossier.md` dans un dossier donne le `titre`, la `description` et l'`ordre` de la catégorie ou sous-catégorie (son corps est ignoré). Les fichiers et dossiers qui commencent par `.` ou `_` sont ignorés ; un dossier plus profond que la sous-catégorie est ignoré, avec un avertissement au build. Un fichier `.md` à la racine de `ressources/` est une catégorie comme un dossier : son titre et son ordre viennent de son bloc de tête (sinon, son nom, avec « _ » et « - » remplacés par des espaces), son contenu est son unique document (`/ressources/<nom>/`) ; dans le sommaire, c'est un simple lien. `ressources/index.md` n'est pas une catégorie : son corps est le texte de la page d'index, mis en forme comme un document (titre et description du bloc de tête, sinon « Ressources »).
+  Sans `titre`, le nom du fichier sert de titre. Sans `ordre`, l'ordre est alphabétique, après les éléments qui ont un `ordre` (plus petit = plus haut). Un fichier `_dossier.md` dans un dossier donne le `titre`, la `description` et l'`ordre` de la catégorie ou sous-catégorie (son corps est ignoré). Les fichiers et dossiers qui commencent par `.` ou `_` sont ignorés ; un dossier plus profond que la sous-catégorie est ignoré, avec un avertissement au build. Un fichier `.md` à la racine de `menu/` est une catégorie comme un dossier : son titre et son ordre viennent de son bloc de tête (sinon, son nom, avec « _ » et « - » remplacés par des espaces), son contenu est son unique document (`/menu/<nom>/`) ; dans le sommaire, c'est un simple lien. `menu/index.md` n'est pas une catégorie : son corps est le texte de la page d'index, mis en forme comme un document (titre et description du bloc de tête, sinon « Menu »).
 - **Contenu** : Markdown avec les tableaux, le code délimité, les listes et les sauts de ligne simples (extensions `extra`, `sane_lists`, `nl2br`). Le HTML écrit dans un `.md` passe tel quel : n'y mettre que du contenu de confiance. Les images : une adresse `https://…` ; un chemin relatif ne marche pas.
-- **Build** : `build/ressources/` est reconstruit à chaque fois (un document supprimé ne reste pas en ligne). `build --simple` aussi.
+- **Build** : `build/menu/` est reconstruit à chaque fois (un document supprimé ne reste pas en ligne). `build --simple` aussi.
 - **Petit écran** : pas de menu déroulant. La barre garde le nom et les boutons ♡, 🔔, Menu sur une ligne ; les compteurs sont masqués sous 900 px.
 - **Barre du haut** : la même partout (marque et compteurs, recherche, ♡, 🔔, bouton Menu). Elle vient de `valeurs_barre()` (`kioske/rendu.py`) et des fragments `kioske/gabarits/partiels/`.
-- **Serveur** : nginx sert les pages Ressources comme des fichiers (`try_files $uri $uri/index.html`, nommer l'index : `$uri/` seul donne une 404 dans un bloc `location ~`) et `code-de-conduite.html` comme les autres pages à la racine. Règles dans `deploy/kioske-nginx.conf` et `deploy/deployer_nginx.sh`.
-- **Tests** : `RessourcesDuDossier` (tests/test_python.py) et `tests/test_ressources.js` (pages statiques, barre comparée à celle de l'accueil).
+- **Serveur** : nginx sert les pages du Menu comme des fichiers (`try_files $uri $uri/index.html`, nommer l'index : `$uri/` seul donne une 404 dans un bloc `location ~`) et `code-de-conduite.html` comme les autres pages à la racine. Règles dans `deploy/kioske-nginx.conf` et `deploy/deployer_nginx.sh`.
+- **Tests** : `MenuDuDossier` (tests/test_python.py) et `tests/test_menu_pages.js` (pages statiques, barre comparée à celle de l'accueil).
 ### Bouton précédent et historique
 
 - **Panneaux de l'accueil** : un panneau ouvert par un clic ajoute une entrée d'historique
@@ -380,9 +411,18 @@ Le CSS est dans `kioske/style.css`, inséré dans la page au build.
 - **Images des articles** : jamais copiées. Le navigateur les charge depuis le site d'origine (chaque
   visite envoie donc l'adresse du visiteur à ce site). Une image qui ne charge pas laisse la lettre de
   repli (cartes, pages d'article) ou disparaît de la galerie. Seules les adresses https sont gardées.
-- **Cartes de partage** (`build/img/previews/`) : composées au build à partir de l'image d'origine, lue
-  en mémoire et jamais écrite ; seule la carte, petite, est stockée. Une carte est recomposée seulement
-  si elle n'existe pas encore.
+- **Cartes de partage** (`build/img/previews/<empreinte>-v3.png`, `kioske/previews.py`) : composées au build à
+  partir de l'image d'origine, lue en mémoire et jamais écrite ; seule la carte, petite, est stockée.
+  - **Police** : Inter, celle du site (`static/fonts/inter.woff2`, variable : titre en gras, date en normal).
+    Aucune dépendance aux polices de la machine (sur le serveur, DejaVu manquait : texte minuscule). Couvre le
+    français et l'Europe de l'Ouest ; les lettres d'Europe centrale (ł, č, ő…) sortent en carré vide.
+    Fichier illisible : police de Pillow à la même taille, avec un avertissement dans le journal.
+  - **Sans image** : la première lettre du nom de la source, en grand (avant : toujours « H », de `https`).
+    Une image fournie mais inutilisable laisse `[preview] image non utilisée … : raison` dans le journal.
+  - **Version** (`VERSION_PREVIEW`) : elle fait partie du nom du fichier. Une carte est composée si elle n'existe
+    pas dans la version actuelle. Augmenter la version fait refaire les anciennes cartes par lots, les plus
+    récentes d'abord : 150 au plus et 180 s au plus par build (refaire une carte télécharge l'image), aucune en
+    build `--simple`. Une carte pas encore refaite garde son ancien fichier, qui reste servi.
 - L'ancien dossier `build/img/veille/` (copies d'images d'avant la bascule) est vidé à chaque build (`purger_images`).
 - **Flux RSS produit** : `build/rss.xml` (les 100 articles les plus récents), avec le texte complet de chaque article. Pas de flux par catégorie : le build retire un ancien dossier `build/rss/`, et la publication retire ses copies sur le serveur.
 
@@ -425,10 +465,11 @@ Une copie de l'ancienne fonction reste dans `~/.config/fish/functions/kioske_upd
 
 ```bash
 cd ~/kioske.fr
-bash deploy/deployer-nginx-simple.sh
+deploy/kioske.sh --certificat-ok nginx    # appelle deploy/deployer_nginx_simple.sh
+deploy/kioske.sh fail2ban
 ```
 
-Ça installe et configure nginx + fail2ban en un seul appel (idéal pour les updates).
+Copie `deploy/kioske-nginx.conf`, teste et recharge nginx sans toucher aux certificats (idéal pour les mises à jour).
 
 ### Déploiement complet (veille + nginx + fail2ban + statut)
 
@@ -469,8 +510,11 @@ sudo systemctl start kioske-veille.service   # publier tout de suite
 
 | Adresse | Réponse |
 |---|---|
-| `/`, `/index.html`, `/rss.html`, `/rss.xml`, `/sitemap.xml`, `/robots.txt`, `/articles-index.json` | servie (débit « pages ») |
+| `/`, `/index.html`, `/rss.html`, `/hors-ligne.html`, `/rss.xml`, `/sitemap.xml`, `/robots.txt`, `/articles-index.json` | servie (débit « pages ») |
 | `/articles/<id>-<titre>/`, `/categories/<nom>/` | servie, ou 404 ordinaire si la page a disparu |
+| `/menu/`, `/menu/<catégorie>/[<sous-catégorie>/]<document>/` | servie (débit « pages ») |
+| `/ressources/…` (ancienne adresse du Menu) | redirection 301 vers `/menu/…` |
+| `/dispositions-legales.html` (ancienne page statique) | redirection 301 vers `/menu/dispositions-legales/` |
 | `/manifest.json`, `/theme.js`, `/pluie.js`, `/sw.js`, `/favicon.svg`, `/preview.png`, `/apple-touch-icon.png`, `/icon-<taille>.png`, `/img/previews/<fichier>`, `/fonts/<fichier>` | servie (débit « fichiers ») |
 | `/favicon.ico`, `/apple-touch-icon-….png`, `/browserconfig.xml`, `/ads.txt`, `/humans.txt`, `/security.txt`, `/.well-known/…` | 404 ordinaire : navigateurs et robots les demandent d'eux-mêmes |
 | fichier ou dossier caché (`/.env`, `/.git/…`) | 404 (et ban immédiat par `kioske-scan`) |
@@ -478,11 +522,11 @@ sudo systemctl start kioske-veille.service   # publier tout de suite
 
 **Débit** : par adresse IP, 10 pages par seconde (marge de 40) et 100 fichiers par seconde (marge de 300) ; 40 connexions à la fois. Au-delà : réponse 429. Une page d'accueil demande une page et quelques dizaines de fichiers : un visiteur n'atteint pas ces limites.
 
-**Règle à respecter dans la configuration** : aucun `add_header` dans un bloc `location`. Dans nginx, un `add_header` placé dans un `location` annule tous ceux du niveau `server` pour ce `location`. La durée de cache est donc choisie par une table `map $uri $kioske_cache_control` en tête de fichier et envoyée par un seul `add_header Cache-Control` au niveau `server`. Deux scripts de déploiement, qui écrivent **la même configuration** (à modifier ensemble) :
+**Règle à respecter dans la configuration** : aucun `add_header` dans un bloc `location`. Dans nginx, un `add_header` placé dans un `location` annule tous ceux du niveau `server` pour ce `location`. La durée de cache est donc choisie par une table `map $uri $kioske_cache_control` en tête de fichier et envoyée par un seul `add_header Cache-Control` au niveau `server`. Deux scripts de déploiement, qui écrivent **la même configuration** (à modifier ensemble ; le test `NginxAligne` de `tests/test_python.py` échoue si leurs blocs `location` divergent) :
 - **`deploy/deployer_nginx.sh`** : complet, gère les certificats Let's Encrypt (appelle certbot) et déploie nginx. À utiliser lors de l'installation initiale ou pour renégocier les certificats.
 - **`deploy/deployer_nginx_simple.sh`** : copie la configuration nginx depuis `deploy/kioske-nginx.conf`, teste, et recharge nginx sans toucher aux certificats. La racine (`root`) n'est pas écrite en dur : le marqueur `__RACINE_WEB__` de la configuration est remplacé par la racine demandée au terminal (défaut `/srv/kioske.fr`, ou `RACINE_WEB` si elle est passée). À utiliser pour mettre à jour la configuration si les certificats sont déjà en place (`deploy/kioske.sh --certificat-ok nginx`).
 
-Les deux scripts testent la configuration et restaurent l'ancienne version si le test échoue. Le certificat couvre le domaine seul, sans `www`. `deploy/kioske.nginx.conf` (avec un point) est un ancien fichier qu'aucun script n'utilise.
+Les deux scripts testent la configuration et restaurent l'ancienne version si le test échoue. Le certificat couvre le domaine seul, sans `www`. Les anciennes variantes (`deployer-nginx-simple.sh` avec des tirets, `kioske-nginx-simple.conf`, `kioske.nginx.conf`) ont été supprimées le 2026-11-19.
 
 **fail2ban** (`deploy/fail2ban/`) : `f2b.sh` (copie de `~/fail2ban_hardened/f2b.sh`) installe la page « Tu es banni » et l'action `nginx-geo-ban` ; le ban est appliqué par nginx (sauf `kioske-debit`, banni par le pare-feu avec `iptables-multiport` sur http et https : le robot n'atteint plus nginx), le SSH n'est pas concerné. Quatre filtres et leurs jails (`kioske.jail.conf`, installé dans `/etc/fail2ban/jail.d/kioske.local`) :
 
@@ -533,14 +577,14 @@ application native, et fonctionne partiellement hors ligne.
 **Service Worker** (`static/sw.js`). Sa version (`CACHE_VERSION`) est calculée au build : empreinte SHA-256 des fichiers de `static/` (sauf `sw.js`), des feuilles `kioske/style_*.css` et du texte de `sw.js`. Elle ne change que si l'un d'eux change ; `build/sw.js` reçoit `kioske-<12 caractères>`. Rien à faire à la main :
 - **Cache-first** : assets statiques (CSS, JS, fonts, icônes). Se chargent depuis le cache si disponibles.
 - **Network-first** : toutes les pages (accueil, `/articles/…/`, `/categories/…/`, `.html`), flux RSS, images. Vérifient le réseau d'abord, cache en fallback si hors ligne.
-- **Fallback hors ligne** : page d'accueil cachée si le réseau est indisponible et la page ne l'est pas.
+- **Page hors ligne** : sans réseau, une page qui n'est pas en cache affiche `static/hors-ligne.html` (préchargée à l'installation, sans script, liens vers l'accueil et le Menu). Les autres fichiers absents du cache échouent normalement.
 
 **Installation** :
 - **Bouton « ⬇ Installer l'app »** : dans la page Paramètres (attribut `data-reglage="installer"`, géré par `kioske/js/installation_pwa.js`). Le panneau d'infos a été supprimé.
 - **Via le navigateur** :
   - **Téléphone** (Chrome, Firefox, Edge) : visiter le site, puis « Installer » dans le menu du navigateur.
   - **Ordinateur** (Chrome, Edge) : visiter le site, cliquer sur l'icône « Installer » dans la barre d'adresse.
-- **Raccourci PWA** : lien vers la page RSS (`rss.html`) depuis le manifest.
+- **Raccourcis de l'app** (`shortcuts` du manifest, appui long ou clic droit sur l'icône) : Rechercher (`/?recherche`, curseur dans le champ), Mes favoris (`/?favoris`, ouvre le panneau), Personnaliser mon flux (`/?flux=personnaliser`), Menu (`/menu/`). Les deux premières adresses sont lues par `kioske/js/accueil_adresse.js`.
 
 **Cache headers** (nginx) :
 - Service worker (`sw.js`) : `no-cache, max-age=0` (toujours vérifier les mises à jour).
@@ -569,7 +613,7 @@ Le cache est versionné par empreinte (voir « Service Worker »). Un changement
 - Les aperçus viennent de la page de l'article ; certains sites ne fournissent pas d'image.
 - La base n'est jamais purgée : sans `articles_par_source`, la page grossit avec le temps.
 
-- **Pages Ressources et code de conduite : règles nginx dans `deploy/kioske-nginx.conf` et `deploy/deployer_nginx.sh` (les deux ensemble).** Elles se déploient avec `deploy/kioske.sh nginx` sur le serveur, à refaire après chaque modification de ces fichiers.
+- **Pages du Menu et code de conduite : règles nginx dans `deploy/kioske-nginx.conf` et `deploy/deployer_nginx.sh` (les deux ensemble).** Elles se déploient avec `deploy/kioske.sh nginx` sur le serveur, à refaire après chaque modification de ces fichiers.
 
 ## Licences
 

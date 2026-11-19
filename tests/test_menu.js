@@ -1,4 +1,4 @@
-// Barre du haut : le bouton ⚙️ (menu) est retiré. Le bouton « Accueil » (➕) reste à droite, vers /ressources/.
+// Barre du haut : le bouton ⚙️ (menu) est retiré. Le bouton « Accueil » (➕) reste à droite, vers /menu/.
 const { attendre, charger, suite } = require('./outils');
 
 (async () => {
@@ -9,7 +9,7 @@ const { attendre, charger, suite } = require('./outils');
   t.verif('plus de menu déroulant dans la barre', !d.getElementById('navbar-menu'));
   const accueil = d.querySelector('.navbar-controls .btn-plus');
   t.verif('bouton « Menu » présent', !!accueil && accueil.getAttribute('aria-label') === 'Menu');
-  t.verif('bouton « Menu » : lien vers /ressources/', !!accueil && accueil.getAttribute('href') === '/ressources/');
+  t.verif('bouton « Menu » : lien vers /menu/', !!accueil && accueil.getAttribute('href') === '/menu/');
   t.verif('aucune erreur JavaScript', erreurs.length === 0, erreurs.join(' | '));
   w.close();
   t.fin();

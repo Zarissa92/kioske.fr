@@ -15,7 +15,7 @@ SOURCES = ROOT / "sources"
 FLUX_RSS = SOURCES / "RSS_feeds.txt"
 CHAINES_TWITCH = SOURCES / "Twitch_feeds.txt"
 REGLAGES_FLUX = SOURCES / "flux_corrige_main.txt"
-RESSOURCES = ROOT / "ressources"  # documents Markdown de la page Ressources (kioske/ressources.py)
+MENU = ROOT / "menu"  # documents Markdown de la page Menu (kioske/menu.py), adresse /menu/
 STATIC = ROOT / "static"  # favicon, icône, image de partage, polices : recopiés tels quels dans build/
 
 # Données (jamais publiées)
@@ -77,6 +77,11 @@ ARTICLES_PAR_SOURCE = entier("veille", "articles_par_source")  # 0 = tous
 DELAI_ECHEC = entier("veille", "delai_nouvel_essai_heures") * 3600  # secondes
 
 GALERIE_PANNEAU = entier_opt("site", "galerie_panneau", 1)
+# Galerie « Les plus lus » (kioske/plus_lus.py) : journal d'accès de nginx, période et nombre d'articles.
+JOURNAL_ACCES = Path(CFG.get("site", "plus_lus_journal", fallback="").strip() or f"/var/log/nginx/{DOMAINE}.access.log")
+PLUS_LUS_JOURS = entier_opt("site", "plus_lus_jours", 7)
+PLUS_LUS_NOMBRE = entier_opt("site", "plus_lus_nombre", 10)
+IP_JAMAIS_COMPTEES = CFG.get("serveur", "ip_jamais_bannies", fallback="")
 
 
 

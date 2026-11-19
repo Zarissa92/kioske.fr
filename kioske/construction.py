@@ -23,12 +23,13 @@ from zoneinfo import ZoneInfo
 
 from . import apercus
 from .config import (ARTICLES_PAR_SOURCE, BUILD, CHAINES_TWITCH, DOMAINE, DOSSIER_RSS_CATEGORIES, FLUX_RSS,
-                     HISTORIQUE_DB, NOM_PAGE, PAQUET, REGLAGES_FLUX, ROOT, STATIC, TWITCH_SCAN, URL_SITE, RSS_MAX)
+                     HISTORIQUE_DB, NOM_PAGE, PAQUET, REGLAGES_FLUX, ROOT, STATIC, TWITCH_SCAN, URL_SITE, RSS_MAX,
+                     IP_JAMAIS_COMPTEES, JOURNAL_ACCES, PLUS_LUS_JOURS, PLUS_LUS_NOMBRE)
 from .flux import load_feed
 from .historique import Historique
 from .images import appliquer_images, purger_images, telecharger_images
-from .previews import generer_previews
-from .ressources import ecrire_ressources
+from .previews import REFAITES_PAR_BUILD, generer_previews
+from .menu import ecrire_menu
 from .javascript import JS_BUNDLE, NOM_BUNDLE
 from .rendu import render_page, render_rss_page
 from .rendu_statique import render_article_page, render_category_page
@@ -145,12 +146,12 @@ def copier_statiques() -> None:
 
 
 # Dossiers du build dont chaque index.html est une page publique à référencer.
-DOSSIERS_SITEMAP = ("articles", "categories", "ressources")
+DOSSIERS_SITEMAP = ("articles", "categories", "menu")
 
 
 def ecrire_sitemap() -> int:
     """Écrit build/sitemap.xml à partir des pages réellement produites : accueil, code de conduite, articles,
-    catégories et Ressources. Renvoie le nombre d'adresses."""
+    catégories et Menu. Renvoie le nombre d'adresses."""
     from xml.sax.saxutils import escape
     adresses = [f"{URL_SITE}/"]
     if (BUILD / "code-de-conduite.html").is_file():
@@ -195,9 +196,16 @@ def version_service_worker() -> str:
 
 
 def ecrire_page(items: list[dict], previews: dict[str, dict], categories: dict[str, str], panneaux: dict[str, str] | None = None) -> None:
-    """Écrit build/index.html."""
+    """Écrit build/index.html, avec la galerie « Les plus lus » quand le journal d'accès est lisible."""
+    from .plus_lus import compter, plus_lus
     panneaux = panneaux or {}
-    page = render_page(items, previews, categories, panneaux)
+    compte = compter(JOURNAL_ACCES, PLUS_LUS_JOURS, IP_JAMAIS_COMPTEES)
+    classement = plus_lus(items, compte, PLUS_LUS_NOMBRE, article_id)
+    if classement:
+        print(f"   • Les plus lus : {len(classement)} article(s) sur {PLUS_LUS_JOURS} jours ({JOURNAL_ACCES})")
+    else:
+        print(f"   • Les plus lus : aucun (journal {JOURNAL_ACCES} absent, illisible ou vide) : galerie non écrite")
+    page = render_page(items, previews, categories, panneaux, classement, PLUS_LUS_JOURS)
     BUILD.mkdir(parents=True, exist_ok=True)
     sortie = BUILD / NOM_PAGE
     tmp = sortie.with_name(sortie.name + ".tmp")
@@ -208,7 +216,7 @@ def ecrire_page(items: list[dict], previews: dict[str, dict], categories: dict[s
 
 def ecrire_code_de_conduite(items: list[dict]) -> None:
     """Écrit build/code-de-conduite.html : page statique, comme la page RSS."""
-    from .ressources import ecrire_fichier
+    from .menu import ecrire_fichier
     from .rendu import render_code_de_conduite
     ecrire_fichier(BUILD / "code-de-conduite.html", render_code_de_conduite(len(items), len({i["key"] for i in items})))
 
@@ -232,8 +240,9 @@ def ecrire_page_rss(categories: dict[str, str], items: list[dict]) -> None:
     print(f"OK : page RSS écrite dans {sortie.relative_to(ROOT)}")
 
 
-def ecrire_pages_articles(items: list[dict], previews: dict[str, dict]) -> None:
-    """Écrit les pages statiques pour chaque article dans build/articles/."""
+def ecrire_pages_articles(items: list[dict], previews: dict[str, dict], simple: bool = False) -> None:
+    """Écrit les pages statiques pour chaque article dans build/articles/. simple : build --simple, aucune
+    ancienne carte de partage n'est refaite (ce serait télécharger les images des articles)."""
     from .rendu import valeurs_barre
     barre = valeurs_barre(len(items), len({i["key"] for i in items}))
     articles_dossier = BUILD / "articles"
@@ -241,8 +250,10 @@ def ecrire_pages_articles(items: list[dict], previews: dict[str, dict]) -> None:
 
     # Générer les previews "carte Pokémon" pour les articles
     print("[previews] génération des previews 'carte Pokémon'...")
-    images_map = {item["link"]: item.get("image", "") for item in items}
-    article_previews = generer_previews(items, images_map, telecharger=True)
+    # Même image que la page de l'article (rendu_statique.py) : celle de l'aperçu d'abord, sinon celle du flux.
+    # Avant, seule celle du flux était prise : les sources sans image dans leur flux avaient une carte sans photo.
+    images_map = {item["link"]: previews.get(item["link"], {}).get("image") or item.get("image") or "" for item in items}
+    article_previews = generer_previews(items, images_map, telecharger=True, refaites_max=0 if simple else REFAITES_PAR_BUILD)
 
     # Trier par date décroissante (plus récents en premier) pour Précédent/Suivant
     epoque = datetime.min.replace(tzinfo=timezone.utc)
@@ -474,7 +485,7 @@ def construire(args: argparse.Namespace) -> None:
 
         # === Génération des pages statiques ===
         print("6. GÉNÉRATION DES PAGES STATIQUES")
-        ecrire_pages_articles(items, previews)
+        ecrire_pages_articles(items, previews, simple=args.simple)
         ecrire_pages_categories(items, previews, categories)
 
         # === Index JSON ===
@@ -491,8 +502,8 @@ def construire(args: argparse.Namespace) -> None:
             ecrire_flux_rss(items, categories)
         # Flux par catégorie : supprimés (leur adresse dépend du nom de la catégorie)
         shutil.rmtree(BUILD / DOSSIER_RSS_CATEGORIES, ignore_errors=True)
-        print("   • Page Ressources (documents de ressources/)")
-        ecrire_ressources(len(items), len({i["key"] for i in items}))
+        print("   • Page Menu (documents de menu/)")
+        ecrire_menu(len(items), len({i["key"] for i in items}))
 
         # === Fichiers statiques ===
         print("9. COPIE DES FICHIERS STATIQUES")

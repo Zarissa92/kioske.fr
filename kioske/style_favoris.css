@@ -1,5 +1,5 @@
 /* Effet « shiny » : halo, bordure en dégradé qui tourne, et reflet qui balaie la carte en continu.
-   Appliqué aux cartes des favoris (.carte-favori), aux vignettes de la grande galerie (.galerie-principale)
+   Appliqué aux cartes des favoris (.carte-favori), aux vignettes de la grande galerie (.galerie-principale) et de la galerie « Les plus lus » (.galerie-plus-lus)
    et à la carte d'article ouverte par-dessus l'accueil (.carte-ouverte .panel-article).
    Fichier partagé : il est inséré dans la page d'accueil au build (kioske/rendu.py), quel que soit le thème.
    Les couleurs viennent des variables du thème (--neon-coeur, --neon-halo), donc chaque thème garde les siennes.
@@ -11,7 +11,7 @@
 #fav-grille {
   padding: 1.2rem;
 }
-.galerie-principale > .galerie {
+:is(.galerie-principale, .galerie-plus-lus > .galerie-slider) > .galerie {
   padding: .6rem .5rem;
 }
 
@@ -37,7 +37,7 @@ button.fav-heart.active:hover {
 .carte.carte-favori {
   box-shadow: 0 0 .6rem -.1rem var(--neon-coeur), 0 0 1.4rem -.4rem var(--neon-halo);
 }
-.galerie-principale .galerie-carte {
+:is(.galerie-principale, .galerie-plus-lus > .galerie-slider) .galerie-carte {
   box-shadow: 0 0 .35rem -.05rem var(--neon-coeur), 0 0 .8rem -.25rem var(--neon-halo);
 }
 .carte-ouverte .panel-article {
@@ -47,7 +47,7 @@ button.fav-heart.active:hover {
 /* Bordure en dégradé des cartes et des vignettes : le fond du dessus couvre l'intérieur (padding-box),
    le dégradé conique n'est visible que dans la bordure (border-box). L'angle tourne en continu. */
 .carte.carte-favori,
-.galerie-principale .galerie-carte {
+:is(.galerie-principale, .galerie-plus-lus > .galerie-slider) .galerie-carte {
   border-color: transparent;
   background-image:
     linear-gradient(rgba(8, 0, 0, .92), rgba(8, 0, 0, .92)),
@@ -78,7 +78,7 @@ button.fav-heart.active:hover {
 /* Reflet diagonal. Il est hors de la carte (la carte coupe les débordements), balaie la carte pendant
    la première partie du cycle, puis reste hors de la carte le reste du temps. Seul transform est animé. */
 .carte.carte-favori::before,
-.galerie-principale .galerie-carte::before,
+:is(.galerie-principale, .galerie-plus-lus > .galerie-slider) .galerie-carte::before,
 .carte-ouverte .panel-article::before {
   content: "";
   position: absolute;
@@ -107,12 +107,12 @@ button.fav-heart.active:hover {
 
 @media (prefers-reduced-motion: reduce) {
   .carte.carte-favori,
-  .galerie-principale .galerie-carte,
+  :is(.galerie-principale, .galerie-plus-lus > .galerie-slider) .galerie-carte,
   .carte-ouverte .panel-article::after {
     animation: none;
   }
   .carte.carte-favori::before,
-  .galerie-principale .galerie-carte::before,
+  :is(.galerie-principale, .galerie-plus-lus > .galerie-slider) .galerie-carte::before,
   .carte-ouverte .panel-article::before {
     animation: none;
     display: none;
@@ -121,12 +121,12 @@ button.fav-heart.active:hover {
 
 @media (prefers-contrast: more), (forced-colors: active) {
   .carte.carte-favori,
-  .galerie-principale .galerie-carte,
+  :is(.galerie-principale, .galerie-plus-lus > .galerie-slider) .galerie-carte,
   .carte-ouverte .panel-article {
     box-shadow: none;
   }
   .carte.carte-favori,
-  .galerie-principale .galerie-carte {
+  :is(.galerie-principale, .galerie-plus-lus > .galerie-slider) .galerie-carte {
     background-image: none;
     border-color: var(--color-text-accent);
     animation: none;
@@ -135,7 +135,7 @@ button.fav-heart.active:hover {
     display: none;
   }
   .carte.carte-favori::before,
-  .galerie-principale .galerie-carte::before,
+  :is(.galerie-principale, .galerie-plus-lus > .galerie-slider) .galerie-carte::before,
   .carte-ouverte .panel-article::before {
     display: none;
   }
