@@ -340,6 +340,13 @@ def ecrire_pages_categories(items: list[dict], previews: dict[str, dict],
     print(f"OK : {written} page(s) de catégorie(s) écrite(s) dans {categories_dossier.relative_to(ROOT)}/")
 
 
+def image_index(image: str) -> str:
+    """Adresse d'image pour articles-index.json : externe (http/https, //) telle quelle, chemin local avec un « / »."""
+    if not image or image.startswith(("/", "http://", "https://")):
+        return image or ""
+    return "/" + image
+
+
 def ecrire_index_articles(items: list[dict], previews: dict[str, dict], categories: dict[str, str]) -> None:
     """Génère un index JSON de tous les articles pour la recherche JavaScript."""
     index = []
@@ -367,8 +374,10 @@ def ecrire_index_articles(items: list[dict], previews: dict[str, dict], categori
         # Host du lien
         host = urlparse(link).netloc.removeprefix("www.")
 
-        # Chemins absolus pour les images (commencent par /)
-        image_abs = f"/{image}" if image and not image.startswith("/") else image
+        # Image : une adresse externe (https://…) reste telle quelle ; seul un chemin local (img/…) prend un « / ».
+        # Avant, toute image prenait un « / » : « /https://… » était demandé au site (404 en série, et ban par la
+        # jail générale nginx-404 dès qu'une recherche ou les favoris affichaient beaucoup de résultats).
+        image_abs = image_index(image)
 
         index.append({
             "title": title,

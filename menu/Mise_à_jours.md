@@ -4,7 +4,7 @@ ordre: 2
 ---
 
 ## 19/11/2026 :
-
+- **Souci de deploiement, desole pour le ban de 5mn**
 - Nouvelle galerie en haut de l'accueil : « Les + vus de la semaine », les 10 articles les plus lus ces 7 derniers jours, mise à jour toutes les 30 minutes. Un simple décompte des visites, sans aucun suivi des personnes.
 - La galerie « Les derniers articles » a maintenant son titre, juste en dessous. Chaque galerie peut être masquée dans Paramètres.
 - La recherche trouve les articles pendant que tu tapes, sans avoir besoin d'appuyer sur Entrée.

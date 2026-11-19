@@ -78,7 +78,7 @@ function creerPanneauArticles({ id, titre: texteTitre, cle, articles, ancre, gal
       lien.className = 'galerie-carte';
       lien.title = article.title;
       const img = document.createElement('img');
-      img.src = article.image;
+      img.src = adresseImage(article.image);
       img.alt = article.title;
       img.loading = 'lazy';
       img.referrerPolicy = 'no-referrer';

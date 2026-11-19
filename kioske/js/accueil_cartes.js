@@ -1,7 +1,14 @@
 // Accueil : création des cartes d'article (creerCarte, carteArticle) et des identifiants de panneau.
 // Carte d'un article dans une grille (panneaux, recherche, favoris). Les textes viennent des flux RSS
 // et d'autres sites : ils sont posés avec textContent, jamais interprétés comme du HTML.
+// « /https://… » : adresse externe abîmée par un ancien index des articles (avant le 2026-11-19), encore présente
+// dans des favoris enregistrés. Le « / » en trop la faisait demander au site (404 en série, puis ban) : il est retiré.
+function adresseImage(image) {
+  return /^\/https?:\/\//.test(image || '') ? image.slice(1) : (image || '');
+}
+
 function creerCarte({ adresse, image, source, meta, titre, extrait, favori = false }) {
+  image = adresseImage(image);
   const span = (classe, texte) => {
     const s = document.createElement('span');
     s.className = classe;

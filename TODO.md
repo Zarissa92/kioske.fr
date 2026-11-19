@@ -47,6 +47,12 @@ Dans cet ordre :
 - `/ressources/…` → `/menu/…` (2026-11-19).
 - `/dispositions-legales.html` → `/menu/dispositions-legales/` (2026-11-19).
 
+## fail2ban : visiteurs bannis à tort (à décider, 2026-11-19)
+
+- [ ] **Jail générale `nginx-404` (Script_VPS) sur kioske.fr** : elle compte toutes les 404 du site (30 en 10 min). Un bug d'affichage (images `/https://…`, corrigé le 2026-11-19) a suffi à bannir l'administratrice. kioske.fr a déjà ses jails précises (`kioske-hors-site`, `kioske-scan`…) : retirer `kioske.fr.access.log` du `logpath` de `nginx-404`, ou n'y compter que les pages HTML.
+- [ ] **Adresses de Cloudflare dans `kioske-scan`** (`104.22.*`, `104.23.*`, `162.158.*`, `172.64.*`–`172.71.*`, `141.101.*`) : sorties partagées (app 1.1.1.1/WARP, relais privé iCloud). Un scanner derrière l'une d'elles fait bannir 30 jours tous ses utilisateurs. Pistes : ban plus court pour ces plages, ou les compter seulement dans `kioske-hors-site`.
+- [ ] **Googlebot banni** (`66.249.68.199`, `kioske-hors-site`) : nuit au référencement. Vérifier ce qu'il demandait ; `fail2ban/verifier_robots.sh` (Script_VPS) sait débannir les vrais robots de Google et Bing.
+
 ## Sécurité du compte du timer (à décider)
 
 Depuis la galerie « Les + vus » (2026-11-19), le compte du timer est dans le groupe `adm` : le build lit le journal de nginx.

@@ -711,3 +711,20 @@ class GaleriesParDefaut(unittest.TestCase):
         self.assertEqual(journal_acces("1"), JOURNAL_PAR_DEFAUT)          # pris pour un interrupteur : ignoré
         self.assertEqual(journal_acces("/tmp/a.log"), Path("/tmp/a.log"))
 
+
+
+class ImagesDeLIndex(unittest.TestCase):
+    """articles-index.json : une image externe reste telle quelle (avant : « /https://… », demandé au site, 404 et ban)."""
+
+    def test_image_index(self):
+        from kioske.construction import image_index
+        self.assertEqual(image_index("https://a.org/i.jpg"), "https://a.org/i.jpg")
+        self.assertEqual(image_index("http://a.org/i.jpg"), "http://a.org/i.jpg")
+        self.assertEqual(image_index("img/veille/a.jpg"), "/img/veille/a.jpg")
+        self.assertEqual(image_index("/img/veille/a.jpg"), "/img/veille/a.jpg")
+        self.assertEqual(image_index(""), "")
+
+    def test_index_construit_sans_slash_devant_https(self):
+        index = (Path(__file__).resolve().parent.parent / "build" / "articles-index.json")
+        if index.exists():
+            self.assertNotIn('"/http', index.read_text(encoding="utf-8"))
