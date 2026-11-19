@@ -221,10 +221,10 @@ html, body {
 }
 /* Galeries masquées par les boutons de la page Paramètres : une par type.
    Par défaut : « Les plus lus » affichée, grande galerie masquée (static/theme.js, GALERIES). */
-html[data-grande-galerie="non"] .galerie-principale { display: none; }
+html[data-grande-galerie="non"] .galerie-derniers { display: none; }   /* titre et galerie ensemble */
 html[data-galerie-plus-lus="non"] .galerie-plus-lus { display: none; }
-/* Galerie « Les plus lus » (au-dessus de la grande galerie) : un titre court, puis les vignettes */
-.galerie-plus-lus-titre {
+/* Titres visibles des galeries de l'accueil : « Les + vus de la semaine », « Les derniers articles » */
+.galerie-titre {
   font-family: "Russo One", "Courier New", monospace;
   font-size: 0.95rem;
   font-weight: 400;

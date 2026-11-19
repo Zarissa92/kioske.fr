@@ -3,6 +3,17 @@ description: MAJ
 ordre: 2
 ---
 
+## 19/11/2026 :
+
+- Nouvelle galerie en haut de l'accueil : « Les + vus de la semaine », les 10 articles les plus lus ces 7 derniers jours, mise à jour toutes les 30 minutes. Un simple décompte des visites, sans aucun suivi des personnes.
+- La galerie « Les derniers articles » a maintenant son titre, juste en dessous. Chaque galerie peut être masquée dans Paramètres.
+- La recherche trouve les articles pendant que tu tapes, sans avoir besoin d'appuyer sur Entrée.
+- Nouveau bouton « Tout remettre par défaut » dans Paramètres : thème, galeries, flux perso et notifications reviennent comme à ta première visite. Tes favoris sont gardés.
+- Le Menu a sa propre adresse : kioske.fr/menu. Les anciens liens marchent toujours.
+- App installée : un appui long sur l'icône donne des raccourcis vers la recherche, tes favoris, ton flux perso et le Menu.
+- Sans connexion, le site affiche une page claire au lieu d'une erreur. Les pages déjà visitées restent lisibles.
+- Corrections de sécurité sur le serveur.
+
 ## 18/11/2026 :
 
 

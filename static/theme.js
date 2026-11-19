@@ -13,11 +13,14 @@
 
   let themes = [];
   let defaut = racine.dataset.theme || '';
+  let galeriesDefaut = {};   // galeries affichées par défaut, depuis kioske.cfg ([site] galerie_plus_lus…)
   try {
     const donnees = JSON.parse(document.getElementById('kioske-themes').textContent);
     themes = donnees.themes;
     defaut = donnees.defaut;
+    galeriesDefaut = donnees.galeries || {};
   } catch (e) {}
+  const galerieDefaut = (nom, sinon) => (typeof galeriesDefaut[nom] === 'boolean' ? galeriesDefaut[nom] : sinon);
 
   function lireChoix() {
     try { return localStorage.getItem(CLE); } catch (e) { return null; }
@@ -27,16 +30,21 @@
     try { return localStorage.getItem(CLE_SOBRE) === '1'; } catch (e) { return false; }
   }
 
-  // Galeries de l'accueil, un interrupteur par type. Par défaut : seule « Les plus lus » est affichée.
-  // Un choix mémorisé (« 1 » affichée, « 0 » masquée) l'emporte sur le défaut.
+  // Galeries de l'accueil, un interrupteur par type. Défaut : kioske.cfg ([site] galerie_plus_lus, grande_galerie,
+  // galeries_blocs), sinon « Les plus lus » seule (si la page ne les donne pas). Un choix mémorisé (« 1 » affichée, « 0 » masquée) l'emporte.
   const GALERIES = [
     { id: 'btn-galerie-plus-lus', attribut: 'galeriePlusLus', cle: 'kioske-galerie-plus-lus',
-      libelle: 'Les plus lus', etat: ['affichée', 'masquée'], defaut: true },
+      libelle: 'Les plus lus', etat: ['affichée', 'masquée'], defaut: galerieDefaut('plus_lus', true) },
     { id: 'btn-grande-galerie', attribut: 'grandeGalerie', cle: 'kioske-grande-galerie',
-      libelle: 'Grande galerie', etat: ['affichée', 'masquée'], defaut: false },
+      libelle: 'Grande galerie', etat: ['affichée', 'masquée'], defaut: galerieDefaut('grande', false) },
     { id: 'btn-galeries-blocs', attribut: 'galeriesBlocs', cle: 'kioske-galeries-blocs',
-      libelle: 'Galeries des catégories', etat: ['affichées', 'masquées'], defaut: false },
+      libelle: 'Galeries des catégories', etat: ['affichées', 'masquées'], defaut: galerieDefaut('blocs', false) },
   ];
+  // Réglages remis par défaut par le bouton « Tout remettre par défaut » (page Paramètres). Une clé ajoutée pour
+  // un nouveau réglage se déclare ici aussi. Les données (favoris, notifications, vus) n'y sont pas.
+  const REGLAGES = [CLE, CLE_SOBRE, ...GALERIES.map(g => g.cle),
+    'kioske_flux_personnalise', 'kioske_flux_connus',   // flux personnalisé (flux_personnalise.js)
+    'kioske_notifications', 'kioske_notif_site'];      // interrupteurs des notifications (notifications.js)
   function lireGalerie(g) {
     try {
       const choix = localStorage.getItem(g.cle);
@@ -168,6 +176,27 @@
         appliquerSobre(actif);
         if (!actif) appliquer(racine.dataset.theme); // remet la pluie du thème, s'il en a une
         majSobre();
+      });
+    });
+
+    // Bouton « Tout remettre par défaut » (page Paramètres) : efface les RÉGLAGES enregistrés dans ce navigateur,
+    // puis recharge la page. Deux clics : le premier demande confirmation sur le bouton lui-même (pas de fenêtre
+    // de dialogue), sans second clic dans les 5 s il revient à son texte. Les DONNÉES restent : favoris,
+    // notifications reçues, éléments déjà vus ou effacés, sources déjà annoncées.
+    // L'autorisation des notifications donnée au navigateur ne peut pas être retirée par le site.
+    document.querySelectorAll('[data-reglage="reinitialiser"]').forEach(bouton => {
+      const texte = bouton.textContent;
+      let minuterie = null;
+      bouton.addEventListener('click', () => {
+        if (bouton.dataset.confirmer !== 'oui') {
+          bouton.dataset.confirmer = 'oui';
+          bouton.textContent = '↺ Confirmer : tout remettre par défaut ?';
+          minuterie = setTimeout(() => { delete bouton.dataset.confirmer; bouton.textContent = texte; }, 5000);
+          return;
+        }
+        clearTimeout(minuterie);
+        REGLAGES.forEach(cle => { try { localStorage.removeItem(cle); } catch (e) {} });
+        location.reload();
       });
     });
   });

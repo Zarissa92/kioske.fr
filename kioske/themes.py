@@ -11,6 +11,7 @@ import hashlib
 import json
 
 from .config import CFG, CONFIG, PAQUET
+from .config import GALERIES_DEFAUT
 from .texte import esc
 
 
@@ -97,6 +98,7 @@ def _morceaux_de_page() -> tuple[str, str, str, str]:
     variables = f"--panneau-opacite: {d['opacite_panneau'] / 100:g};"
     donnees = json.dumps(
         {"defaut": defaut,
+         "galeries": GALERIES_DEFAUT,   # galeries de l'accueil affichées par défaut (kioske.cfg)
          "themes": [{
              "id": t["id"],
              "fond": t["fond"],

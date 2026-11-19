@@ -3,6 +3,7 @@
 Bibliothèque standard seulement (unittest). Lancés par tests/lancer.sh.
 """
 import json
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -230,8 +231,10 @@ class CheminsSansPersonne(unittest.TestCase):
     def test_pas_de_chemin_personnel(self):
         for nom in self.FICHIERS:
             texte = (self.RACINE / nom).read_text(encoding="utf-8")
-            for motif in ("/home/<utilisateur>", "/home/<utilisateur>"):
-                self.assertNotIn(motif, texte, f"{nom} contient {motif}")
+            # Un dossier personnel écrit en dur (/home/<compte>/…) ; « /home/<utilisateur> » (exemple) est permis.
+            # Aucun nom de compte n'est écrit ici : le motif suffit.
+            trouve = re.search(r"/home/[a-z][a-z0-9_-]*", texte)
+            self.assertIsNone(trouve, f"{nom} contient {trouve.group(0) if trouve else ''}")
 
     def test_ip_publique_absente_de_la_configuration(self):
         self.assertNotIn("ip_publique", (self.RACINE / "kioske.cfg").read_text(encoding="utf-8"))
@@ -677,3 +680,24 @@ class PlusLus(unittest.TestCase):
             locale.setlocale(locale.LC_TIME, ancienne)
         self.assertIsNone(lire_date("19/nov./2026:10:00:00 +0100"))
 
+    def test_titre_de_la_grande_galerie(self):
+        from datetime import datetime, timezone
+        from kioske.rendu import render_galerie
+        item = {"link": "https://a.org/y", "title": "T", "image": "https://a.org/i.jpg", "source": "S",
+                "date": datetime(2026, 11, 1, tzinfo=timezone.utc)}
+        html = render_galerie([item], {})
+        self.assertIn('<h2 class="galerie-titre">Les derniers articles</h2>', html)
+        self.assertLess(html.index('class="galerie-derniers"'), html.index("galerie-titre"))   # masqué avec elle
+
+
+
+class GaleriesParDefaut(unittest.TestCase):
+    """Galeries affichées par défaut : lues dans kioske.cfg et écrites dans les données de la page."""
+
+    def test_valeurs_dans_la_page(self):
+        import json
+        from kioske.config import GALERIES_DEFAUT
+        from kioske.themes import SCRIPT_THEME
+        donnees = json.loads(SCRIPT_THEME.split('id="kioske-themes">', 1)[1].split("</script>", 1)[0].replace("<\\/", "</"))
+        self.assertEqual(donnees["galeries"], GALERIES_DEFAUT)
+        self.assertEqual(set(GALERIES_DEFAUT), {"plus_lus", "grande", "blocs"})

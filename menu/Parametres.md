@@ -17,7 +17,7 @@ Ces réglages sont gardés dans ton navigateur : rien n'est envoyé.
 Galeries de l'accueil :
 
 <p><button type="button" class="menu-button" id="btn-galerie-plus-lus" aria-pressed="true">🖼️ Les plus lus : affichée</button>
-<button type="button" class="menu-button" id="btn-grande-galerie" aria-pressed="false">🖼️ Grande galerie : masquée</button>
+<button type="button" class="menu-button" id="btn-grande-galerie" aria-pressed="true">🖼️ Grande galerie : affichée</button>
 <button type="button" class="menu-button" id="btn-galeries-blocs" aria-pressed="false">🖼️ Galeries des catégories : masquées</button></p>
 
 ### Flux
@@ -31,3 +31,9 @@ Galeries de l'accueil :
 ### Notifications
 
 La cloche 🔔 en haut de la page ouvre le panneau des notifications.
+
+### Réinitialiser
+
+Remet le thème, le mode sobre, les galeries, le flux personnalisé et les notifications comme à la première visite. Vos favoris sont gardés.
+
+<p><button type="button" class="menu-button" data-reglage="reinitialiser">↺ Tout remettre par défaut</button></p>

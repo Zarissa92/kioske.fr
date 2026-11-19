@@ -120,7 +120,7 @@ def render_galerie_plus_lus(classement: list[tuple[dict, int]], previews: dict[s
     titre_galerie = "Les + vus " + ("de la semaine" if jours == 7 else f"des {jours} derniers jours")
     return (
         '<div class="galerie-plus-lus">'
-        f'<h2 class="galerie-plus-lus-titre">{titre_galerie}</h2>'
+        f'<h2 class="galerie-titre">{titre_galerie}</h2>'
         f'<section class="galerie-slider" aria-label="{titre_galerie.replace("+", "plus")}">'
         '<button class="galerie-arrow-left" type="button" aria-label="Défiler vers la gauche">&lt;</button>'
         f'<div class="galerie">{"".join(cartes)}</div>'
@@ -180,8 +180,11 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> str:
       # Ajouter une seule fois le script de retour, pas une fois par carte
     script_galerie = ""   # galerie et repli d'images : dans le bundle commun (javascript.py)
 
+    # Titre visible, dans un bloc qui le masque avec la galerie (interrupteur « Grande galerie » des Paramètres)
     html = f"""
-    <section class="galerie-slider galerie-principale" aria-label="12 derniers articles">
+    <div class="galerie-derniers">
+    <h2 class="galerie-titre">Les derniers articles</h2>
+    <section class="galerie-slider galerie-principale" aria-label="Les derniers articles">
       <button class="galerie-arrow-left" type="button" aria-label="Défiler vers la gauche">
         &lt;
       </button>
@@ -194,6 +197,7 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> str:
         &gt;
       </button>
     </section>
+    </div>
 
     {script_galerie}
     """

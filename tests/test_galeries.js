@@ -46,7 +46,7 @@ const { attendre, charger, clic, panneauOuvert, poserHistorique, surAccueil, sui
   t.verif('la flèche > fait défiler', gal.scrollLeft === 500, '(' + gal.scrollLeft + ')');
   clic(w, bloc.querySelector('.galerie-arrow-left'));
   t.verif('la flèche < revient', gal.scrollLeft === 250, '(' + gal.scrollLeft + ')');
-  t.verif('la grande galerie n\'a pas bougé', d.querySelector('main > .galerie-slider .galerie').scrollLeft === 0);
+  t.verif('la grande galerie n\'a pas bougé', d.querySelector('main .galerie-principale .galerie').scrollLeft === 0);
   clic(w, bloc.querySelector('a.galerie-carte')); await attendre(300);
   const carte2 = d.querySelector('.carte-ouverte');
   t.verif('un clic sur une vignette ouvre l\'article', carte2 && !carte2.hidden && w.history.state.carte);

@@ -139,6 +139,7 @@ parcours des visiteurs dans jsdom, sans navigateur, sur les pages de `build/` :
 | `test_styles.js` | Non-régression des styles : style calculé de chaque élément de l'accueil et d'un article, dans les 7 thèmes, comparé à `tests/reference/styles.json`. Après une modification voulue : `node tests/test_styles.js --mettre-a-jour`. Ne voit ni les cartes créées par JavaScript, ni `:hover`, ni les largeurs d'écran. |
 | `test_partage_menu.js` | Bouton 📤 des pages du Menu : partage de l'adresse (sans paramètre) et du titre de la page. |
 | `test_parametres.js` | `/?flux=personnaliser` ouvre le panneau de personnalisation sur l'accueil ; page Paramètres : lien de personnalisation, interrupteurs des galeries (affichage et mémorisation). |
+| `test_reinitialiser.js` | Bouton « Tout remettre par défaut » des Paramètres : confirmation au premier clic, réglages effacés au second ; favoris, notifications reçues et éléments vus gardés. |
 | `test_menu.js` | Barre : bouton Menu vers `/menu/`, absence du menu ⚙️ et de son bouton. |
 | `test_sobre.js` | Mode sobre : activation, mémorisation, feuille de style, pluie retirée. |
 | `test_menu_pages.js` | Pages statiques : index et document du Menu (sommaire, document actif, retour), code de conduite, barre du haut identique à l'accueil. |
@@ -252,6 +253,7 @@ jusqu'à la ligne `[…]` suivante. Une source sans catégorie tombe dans le blo
   lui qui s'affiche, sans pluie. Les règles sont dans la section « Thèmes » de `kioske/style.css`.
 - **Pluie matricielle** : colonnes créées par `static/pluie.js`, chargé par `theme.js` seulement pour un thème avec `pluie = oui` (et hors mode sobre). Signes affichés par CSS depuis un attribut ; les règles CSS restent dans les feuilles de thème.
   La page ne contient aucun texte japonais (les navigateurs ne proposent plus de la traduire).
+- **Tout remettre par défaut** (page Paramètres, bouton `[data-reglage="reinitialiser"]`, `static/theme.js`) : efface les réglages de ce navigateur (liste `REGLAGES` : thème, mode sobre, galeries, flux personnalisé et sources connues avec lui, interrupteurs des notifications), puis recharge la page. Deux clics : le premier demande confirmation sur le bouton (pas de fenêtre de dialogue), sinon il revient à son texte après 5 s. **Gardés** : favoris, notifications reçues, éléments vus ou effacés, sources déjà annoncées. L'autorisation des notifications du navigateur reste (le site ne peut pas la retirer). Un nouveau réglage stocké doit être ajouté à `REGLAGES`.
 - **Mode sobre** (page Paramètres, bouton `[data-reglage="sobre"]`, clé `localStorage` `kioske-sobre` : `1` activé, `0` coupé) :
   pas de pluie, pas de halo (`text-shadow`, `box-shadow`), pas d'animation, pas de reflet des favoris. `theme.js`
   pose `data-sobre` sur `<html>` dès le `<head>` et ajoute la feuille `static/style_sobre.css` (désactivable,
@@ -278,8 +280,9 @@ jusqu'à la ligne `[…]` suivante. Une source sans catégorie tombe dans le blo
   - Mêmes vignettes que la grande galerie (halo de `style_favoris.css`) ; un article sans image montre son titre.
   - Tests : classe `PlusLus` de `tests/test_python.py`.
 - **Galerie horizontale** (grande galerie) : les 12 derniers articles ayant une image. Les flèches < et > font
-  défiler au survol. **Masquée par défaut** depuis le 2026-11-19 : « Les + vus » la remplace ; elle se réaffiche
-  dans les Paramètres.
+  défiler au survol. Titre visible « Les derniers articles ». Affichée par défaut, sous « Les + vus » ; les deux se
+  masquent dans les Paramètres, et leur affichage par défaut se règle dans `kioske.cfg` (`galerie_plus_lus`,
+  `grande_galerie`, `galeries_blocs`).
   Les flèches prennent les couleurs du thème (fond, bordure, survol) : règle `.galerie-arrow-left/right` dans chaque `kioske/style_<thème>.css`.
 - **Barre du haut sur petit écran** : sous 768 px, elle passe en flex (marque et boutons, puis la recherche sur sa propre ligne). Règle dans le bloc `@media (max-width: 768px)` de chaque `kioske/style_<thème>.css`.
 - **Galerie des blocs de catégorie** : dans chaque bloc de l'accueil, entre le titre et les étiquettes, une

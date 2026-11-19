@@ -82,6 +82,13 @@ JOURNAL_ACCES = Path(CFG.get("site", "plus_lus_journal", fallback="").strip() or
 PLUS_LUS_JOURS = entier_opt("site", "plus_lus_jours", 7)
 PLUS_LUS_NOMBRE = entier_opt("site", "plus_lus_nombre", 10)
 IP_JAMAIS_COMPTEES = CFG.get("serveur", "ip_jamais_bannies", fallback="")
+# Galeries de l'accueil affichées par défaut (1) ou masquées (0), avant tout choix du visiteur dans Paramètres.
+# Écrites dans la page (kioske/themes.py), appliquées par static/theme.js.
+GALERIES_DEFAUT = {
+    "plus_lus": entier_opt("site", "galerie_plus_lus", 1) == 1,
+    "grande": entier_opt("site", "grande_galerie", 0) == 1,
+    "blocs": entier_opt("site", "galeries_blocs", 0) == 1,
+}
 
 
 
