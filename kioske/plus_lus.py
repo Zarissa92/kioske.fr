@@ -3,7 +3,10 @@
 Aucun pistage n'est ajouté au site : le serveur tient déjà ce journal (sécurité, robots). Le build le relit
 à chaque passage (toutes les 30 min avec le timer) et en tire un classement :
 
-- requêtes « GET /articles/<id>-<titre>/ » servies (code 200), sur les `jours` derniers jours ;
+- seules les cartes ouvertes comptent : « GET /articles/<id>-<titre>/?carte=1 », la requête que fait
+  kioske/js/carte_ouverte.js en ouvrant la carte. Une page chargée sans ce marqueur (robot, aperçu de lien
+  d'un réseau social, visite directe) ne compte pas. Réponse servie (200) ou déjà en cache (304) ;
+- sur les `jours` derniers jours ;
 - une adresse IP compte une fois par article (un visiteur qui revient ne fait pas monter l'article) ;
 - robots qui se déclarent (GPTBot, Googlebot…) et adresses de `ip_jamais_bannies` (kioske.cfg : le serveur,
   le réseau local) retirés ;
@@ -26,7 +29,8 @@ from pathlib import Path
 # Une ligne du format « combined » de nginx :
 # 1.2.3.4 - - [19/Nov/2026:10:00:00 +0100] "GET /articles/abc-titre/ HTTP/2.0" 200 1234 "referer" "agent"
 LIGNE = re.compile(r'^(\S+) \S+ \S+ \[([^\]]+)\] "GET (\S+) [^"]*" (\d{3}) \S+ "[^"]*" "([^"]*)"')
-ADRESSE_ARTICLE = re.compile(r"^/articles/([0-9a-f]{12})-[a-z0-9-]*/(?:index\.html)?(?:\?.*)?$")
+ADRESSE_ARTICLE = re.compile(r"^/articles/([0-9a-f]{12})-[a-z0-9-]*/(?:index\.html)?\?(?:[^#]*&)?carte=1(?:&[^#]*)?$")
+CODES_VUS = {"200", "304"}   # 304 : la carte déjà en cache dans le navigateur, revalidée
 ROBOTS = re.compile(r"bot|crawl|spider|slurp|preview|fetch|python|curl|wget|httpx|scrapy", re.I)
 # Date de nginx (« 19/Nov/2026:10:00:00 +0100 »), mois toujours en anglais. Lue sans strptime : « %b » dépend
 # de la langue du système, et un serveur en français ne reconnaîtrait aucun mois.
@@ -86,7 +90,7 @@ def compter(journal: Path, jours: int, ips_exclues: str = "", maintenant: dateti
                     if "/articles/" not in ligne:
                         continue
                     m = LIGNE.match(ligne)
-                    if not m or m.group(4) != "200" or ROBOTS.search(m.group(5)):
+                    if not m or m.group(4) not in CODES_VUS or ROBOTS.search(m.group(5)):
                         continue
                     article = ADRESSE_ARTICLE.match(m.group(3))
                     if not article:

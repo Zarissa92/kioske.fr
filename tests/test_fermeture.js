@@ -4,7 +4,10 @@ const { attendre, charger, clic, touche, panneauOuvert, poserHistorique, surAccu
 
 (async () => {
   const t = suite('Fermeture des panneaux et de la carte');
-  const { w, d, erreurs } = charger('index.html', '/');
+  const demandes = [];   // adresses demandées par la page (fetch)
+  const { w, d, erreurs } = charger('index.html', '/', { avant: (f) => {
+    const original = f.fetch; f.fetch = (a, o) => { demandes.push(String(a)); return original(a, o); };
+  } });
   await attendre(300);
   poserHistorique(w);
   const btnCat = d.querySelector('.titre-panneau[data-category-name]');
@@ -35,6 +38,8 @@ const { attendre, charger, clic, touche, panneauOuvert, poserHistorique, surAccu
   clic(w, lien); await attendre(300);
   const carte = d.querySelector('.carte-ouverte');
   t.verif('un clic sur une carte ouvre l\'article', carte && !carte.hidden && w.history.state.carte);
+  t.verif('la carte est demandée avec le marqueur ?carte=1 (compte pour « Les + vus »)',
+    demandes.some(a => /^\/articles\/[^?]+\?carte=1$/.test(a)), demandes.filter(a => a.startsWith('/articles/')).join(' '));
   const retour = carte.querySelector('.btn-retour');
   clic(w, retour); clic(w, retour); await attendre();
   t.verif('double appui sur « ← Retour » : le panneau est toujours là', carte.hidden && panneauOuvert(d) && panneauOuvert(d).id === idCat);

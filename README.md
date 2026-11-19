@@ -269,8 +269,11 @@ jusqu'à la ligne `[…]` suivante. Une source sans catégorie tombe dans le blo
 - **Galerie « Les + vus de la semaine »** (`kioske/plus_lus.py`, `render_galerie_plus_lus()` dans `kioske/rendu.py`) :
   en haut de l'accueil, au-dessus de la grande galerie, avec son titre visible. Les 10 articles les plus consultés
   ces 7 derniers jours, du plus vu au moins vu, recalculés à chaque build (toutes les 30 min avec le timer).
-  - Source : le journal d'accès de nginx que le serveur tient déjà (aucun pistage ajouté au site). Comptent les
-    `GET /articles/<id>-<titre>/` servis (200) ; une adresse IP compte une fois par article ; robots déclarés et
+  - Source : le journal d'accès de nginx que le serveur tient déjà (aucun pistage ajouté au site). **Seules les
+    cartes ouvertes comptent** : `carte_ouverte.js` charge la carte par `/articles/<id>-<titre>/?carte=1` (même
+    requête qu'avant, avec un marqueur ; nginx sert la même page). Une page chargée sans ce marqueur (robot, aperçu
+    de lien d'un réseau social, visite directe) ne compte pas. Réponse 200 ou 304 (carte déjà en cache) ; une
+    adresse IP compte une fois par article ; robots déclarés et
     adresses de `ip_jamais_bannies` retirés ; seuls les articles encore affichés sont gardés. Journal du jour et
     archives tournées (`.1`, `.gz`) lus ; dates de nginx lues sans dépendre de la langue du système.
   - Réglages (`kioske.cfg`, `[site]`) : `plus_lus_journal` (vide : `/var/log/nginx/<domaine>.access.log`),

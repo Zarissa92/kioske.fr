@@ -11,8 +11,11 @@ function articleDuSite(href) {
   return (u.origin === location.origin && u.pathname.startsWith('/articles/')) ? u : null;
 }
 
+// « ?carte=1 » marque, dans le journal du serveur, une carte réellement ouverte : seules ces requêtes comptent pour
+// la galerie « Les + vus » (kioske/plus_lus.py). Pas de requête en plus : c'est celle qui charge la carte.
+// nginx sert la même page (les règles regardent l'adresse sans les paramètres).
 function chargerCarte(u) {
-  return fetch(u.pathname)
+  return fetch(u.pathname + '?carte=1')
     .then(r => {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       return r.text();

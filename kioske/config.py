@@ -78,7 +78,25 @@ DELAI_ECHEC = entier("veille", "delai_nouvel_essai_heures") * 3600  # secondes
 
 GALERIE_PANNEAU = entier_opt("site", "galerie_panneau", 1)
 # Galerie « Les plus lus » (kioske/plus_lus.py) : journal d'accès de nginx, période et nombre d'articles.
-JOURNAL_ACCES = Path(CFG.get("site", "plus_lus_journal", fallback="").strip() or f"/var/log/nginx/{DOMAINE}.access.log")
+JOURNAL_PAR_DEFAUT = Path(f"/var/log/nginx/{DOMAINE}.access.log")
+
+
+def journal_acces(valeur_cfg: str) -> Path:
+    """Chemin du journal lu par « Les + vus ». Vide : celui de nginx pour le domaine. Une valeur qui n'est pas un
+    chemin complet (ex. « 1 », pris pour un interrupteur) est ignorée, avec un avertissement : la galerie se règle
+    par galerie_plus_lus, pas par cette clé."""
+    texte = valeur_cfg.strip()
+    if not texte:
+        return JOURNAL_PAR_DEFAUT
+    if not texte.startswith("/"):
+        print(f"   ! {CONFIG.name} : plus_lus_journal = « {texte} » n'est pas un chemin (il doit commencer par /) : "
+              f"journal par défaut ({JOURNAL_PAR_DEFAUT}). Pour afficher ou masquer la galerie : galerie_plus_lus.",
+              flush=True)
+        return JOURNAL_PAR_DEFAUT
+    return Path(texte)
+
+
+JOURNAL_ACCES = journal_acces(CFG.get("site", "plus_lus_journal", fallback=""))
 PLUS_LUS_JOURS = entier_opt("site", "plus_lus_jours", 7)
 PLUS_LUS_NOMBRE = entier_opt("site", "plus_lus_nombre", 10)
 IP_JAMAIS_COMPTEES = CFG.get("serveur", "ip_jamais_bannies", fallback="")

@@ -622,18 +622,21 @@ class PlusLus(unittest.TestCase):
         from datetime import datetime, timezone
         from kioske.plus_lus import compter
         A, B = "/articles/aaaaaaaaaaaa-un-titre-11111111/", "/articles/bbbbbbbbbbbb-autre-22222222/"
+        C = "?carte=1"   # marqueur d'une carte ouverte (kioske/js/carte_ouverte.js)
         self.journal.write_text(
-            self.ligne("1.1.1.1", "18/Nov/2026:10:00:00", A)
-            + self.ligne("1.1.1.1", "18/Nov/2026:11:00:00", A)                      # même visiteur : une fois
-            + self.ligne("2.2.2.2", "18/Nov/2026:10:00:00", A + "?from=%2F")         # variante de l'adresse
-            + self.ligne("3.3.3.3", "18/Nov/2026:10:00:00", A + "index.html")
-            + self.ligne("4.4.4.4", "18/Nov/2026:10:00:00", A, agent="GPTBot/1.0")   # robot
-            + self.ligne("5.5.5.5", "18/Nov/2026:10:00:00", A, code=404)             # page absente
-            + self.ligne("127.0.0.1", "18/Nov/2026:10:00:00", A)                     # serveur (ip_jamais_bannies)
-            + self.ligne("6.6.6.6", "01/Nov/2026:10:00:00", B)                       # trop ancien
+            self.ligne("1.1.1.1", "18/Nov/2026:10:00:00", A + C)
+            + self.ligne("1.1.1.1", "18/Nov/2026:11:00:00", A + C)                  # même visiteur : une fois
+            + self.ligne("2.2.2.2", "18/Nov/2026:10:00:00", A + C, code=304)        # carte déjà en cache
+            + self.ligne("3.3.3.3", "18/Nov/2026:10:00:00", A + "index.html" + C)
+            + self.ligne("8.8.8.8", "18/Nov/2026:10:00:00", A)                      # page sans carte : ne compte pas
+            + self.ligne("9.9.9.9", "18/Nov/2026:10:00:00", A + "?from=%2F")        # idem
+            + self.ligne("4.4.4.4", "18/Nov/2026:10:00:00", A + C, agent="GPTBot/1.0")   # robot
+            + self.ligne("5.5.5.5", "18/Nov/2026:10:00:00", A + C, code=404)        # page absente
+            + self.ligne("127.0.0.1", "18/Nov/2026:10:00:00", A + C)                # serveur (ip_jamais_bannies)
+            + self.ligne("6.6.6.6", "01/Nov/2026:10:00:00", B + C)                  # trop ancien
             + "ligne illisible\n", encoding="utf-8")
         with gzip.open(str(self.journal) + ".2.gz", "wt", encoding="utf-8") as f:   # archive tournée
-            f.write(self.ligne("7.7.7.7", "17/Nov/2026:10:00:00", B))
+            f.write(self.ligne("7.7.7.7", "17/Nov/2026:10:00:00", B + C))
         compte = compter(self.journal, 7, "127.0.0.1/8 ::1", maintenant=datetime(2026, 11, 19, tzinfo=timezone.utc))
         self.assertEqual(compte, {"aaaaaaaaaaaa": 3, "bbbbbbbbbbbb": 1})
 
@@ -701,3 +704,10 @@ class GaleriesParDefaut(unittest.TestCase):
         donnees = json.loads(SCRIPT_THEME.split('id="kioske-themes">', 1)[1].split("</script>", 1)[0].replace("<\\/", "</"))
         self.assertEqual(donnees["galeries"], GALERIES_DEFAUT)
         self.assertEqual(set(GALERIES_DEFAUT), {"plus_lus", "grande", "blocs"})
+
+    def test_chemin_du_journal(self):
+        from kioske.config import JOURNAL_PAR_DEFAUT, journal_acces
+        self.assertEqual(journal_acces(""), JOURNAL_PAR_DEFAUT)
+        self.assertEqual(journal_acces("1"), JOURNAL_PAR_DEFAUT)          # pris pour un interrupteur : ignoré
+        self.assertEqual(journal_acces("/tmp/a.log"), Path("/tmp/a.log"))
+
