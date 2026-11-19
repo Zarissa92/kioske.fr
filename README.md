@@ -172,7 +172,7 @@ serveur ; `tests/node_modules/` est à exclure de la synchronisation.
 
 ## Construire et publier
 
-Le Python est toujours celui du venv du projet : `venv_blog/` sur le PC, `venv/` sur le serveur.
+Un venv par environnement : `venv_blog/` sur le PC (test), `venv/` sur le serveur (live). Le Python est toujours celui du venv de l'environnement, jamais le Python système.
 
 **Raccourci : `bin/kioske`.** Il choisit lui-même le venv (`venv_blog/` puis `venv/`) et marche depuis
 n'importe quel dossier, sur le PC comme sur le serveur :

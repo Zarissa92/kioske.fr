@@ -844,3 +844,8 @@ Note[^1].
         html = self.rendu()
         self.assertIn("Deux lignes du même paragraphe.", html)
         self.assertIn("<br />", html)                    # nl2br : un saut de ligne reste un saut
+
+    def test_ordre_des_galeries_de_l_accueil(self):
+        source = (Path(__file__).resolve().parent.parent / "kioske" / "rendu.py").read_text(encoding="utf-8")
+        self.assertIn("galerie_html = render_galerie(items, previews) + render_galerie_plus_lus(", source)
+

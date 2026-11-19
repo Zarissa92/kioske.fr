@@ -368,7 +368,7 @@ def render_page(items: list[dict], previews: dict[str, dict],
                 )
     nuage = f'<div class="groupes">{blocs}</div>'
 
-    galerie_html = render_galerie_plus_lus(plus_lus or [], previews, jours_plus_lus) + render_galerie(items, previews)
+    galerie_html = render_galerie(items, previews) + render_galerie_plus_lus(plus_lus or [], previews, jours_plus_lus)
     # Référencement : le titre et la description décrivent le contenu réel (sources et catégories du jour).
     titre_page = NOM_SITE
     description = "Le KiosKe : une veille automatique des médias indépendants, des luttes et des voix LGBTQIA+. Une seule page statique (HTML5, CSS et JavaScript minimal), reconstruite toutes les 30 minutes sur le serveur à partir de flux RSS et de chaînes Twitch. Les images sont hébergées par le site : la page ne charge rien d'un autre site, sans publicité ni pistage."
