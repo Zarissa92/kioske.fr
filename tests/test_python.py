@@ -728,3 +728,119 @@ class ImagesDeLIndex(unittest.TestCase):
         index = (Path(__file__).resolve().parent.parent / "build" / "articles-index.json")
         if index.exists():
             self.assertNotIn('"/http', index.read_text(encoding="utf-8"))
+
+
+class EtoilesAuDessus(unittest.TestCase):
+    """Les étoiles du ♡ passent au-dessus de la carte ouverte (z-index 10000) : sinon elles sont cachées."""
+
+    def test_z_index(self):
+        import re
+        racine = Path(__file__).resolve().parent.parent
+        carte = re.search(r"\.carte-ouverte \{[^}]*z-index: (\d+)", (racine / "kioske" / "style_default.css").read_text(encoding="utf-8"))
+        etoiles = re.search(r"\.etoiles \{[^}]*z-index: (\d+)", (racine / "kioske" / "style_favoris.css").read_text(encoding="utf-8"))
+        self.assertIsNotNone(carte)
+        self.assertIsNotNone(etoiles)
+        self.assertGreater(int(etoiles.group(1)), int(carte.group(1)))
+
+
+class EspacesDuMarkdown(unittest.TestCase):
+    """Documents du Menu : lignes vides, espaces et retraits conservés ; listes et blocs de code inchangés."""
+
+    def test_lignes_vides_en_trop(self):
+        from kioske.menu import _html_du_markdown
+        html = _html_du_markdown("Un\n\n\n\nDeux")
+        self.assertEqual(html.count('class="menu-espace"'), 2)   # 3 lignes vides : séparation + 2 espaces
+        self.assertIn("<p>Un</p>", html)
+        self.assertIn("<p>Deux</p>", html)
+
+    def test_espaces_et_retrait_gardes(self):
+        from kioske.menu import _html_du_markdown
+        html = _html_du_markdown("Premier   mot\n    indenté")
+        self.assertIn("Premier   mot", html)
+        self.assertIn("    indenté", html)
+        self.assertNotIn("<br />\n", html)
+
+    def test_listes_et_code_inchanges(self):
+        from kioske.menu import _html_du_markdown
+        html = _html_du_markdown("- a\n  - sous\n\n```\nx\n\n\ny\n```\n")
+        self.assertIn("<li>sous</li>", html)
+        self.assertIn("x\n\n\ny", html)        # le bloc de code garde ses lignes vides telles quelles
+        self.assertNotIn("menu-espace", html)
+
+
+class FonctionsDuMarkdown(unittest.TestCase):
+    """Chaque fonction du Markdown des documents du Menu, rendue dans le pipeline réel (_ameliorer compris)."""
+
+    EXEMPLE = """# Titre
+
+Texte avec **gras**, *italique*, `code` et [un lien](https://ex.org) et [interne](/menu/).
+Deux lignes du même paragraphe.
+
+- niveau un
+  - niveau deux
+    - niveau trois
+- retour
+
+1. premier
+2. second
+
+> une citation
+
+| colonne a | colonne b |
+|---|---|
+| 1 | 2 |
+
+```python
+print(1)
+```
+
+![Une photo](photo.png)
+
+Note[^1].
+
+[^1]: la note.
+"""
+
+    def rendu(self):
+        from kioske.menu import _ameliorer, _html_du_markdown
+        return _ameliorer(_html_du_markdown(self.EXEMPLE), "/menu/")
+
+    def test_titres_gras_italique_code(self):
+        html = self.rendu()
+        self.assertIn('<h1 id="titre">Titre</h1>', html)
+        self.assertIn("<strong>gras</strong>", html)
+        self.assertIn("<em>italique</em>", html)
+        self.assertIn("<code>code</code>", html)
+
+    def test_liens_externes_et_internes(self):
+        html = self.rendu()
+        self.assertIn('href="https://ex.org"', html)
+        self.assertIn('target="_blank"', html)
+        self.assertIn('href="/menu/"', html)
+
+    def test_listes_et_sous_listes(self):
+        html = self.rendu()
+        self.assertEqual(html.count("<ul>"), 3)            # liste, sous-liste, sous-sous-liste
+        self.assertIn("<ol>", html)
+        self.assertIn("<li>niveau trois</li>", html)
+
+    def test_citation_tableau_code(self):
+        html = self.rendu()
+        self.assertIn("<blockquote>", html)
+        self.assertIn("<table>", html)
+        self.assertIn('<code class="language-python">', html)
+
+    def test_image_centree_avec_legende(self):
+        html = self.rendu()
+        self.assertIn('<figure class="menu-image">', html)
+        self.assertIn("<figcaption>Une photo</figcaption>", html)
+        self.assertIn('loading="lazy"', html)            # chargement différé de l'image
+
+    def test_note_de_bas_de_page(self):
+        html = self.rendu()
+        self.assertIn('class="footnote"', html)
+
+    def test_retour_a_la_ligne_et_ancres(self):
+        html = self.rendu()
+        self.assertIn("Deux lignes du même paragraphe.", html)
+        self.assertIn("<br />", html)                    # nl2br : un saut de ligne reste un saut

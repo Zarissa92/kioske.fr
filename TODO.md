@@ -18,14 +18,6 @@ Tâches à implémenter dans les prochaines sessions.
   - `README.md` (« Cartes de partage », point « Version ») et `CHANGELOG.md`.
   - Sur le serveur : supprimer les anciennes cartes restées dans la racine web (`/srv/kioske.fr/img/previews/`, fichiers sans `-v3`), ou ajouter `img/previews` à `DOSSIERS_PURGES` (`kioske/publication.py`) ; la publication ne les retire pas aujourd'hui.
 
-## Configuration (kioske.cfg)
-
-- **Espacements réglables** : rendre les marges et padding configurables pour permettre d'ajuster facilement le layout sans modifier le CSS :
-  - Marges du panneau principal (`.panel`)
-  - Espacement des groupes/sections (`.groupes`, `.groupe`)
-  - Gap des éléments (cartes, étiquettes, etc.)
-
-- **Layout compacté réglable** : créer un paramètre de configuration (ex: `densité` ou `espacements`) pour passer rapidement entre différents niveaux de compacité sans retoucher le CSS en dur.
 
 ## Mise en ligne du 2026-11-19 (Menu, dispositions légales, nginx réaligné)
 
@@ -47,11 +39,11 @@ Dans cet ordre :
 - `/ressources/…` → `/menu/…` (2026-11-19).
 - `/dispositions-legales.html` → `/menu/dispositions-legales/` (2026-11-19).
 
-## fail2ban : visiteurs bannis à tort (à décider, 2026-11-19)
+## fail2ban : suites de l'assouplissement du 2026-11-19
 
-- [ ] **Jail générale `nginx-404` (Script_VPS) sur kioske.fr** : elle compte toutes les 404 du site (30 en 10 min). Un bug d'affichage (images `/https://…`, corrigé le 2026-11-19) a suffi à bannir l'administratrice. kioske.fr a déjà ses jails précises (`kioske-hors-site`, `kioske-scan`…) : retirer `kioske.fr.access.log` du `logpath` de `nginx-404`, ou n'y compter que les pages HTML.
-- [ ] **Adresses de Cloudflare dans `kioske-scan`** (`104.22.*`, `104.23.*`, `162.158.*`, `172.64.*`–`172.71.*`, `141.101.*`) : sorties partagées (app 1.1.1.1/WARP, relais privé iCloud). Un scanner derrière l'une d'elles fait bannir 30 jours tous ses utilisateurs. Pistes : ban plus court pour ces plages, ou les compter seulement dans `kioske-hors-site`.
-- [ ] **Googlebot banni** (`66.249.68.199`, `kioske-hors-site`) : nuit au référencement. Vérifier ce qu'il demandait ; `fail2ban/verifier_robots.sh` (Script_VPS) sait débannir les vrais robots de Google et Bing.
+- Fait : Cloudflare et robots de Google et Bing jamais bannis par les jails sondes, hors site et interdit (`ip_partagees`) ; bans raccourcis (sondes 7 j, hors site 1 h) ; `nginx-404` (Script_VPS) ne lit plus kioske.fr.
+- [ ] **Relais privé d'iCloud** : une partie passe aussi par Akamai et Fastly (plages très larges, non ajoutées). Apple publie la liste des sorties (`https://mask-api.icloud.com/egress-ip-ranges.csv`) : à étudier si des iPhone se font bannir.
+- [ ] **Plages Google et Bing** recopiées à la main dans `kioske.cfg` : elles changent rarement, mais à revérifier de temps en temps (listes publiées par Google et Bing). Les plages de Cloudflare : `https://www.cloudflare.com/ips/`.
 
 ## Sécurité du compte du timer (à décider)
 

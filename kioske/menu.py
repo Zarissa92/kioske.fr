@@ -113,6 +113,76 @@ def _images_differees(html: str) -> str:
     return re.sub(r'<img\b(?![^>]*\bloading=)', '<img loading="lazy"', html)
 
 
+LIGNE_DE_LISTE = re.compile(r"^(\s*)([-*+]|\d+[.)])\s+\S")
+
+
+def _sous_listes(corps: str) -> str:
+    """Les sous-puces s'écrivent avec 2, 3 ou 4 espaces : Python-Markdown n'en reconnaît qu'avec 4. Chaque retrait
+    de liste est ramené au niveau le plus proche, à 4 espaces par niveau. Les blocs de code ne changent pas."""
+    sortie: list[str] = []
+    dans_code = False
+    niveaux: list[int] = []        # retraits des niveaux ouverts, du plus externe au plus profond
+    for ligne in corps.split("\n"):
+        if re.match(r"^\s*(```|~~~)", ligne):
+            dans_code = not dans_code
+        if dans_code or not ligne.strip():
+            sortie.append(ligne)
+            continue
+        m = LIGNE_DE_LISTE.match(ligne)
+        if m:
+            retrait = len(m.group(1).expandtabs(4))
+            while niveaux and niveaux[-1] > retrait:
+                niveaux.pop()
+            if not niveaux or niveaux[-1] < retrait:
+                niveaux.append(retrait)
+            sortie.append(" " * (4 * (len(niveaux) - 1)) + ligne.lstrip())
+        else:
+            if ligne[:1] not in (" ", "\t"):
+                niveaux = []               # retour au texte sans retrait : la liste est finie
+            sortie.append(ligne)
+    return "\n".join(sortie)
+
+
+def _espaces_conserves(corps: str) -> str:
+    """Les lignes vides de plus restent visibles : chaque ligne vide en trop devient un espace (une ligne vide
+    de la page). Les blocs de code ne changent pas. Une ligne vide suffit pour séparer deux blocs, comme avant."""
+    sortie: list[str] = []
+    dans_code = False
+    vides = 0
+    for ligne in corps.split("\n"):
+        if re.match(r"^\s*(```|~~~)", ligne):
+            dans_code = not dans_code
+        if not dans_code and ligne.strip() == "":
+            vides += 1
+            continue
+        if vides:
+            sortie.append("")                       # la ligne vide qui sépare les blocs
+            for _ in range(vides - 1):              # chaque ligne vide en plus : un espace
+                sortie += ['<p class="menu-espace">&nbsp;</p>', ""]
+            vides = 0
+        sortie.append(ligne)
+    return "\n".join(sortie) + "\n"
+
+
+def _figures_images(html: str) -> str:
+    """Une image seule dans son paragraphe devient une figure centrée, avec son texte alternatif (alt) dessous.
+    Sans alt, pas de légende. Une image au milieu d'un texte reste dans le paragraphe."""
+    def figure(m: re.Match) -> str:
+        image = m.group(1)
+        alt = re.search(r'\balt="([^"]*)"', image)
+        legende = f'<figcaption>{alt.group(1)}</figcaption>' if alt and alt.group(1).strip() else ""
+        return f'<figure class="menu-image">{image}{legende}</figure>'
+    return re.sub(r'<p>\s*(<img\b[^>]*?/?>)\s*</p>', figure, html)
+
+
+def _html_du_markdown(corps: str) -> str:
+    """HTML d'un document : lignes vides et espaces conservés. Après un saut de ligne (nl2br), le retour à la
+    ligne du HTML est retiré : la feuille de style (white-space: pre-wrap, style_menu.css) garde les espaces et
+    le retrait de la ligne suivante, sans créer de ligne en plus."""
+    html = markdown.markdown(_espaces_conserves(_sous_listes(corps)), extensions=EXTENSIONS_MARKDOWN)
+    return _figures_images(html.replace("<br />\n", "<br />"))
+
+
 def _ameliorer(html: str, base: str) -> str:
     return _images_differees(_liens_externes(_images_relatives(html, base)))
 
@@ -151,7 +221,7 @@ def _meta_dossier(dossier: Path) -> dict[str, str]:
 
 def _entree(fichier: Path, parents: list[str], slug: str, racine: Path) -> dict:
     meta, corps = separer_front_matter(fichier.read_text(encoding="utf-8"))
-    html = markdown.markdown(corps, extensions=EXTENSIONS_MARKDOWN)
+    html = _html_du_markdown(corps)
     return {
         "titre": meta.get("titre") or _titre_du_nom(fichier.stem),
         "slug": slug,
@@ -252,7 +322,7 @@ def _intro(racine: Path = MENU) -> tuple[dict[str, str], str]:
     if not fichier.is_file():
         return {}, ""
     meta, corps = separer_front_matter(fichier.read_text(encoding="utf-8"))
-    return meta, _ameliorer(markdown.markdown(corps, extensions=EXTENSIONS_MARKDOWN), URL_MENU)
+    return meta, _ameliorer(_html_du_markdown(corps), URL_MENU)
 
 
 # Bouton 📤 (partage.js, comme sur les articles) : partage l'adresse de la page, ou la copie sans partage système.

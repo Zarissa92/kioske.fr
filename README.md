@@ -1,4 +1,16 @@
-# kioske.fr — 1.2.0
+# kioske.fr — 1.5.0
+
+**Version 1.5.0** (2026-11-19). Changements principaux depuis la 1.2.0 :
+
+- **Menu** (`/menu/`, ex-« Ressources ») : documents Markdown, sommaire, Paramètres, mises à jour du site, dispositions légales ; une adresse par document, Markdown avec sous-puces, images centrées et légendées, espaces conservés.
+- **Accueil** : galerie « Les + vus de la semaine » (classement d'après les cartes ouvertes, sans suivi) et « Les derniers articles » ; réglages par défaut dans `kioske.cfg` ; recherche en direct.
+- **Favoris** : animation du ♡ à l'ajout.
+- **Paramètres** : bouton « Tout remettre par défaut » (les favoris sont gardés).
+- **PWA** : raccourcis de l'app installée, page hors connexion.
+- **Cartes de partage** : police du site, image de l'article, version 3.
+- **Sécurité et serveur** : bundle JavaScript sans script en ligne, CSP stricte, jails fail2ban assouplies (adresses partagées, bans plus courts), noms de comptes retirés des fichiers suivis.
+
+Le détail jour par jour est dans `CHANGELOG.md`.
 
 Le **KiosKe** : une veille automatique des médias indépendants, des luttes et des voix LGBTQIA+.
 Pages HTML statiques (HTML5, CSS, JavaScript sans dépendance) générées toutes les 30 minutes sur le serveur
@@ -139,6 +151,7 @@ parcours des visiteurs dans jsdom, sans navigateur, sur les pages de `build/` :
 | `test_styles.js` | Non-régression des styles : style calculé de chaque élément de l'accueil et d'un article, dans les 7 thèmes, comparé à `tests/reference/styles.json`. Après une modification voulue : `node tests/test_styles.js --mettre-a-jour`. Ne voit ni les cartes créées par JavaScript, ni `:hover`, ni les largeurs d'écran. |
 | `test_partage_menu.js` | Bouton 📤 des pages du Menu : partage de l'adresse (sans paramètre) et du titre de la page. |
 | `test_parametres.js` | `/?flux=personnaliser` ouvre le panneau de personnalisation sur l'accueil ; page Paramètres : lien de personnalisation, interrupteurs des galeries (affichage et mémorisation). |
+| `test_coeur.js` | Ajout d'un favori : le ♡ pulse et six étoiles jaillissent ; pas au retrait, ni en mode sobre, ni avec « réduire les animations ». |
 | `test_reinitialiser.js` | Bouton « Tout remettre par défaut » des Paramètres : confirmation au premier clic, réglages effacés au second ; favoris, notifications reçues et éléments vus gardés. |
 | `test_menu.js` | Barre : bouton Menu vers `/menu/`, absence du menu ⚙️ et de son bouton. |
 | `test_sobre.js` | Mode sobre : activation, mémorisation, feuille de style, pluie retirée. |
@@ -253,6 +266,9 @@ jusqu'à la ligne `[…]` suivante. Une source sans catégorie tombe dans le blo
   lui qui s'affiche, sans pluie. Les règles sont dans la section « Thèmes » de `kioske/style.css`.
 - **Pluie matricielle** : colonnes créées par `static/pluie.js`, chargé par `theme.js` seulement pour un thème avec `pluie = oui` (et hors mode sobre). Signes affichés par CSS depuis un attribut ; les règles CSS restent dans les feuilles de thème.
   La page ne contient aucun texte japonais (les navigateurs ne proposent plus de la traduire).
+- **Markdown des documents du Menu** (`kioske/menu.py`) : sous-puces écrites à 2, 3 ou 4 espaces (`_sous_listes()`, ramenées à 4 par niveau) ; images seules centrées en figure avec leur texte alternatif dessous (`_figures_images()`, `figure.menu-image` dans `style_menu.css`) ; tests des fonctions dans `FonctionsDuMarkdown`.
+- **Mise en forme des documents du Menu** (`_html_du_markdown()` dans `kioske/menu.py`, `.menu-texte p` dans `style_menu.css`) : chaque ligne vide en trop devient un espace visible (`<p class="menu-espace">`) ; les espaces répétés dans une phrase et le retrait après un saut de ligne sont gardés (`white-space: pre-wrap` sur les paragraphes). Les listes et les blocs de code ne changent pas.
+- **Animation du ♡** : à l'ajout d'un favori, le cœur pulse et six étoiles violettes jaillissent autour de lui (`animerAjout()` dans `kioske/js/favoris.js`, styles dans `kioske/style_favoris.css`). Rien au retrait. Désactivée par le mode sobre et par « réduire les animations » du système.
 - **Tout remettre par défaut** (page Paramètres, bouton `[data-reglage="reinitialiser"]`, `static/theme.js`) : efface les réglages de ce navigateur (liste `REGLAGES` : thème, mode sobre, galeries, flux personnalisé et sources connues avec lui, interrupteurs des notifications), puis recharge la page. Deux clics : le premier demande confirmation sur le bouton (pas de fenêtre de dialogue), sinon il revient à son texte après 5 s. **Gardés** : favoris, notifications reçues, éléments vus ou effacés, sources déjà annoncées. L'autorisation des notifications du navigateur reste (le site ne peut pas la retirer). Un nouveau réglage stocké doit être ajouté à `REGLAGES`.
 - **Mode sobre** (page Paramètres, bouton `[data-reglage="sobre"]`, clé `localStorage` `kioske-sobre` : `1` activé, `0` coupé) :
   pas de pluie, pas de halo (`text-shadow`, `box-shadow`), pas d'animation, pas de reflet des favoris. `theme.js`
@@ -538,12 +554,12 @@ Les deux scripts testent la configuration et restaurent l'ancienne version si le
 
 | Jail | Ce qui compte | Seuil | Premier ban |
 |---|---|---|---|
-| `kioske-scan` | sonde connue : fichier caché, extension étrangère au site (`.php`, `.sql`, `.zip`, `.env`…), dossier de scanner (`/wp-…`, `/phpmyadmin`, `/admin`, `/api`, `/cgi-bin`…), en HTTP comme en HTTPS | 1 demande | 30 jours |
-| `kioske-hors-site` | chaque ligne du journal hors-site | 3 en 10 minutes | 1 jour |
+| `kioske-scan` | sonde connue : fichier caché, extension étrangère au site (`.php`, `.sql`, `.zip`, `.env`…), dossier de scanner (`/wp-…`, `/phpmyadmin`, `/admin`, `/api`, `/cgi-bin`…), en HTTP comme en HTTPS | 1 demande | 7 jours |
+| `kioske-hors-site` | chaque ligne du journal hors-site | 3 en 10 minutes | 1 heure |
 | `kioske-interdit` | requête illisible (400), autre méthode que GET/HEAD (405), envoi de données (413, 414) | 2 en un jour | 7 jours |
 | `kioske-debit` | réponse 429 (débit dépassé) | 60 en dix minutes | 1 heure (doublée à chaque récidive, 52 semaines au plus) |
 
-La durée double à chaque récidive (`bantime.increment`), jusqu'à un an. Ne comptent jamais : une réponse 200, une page d'article ou de catégorie disparue, le texte d'une recherche (ce qui suit le `?`), `sitemap.xml.gz`, et les adresses de `ip_jamais_bannies` (`kioske.cfg`, section `[serveur]` : le serveur et le réseau local par défaut).
+La durée double à chaque récidive (`bantime.increment`), jusqu'à un an. **Adresses partagées** (`ip_partagees`, `kioske.cfg`, section `[serveur]`) : les plages de Cloudflare (app 1.1.1.1 et WARP, une partie du relais privé d'iCloud) et des robots de Google et Bing ne sont jamais bannies par `kioske-scan`, `kioske-hors-site` et `kioske-interdit`, car un seul scanner derrière une adresse partagée ferait bannir tous ses utilisateurs, et les robots d'indexation font le référencement ; `kioske-debit` les bannit quand même si elles inondent le site. La jail générale `nginx-404` de Script_VPS ne lit plus le journal de kioske.fr (depuis le 2026-11-19). Ne comptent jamais : une réponse 200, une page d'article ou de catégorie disparue, le texte d'une recherche (ce qui suit le `?`), `sitemap.xml.gz`, et les adresses de `ip_jamais_bannies` (`kioske.cfg`, section `[serveur]` : le serveur et le réseau local par défaut).
 
 ```bash
 sudo fail2ban-client status kioske-scan      # bans en cours d'une jail

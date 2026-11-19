@@ -111,10 +111,17 @@ body { min-height: 100vh; }
 .menu-texte h2 { font-size: 1.3rem; margin: 1.4rem 0 0.5rem; }
 .menu-texte h3 { font-size: 1.1rem; margin: 1.2rem 0 0.4rem; }
 .menu-texte p, .menu-texte ul, .menu-texte ol { margin: 0 0 0.9rem; }
+/* Listes : le reset global met padding à 0, et les puces tombaient à gauche du texte. Le retrait garde les puces
+   à l'extérieur, et le texte des éléments se place à droite des paragraphes. */
+.menu-texte ul, .menu-texte ol { padding-left: 1.4rem; }
 .menu-texte a { color: var(--color-text-main); }
 .menu-texte img { max-width: 100%; height: auto; }
+/* Image seule dans un paragraphe : centrée, légende (texte alternatif) dessous. Voir _figures_images (menu.py). */
+.menu-texte figure.menu-image { margin: 1rem auto 1.2rem; text-align: center; }
+.menu-texte figure.menu-image img { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+.menu-texte figure.menu-image figcaption { margin-top: 0.4rem; font-size: 0.85rem; color: var(--color-light); }
 .menu-texte li { margin: 0.25rem 0; }
-.menu-texte li > ul, .menu-texte li > ol { margin: 0.3rem 0 0.2rem 1.2rem; }
+.menu-texte li > ul, .menu-texte li > ol { margin: 0.3rem 0 0.2rem 0; }   /* le retrait vient de padding-left (ci-dessus) */
 .menu-texte h2[id], .menu-texte h3[id] { scroll-margin-top: 1rem; }
 .menu-texte blockquote { margin: 0.9rem 0; padding-left: 0.8rem; border-left: 3px solid var(--color-text-accent); }
 .menu-texte pre {
@@ -152,6 +159,10 @@ body { min-height: 100vh; }
   .kioske-navbar .navbar-brand { font-size: 1.1rem; }
   .kioske-navbar .navbar-brand .flag { font-size: 1.3rem; }
 }
+
+/* Texte des documents du Menu : espaces et retraits tels qu'écrits (un saut de ligne = un <br>, voir _html_du_markdown) */
+.menu-texte p { white-space: pre-wrap; }
+.menu-texte .menu-espace { margin: 0; min-height: 1.6em; }
 
 /* Pages de texte (Menu, Paramètres) : le bloc des thèmes reste dans le flux, sans la remontée de la barre */
 .menu-texte .choix-theme { margin: 0.6rem 0 1rem; justify-content: flex-start; }

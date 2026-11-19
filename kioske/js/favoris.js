@@ -18,6 +18,36 @@ function saveFavorites(fav) {
   updateHearts();
 }
 
+// Animation du ♡ à l'ajout : il pulse et des étoiles jaillissent autour de lui. Désactivée par « réduire les
+// animations » du système et par le mode sobre. Rien n'est écrit dans la page : des éléments temporaires,
+// retirés à la fin de l'animation.
+const ETOILES = 6;
+function animerAjout(heart) {
+  if (document.documentElement.dataset.sobre === 'oui') return;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  heart.classList.remove('coeur-anime');
+  void heart.offsetWidth;   // relance l'animation si elle était déjà jouée
+  heart.classList.add('coeur-anime');
+  const r = heart.getBoundingClientRect();
+  const x = r.left + r.width / 2, y = r.top + r.height / 2;
+  const groupe = document.createElement('span');
+  groupe.className = 'etoiles';
+  groupe.style.left = x + 'px';
+  groupe.style.top = y + 'px';
+  for (let i = 0; i < ETOILES; i++) {
+    const angle = (i / ETOILES) * Math.PI * 2 + Math.random() * 0.4;
+    const distance = r.width * (1.1 + Math.random() * 0.6);
+    const etoile = document.createElement('span');
+    etoile.className = 'etoile';
+    etoile.style.setProperty('--dx', (Math.cos(angle) * distance).toFixed(1) + 'px');
+    etoile.style.setProperty('--dy', (Math.sin(angle) * distance).toFixed(1) + 'px');
+    etoile.style.animationDelay = (i * 25) + 'ms';
+    groupe.appendChild(etoile);
+  }
+  document.body.appendChild(groupe);
+  setTimeout(() => { groupe.remove(); heart.classList.remove('coeur-anime'); }, 900);
+}
+
 // Clic sur le ♡ d'un article : l'ajoute aux favoris ou l'en retire. Les données de la carte (titre,
 // image, date, site, source) sont lues dans l'article affiché.
 function toggleFavorite(event) {
@@ -29,6 +59,7 @@ function toggleFavorite(event) {
   if (favorites[articleLink]) {
     delete favorites[articleLink];
   } else {
+    animerAjout(heart);
     const carte = heart.closest('.panel-article');
     const titre = carte?.querySelector('h1')?.textContent || 'Sans titre';
     const meta = (carte?.querySelector('.meta')?.textContent || '').split(' · ');

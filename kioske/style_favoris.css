@@ -26,6 +26,36 @@ button.fav-heart.active:hover {
   color: var(--violet-light, #b57bff);
 }
 
+/* Ajout aux favoris : le ♡ pulse, puis des étoiles jaillissent autour de lui (animerAjout, favoris.js).
+   Les étoiles sont des éléments fixes posés sur la page, retirés après l'animation. */
+@keyframes coeur-pulse {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+button.fav-heart.coeur-anime { animation: coeur-pulse .45s ease-out; }
+/* Au-dessus de la carte ouverte (.carte-ouverte, z-index 10000, style_default.css) : le ♡ d'une carte ouverte
+   a ses étoiles visibles. Sans cela, elles étaient cachées par la carte. */
+.etoiles { position: fixed; width: 0; height: 0; pointer-events: none; z-index: 10010; }
+.etoile {
+  position: absolute; left: -.45rem; top: -.45rem; width: .9rem; height: .9rem;
+  background: var(--violet-light, #b57bff);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  box-shadow: 0 0 6px var(--violet-light, #b57bff);
+  opacity: 0;
+  animation: etoile-jaillit .7s ease-out forwards;
+}
+@keyframes etoile-jaillit {
+  0% { transform: translate(0, 0) scale(.2) rotate(0deg); opacity: 1; }
+  60% { opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(1.1) rotate(160deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  button.fav-heart.coeur-anime, .etoile { animation: none; }
+  .etoile { display: none; }
+}
+html[data-sobre="oui"] .etoiles, html[data-sobre="oui"] button.fav-heart.coeur-anime { display: none; animation: none; }
+
 /* Angle du dégradé de bordure. Déclaré pour pouvoir l'animer ; sans @property, la bordure reste fixe. */
 @property --bordure-angle {
   syntax: "<angle>";
