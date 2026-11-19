@@ -283,13 +283,12 @@ jusqu'à la ligne `[…]` suivante. Une source sans catégorie tombe dans le blo
   le panneau (plus d'alerte). Champ vidé : le panneau se ferme. Depuis une page d'article ou de catégorie, la
   recherche renvoie vers l'accueil (`/?q=…`), qui l'exécute. Test : `tests/test_recherche_directe.js`.
 - **Galerie « Les + vus de la semaine »** (`kioske/plus_lus.py`, `render_galerie_plus_lus()` dans `kioske/rendu.py`) :
-  en haut de l'accueil, au-dessus de la grande galerie, avec son titre visible. Les 10 articles les plus consultés
+  sur l'accueil, sous la grande galerie, avec son titre visible. Les 10 articles les plus consultés
   ces 7 derniers jours, du plus vu au moins vu, recalculés à chaque build (toutes les 30 min avec le timer).
-  - Source : le journal d'accès de nginx que le serveur tient déjà (aucun pistage ajouté au site). **Seules les
-    cartes ouvertes comptent** : `carte_ouverte.js` charge la carte par `/articles/<id>-<titre>/?carte=1` (même
-    requête qu'avant, avec un marqueur ; nginx sert la même page). Une page chargée sans ce marqueur (robot, aperçu
-    de lien d'un réseau social, visite directe) ne compte pas. Réponse 200 ou 304 (carte déjà en cache) ; une
-    adresse IP compte une fois par article ; robots déclarés et
+  - Source : le journal d'accès de nginx que le serveur tient déjà (aucun pistage ajouté au site). **Toute page
+    d'article servie compte** : une carte ouverte depuis l'accueil (`carte_ouverte.js` la charge par
+    `/articles/<id>-<titre>/?carte=1`) comme une visite directe (lien partagé, moteur de recherche, adresse tapée).
+    Réponse 200 ou 304 (déjà en cache) ; une adresse IP compte une fois par article ; robots déclarés et
     adresses de `ip_jamais_bannies` retirés ; seuls les articles encore affichés sont gardés. Journal du jour et
     archives tournées (`.1`, `.gz`) lus ; dates de nginx lues sans dépendre de la langue du système.
   - Réglages (`kioske.cfg`, `[site]`) : `plus_lus_journal` (vide : `/var/log/nginx/<domaine>.access.log`),
@@ -299,7 +298,7 @@ jusqu'à la ligne `[…]` suivante. Une source sans catégorie tombe dans le blo
   - Mêmes vignettes que la grande galerie (halo de `style_favoris.css`) ; un article sans image montre son titre.
   - Tests : classe `PlusLus` de `tests/test_python.py`.
 - **Galerie horizontale** (grande galerie) : les 12 derniers articles ayant une image. Les flèches < et > font
-  défiler au survol. Titre visible « Les derniers articles ». Affichée par défaut, sous « Les + vus » ; les deux se
+  défiler au survol. Titre visible « Les derniers articles ». En haut de l'accueil, affichée par défaut, au-dessus de « Les + vus » ; les deux se
   masquent dans les Paramètres, et leur affichage par défaut se règle dans `kioske.cfg` (`galerie_plus_lus`,
   `grande_galerie`, `galeries_blocs`).
   Les flèches prennent les couleurs du thème (fond, bordure, survol) : règle `.galerie-arrow-left/right` dans chaque `kioske/style_<thème>.css`.

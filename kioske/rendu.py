@@ -94,7 +94,7 @@ def render_galerie_bloc(categorie: str, items: list[dict], previews: dict[str, d
 
 
 def render_galerie_plus_lus(classement: list[tuple[dict, int]], previews: dict[str, dict], jours: int) -> str:
-    """Galerie « Les plus lus » de l'accueil, au-dessus de la grande galerie : les articles les plus consultés
+    """Galerie « Les plus lus » de l'accueil, sous la grande galerie : les articles les plus consultés
     (kioske/plus_lus.py), du plus lu au moins lu. Même balisage et mêmes cartes que la grande galerie ; un
     article sans image affiche son titre. Classement vide (pas de journal) : rien n'est écrit."""
     if not classement:

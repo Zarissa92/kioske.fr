@@ -628,8 +628,8 @@ class PlusLus(unittest.TestCase):
             + self.ligne("1.1.1.1", "18/Nov/2026:11:00:00", A + C)                  # même visiteur : une fois
             + self.ligne("2.2.2.2", "18/Nov/2026:10:00:00", A + C, code=304)        # carte déjà en cache
             + self.ligne("3.3.3.3", "18/Nov/2026:10:00:00", A + "index.html" + C)
-            + self.ligne("8.8.8.8", "18/Nov/2026:10:00:00", A)                      # page sans carte : ne compte pas
-            + self.ligne("9.9.9.9", "18/Nov/2026:10:00:00", A + "?from=%2F")        # idem
+            + self.ligne("8.8.8.8", "18/Nov/2026:10:00:00", A)                      # visite directe : compte
+            + self.ligne("9.9.9.9", "18/Nov/2026:10:00:00", A + "?from=%2F")        # idem, autre adresse
             + self.ligne("4.4.4.4", "18/Nov/2026:10:00:00", A + C, agent="GPTBot/1.0")   # robot
             + self.ligne("5.5.5.5", "18/Nov/2026:10:00:00", A + C, code=404)        # page absente
             + self.ligne("127.0.0.1", "18/Nov/2026:10:00:00", A + C)                # serveur (ip_jamais_bannies)
@@ -638,7 +638,9 @@ class PlusLus(unittest.TestCase):
         with gzip.open(str(self.journal) + ".2.gz", "wt", encoding="utf-8") as f:   # archive tournée
             f.write(self.ligne("7.7.7.7", "17/Nov/2026:10:00:00", B + C))
         compte = compter(self.journal, 7, "127.0.0.1/8 ::1", maintenant=datetime(2026, 11, 19, tzinfo=timezone.utc))
-        self.assertEqual(compte, {"aaaaaaaaaaaa": 3, "bbbbbbbbbbbb": 1})
+        # 1.1.1.1 compté une fois ; 2.2.2.2 (304), 3.3.3.3, 8.8.8.8 et 9.9.9.9 comptés ; robot, 404, serveur et
+        # trop ancien exclus
+        self.assertEqual(compte, {"aaaaaaaaaaaa": 5, "bbbbbbbbbbbb": 1})
 
     def test_sans_journal(self):
         from kioske.plus_lus import compter

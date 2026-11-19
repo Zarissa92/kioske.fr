@@ -1,27 +1,54 @@
 /* Thème « trans » : seulement ce qui le différencie de style_default.css (variables et ajouts). */
 :root {
+  /* Couleurs du thème trans (drapeau) : cœur cyan, halo rose. Les néons et le texte en dépendent. */
+  --neon-coeur: #7FE5FF;
+  --neon-halo: #F5A9B8;
+  --neon-coeur-rgb: 127, 229, 255;
+  --neon-halo-rgb: 245, 169, 184;
+  /* Le violet des favoris (style_default.css, style_favoris.css) devient rose dans ce thème. */
+  --violet-light: var(--neon-halo);
   --tag-survol: var(--color-text-main);   /* les néons gardent le survol de leur couleur */
   --panneau-fond: rgba(37, 37, 37, 0.7);
   --overflow-y-galerie: hidden;
-  --border-color-groupe-h2-titre-panneau: #7FE5FF;
+  --border-color-groupe-h2-titre-panneau: var(--neon-coeur);
   --color-groupe-h2-titre-panneau: var(--neon-coeur);
-  --text-shadow-groupe-h2-titre-panneau: 0 0 6px #7FE5FF, 0 0 12px #7FE5FF, 0 0 24px #7FE5FF, 0 0 36px rgba(127, 229, 255, 0.8);
-  --text-shadow-groupe-h2-titre-panneau-hove: 0 0 10px #7FE5FF, 0 0 20px #7FE5FF, 0 0 40px #7FE5FF, 0 0 60px rgba(127, 229, 255, 0.8);
-  --border-color-groupe-h3-titre-panneau: #7FE5FF;
+  --text-shadow-groupe-h2-titre-panneau: 0 0 6px var(--neon-coeur), 0 0 12px var(--neon-coeur), 0 0 24px var(--neon-halo), 0 0 36px rgba(var(--neon-halo-rgb), 0.8);
+  --text-shadow-groupe-h2-titre-panneau-hove: 0 0 10px var(--neon-coeur), 0 0 20px var(--neon-coeur), 0 0 40px var(--neon-halo), 0 0 60px rgba(var(--neon-halo-rgb), 0.8);
+  --border-color-groupe-h3-titre-panneau: var(--neon-coeur);
   --color-groupe-h3-titre-panneau: #FFF;
-  --text-shadow-groupe-h3-titre-panneau: 0 0 6px #7FE5FF, 0 0 12px #7FE5FF, 0 0 24px #7FE5FF, 0 0 36px rgba(127, 229, 255, 0.8);
-  --text-shadow-groupe-h3-titre-panneau-hove: 0 0 10px #7FE5FF, 0 0 20px #7FE5FF, 0 0 40px #7FE5FF, 0 0 60px rgba(127, 229, 255, 0.8);
+  --text-shadow-groupe-h3-titre-panneau: 0 0 6px var(--neon-coeur), 0 0 12px var(--neon-coeur), 0 0 24px var(--neon-halo), 0 0 36px rgba(var(--neon-halo-rgb), 0.8);
+  --text-shadow-groupe-h3-titre-panneau-hove: 0 0 10px var(--neon-coeur), 0 0 20px var(--neon-coeur), 0 0 40px var(--neon-halo), 0 0 60px rgba(var(--neon-halo-rgb), 0.8);
   --background-html-body: var(--bg);
-  --color-text-accent: #F5A9B8;
-  --color-text-main: #7FE5FF;
+  --color-text-accent: var(--neon-halo);
+  --color-text-main: var(--neon-coeur);
 }
 
-/* Titres des sous-catégories (h2.titre-panneau dans .sous-categorie) : texte et bordures en #ff33cc */
+/* Titres des sous-catégories (h2.titre-panneau dans .sous-categorie) : texte blanc, bordure rose (ex-violet #ff33cc) */
 .groupe .sous-categorie > h2.titre-panneau {
   color: #FFF;
-  border-color: #ff33cc;
+  border-color: var(--neon-halo);
 }
 
 /* Bordures des titres de panneaux : néon (repos et survol) */
-.groupe h2.titre-panneau, .groupe h3.titre-panneau { box-shadow: 0 0 6px #7FE5FF, 0 0 14px #7FE5FF, inset 0 0 8px rgba(127, 229, 255, 0.4); }
-.groupe h2.titre-panneau:hover, .groupe h3.titre-panneau:hover { box-shadow: 0 0 10px #7FE5FF, 0 0 24px #7FE5FF, inset 0 0 12px rgba(127, 229, 255, 0.5); }
+.groupe h2.titre-panneau, .groupe h3.titre-panneau { box-shadow: 0 0 6px var(--neon-coeur), 0 0 14px var(--neon-halo), inset 0 0 8px rgba(var(--neon-coeur-rgb), 0.4); }
+.groupe h2.titre-panneau:hover, .groupe h3.titre-panneau:hover { box-shadow: 0 0 10px var(--neon-coeur), 0 0 24px var(--neon-halo), inset 0 0 12px rgba(var(--neon-coeur-rgb), 0.5); }
+
+/* Néon des grands panneaux qui s'ouvrent : cœur bleu, halo rose (comme les titres). */
+.categorie-panneau { box-shadow: 0 0 8px var(--neon-coeur), 0 0 22px var(--neon-halo), inset 0 0 10px rgba(var(--neon-coeur-rgb), 0.25); }
+/* Zone principale de l'accueil (la grande zone qui contient les galeries et les étiquettes) : même néon. */
+body[data-page="accueil"] > main.panel { box-shadow: 0 0 8px var(--neon-coeur), 0 0 22px var(--neon-halo), inset 0 0 10px rgba(var(--neon-coeur-rgb), 0.25); }
+
+/* Favoris : le violet devient rose (bouton ♡ de la barre, cœur actif, fond du cœur). */
+.btn-favs {
+  color: var(--neon-halo);
+  border-color: var(--neon-halo);
+  box-shadow: 0 0 2px var(--neon-halo), 0 0 6px rgba(var(--neon-halo-rgb), 0.35), inset 0 0 3px rgba(var(--neon-halo-rgb), 0.25);
+}
+button.fav-heart.active { background: rgba(var(--neon-halo-rgb), .25); }
+
+/* Libellés des galeries (« Les derniers articles », « Les + vus… ») et marque kioske.fr : texte blanc, néon cyan. */
+.galerie-titre, .navbar-brand {
+  color: #FFF;
+  text-shadow: 0 0 6px var(--neon-coeur), 0 0 12px var(--neon-coeur), 0 0 24px var(--neon-coeur), 0 0 36px rgba(var(--neon-coeur-rgb), 0.8);
+}
+
