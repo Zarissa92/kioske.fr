@@ -62,3 +62,9 @@ index.avant_*.html
 # Éditeurs et notes personnelles
 CLAUDE.md
 menu/Mastodon.md
+menu/.obsidian/
+menu/.obsidian/app.json
+menu/.obsidian/appearance.json
+menu/.obsidian/core-plugins.json
+menu/.obsidian/workspace.json
+menu/Fonctionnement.md
