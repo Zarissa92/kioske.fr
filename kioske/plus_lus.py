@@ -79,7 +79,8 @@ def compter(journal: Path, jours: int, ips_exclues: str = "", maintenant: dateti
     fichiers = sorted(journal.parent.glob(journal.name + "*")) if journal.parent.is_dir() else []
     if not fichiers:
         return {}
-    limite = (maintenant or datetime.now(timezone.utc)) - timedelta(days=jours)
+    fin = maintenant or datetime.now(timezone.utc)
+    limite = fin - timedelta(days=jours)     # fenêtre : [fin - jours, fin] (les lignes postérieures à fin sont ignorées)
     reseaux = _reseaux(ips_exclues)
     visiteurs: dict[str, set[str]] = defaultdict(set)
     for fichier in fichiers:
@@ -97,7 +98,7 @@ def compter(journal: Path, jours: int, ips_exclues: str = "", maintenant: dateti
                     quand = lire_date(m.group(2))
                     if quand is None:
                         continue
-                    if quand < limite or _exclue(m.group(1), reseaux):
+                    if quand < limite or quand > fin or _exclue(m.group(1), reseaux):
                         continue
                     visiteurs[article.group(1)].add(m.group(1))
         except (OSError, EOFError) as e:

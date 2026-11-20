@@ -146,7 +146,7 @@ EMPLACEMENTS="$(cat <<'NGINX'
     }
 
     # Pages et données à la racine : accueil, page des flux, flux RSS, plan du site, index de recherche
-    location ~ ^/(index\.html|rss\.html|hors-ligne\.html|code-de-conduite\.html|rss\.xml|sitemap\.xml|robots\.txt|articles-index\.json)$ {
+    location ~ ^/(index\.html|rss\.html|hors-ligne\.html|code-de-conduite\.html|rss\.xml|plus-lus\.xml|sitemap\.xml|robots\.txt|articles-index\.json)$ {
         limit_req zone=kioske_pages burst=40 nodelay;
         limit_req zone=kioske_robots burst=10 nodelay;
         limit_req zone=kioske_robots_ia burst=3 nodelay;

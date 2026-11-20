@@ -6,6 +6,7 @@ import json
 import re
 import sys
 import unittest
+import unittest.mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -851,3 +852,143 @@ Note[^1].
         source = (Path(__file__).resolve().parent.parent / "kioske" / "rendu.py").read_text(encoding="utf-8")
         self.assertIn("galerie_html = render_galerie(items, previews) + render_galerie_plus_lus(", source)
 
+
+
+class FenetreDuClassement(unittest.TestCase):
+    """Les visites postérieures à la fin de la fenêtre ne comptent pas (vue jour par jour du script d'analyse)."""
+
+    def test_pas_de_visite_apres_la_fin(self):
+        import tempfile
+        from datetime import datetime, timedelta, timezone
+        from kioske.plus_lus import compter
+        A = "/articles/aaaaaaaaaaaa-un-titre-11111111/"
+        fin = datetime(2026, 11, 18, 23, 59, 59, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as dossier:
+            journal = Path(dossier) / "kioske.fr.access.log"
+            journal.write_text(
+                f'1.1.1.1 - - [18/Nov/2026:10:00:00 +0000] "GET {A} HTTP/2.0" 200 10 "-" "Mozilla/5.0"\n'
+                f'2.2.2.2 - - [19/Nov/2026:10:00:00 +0000] "GET {A} HTTP/2.0" 200 10 "-" "Mozilla/5.0"\n',
+                encoding="utf-8")
+            self.assertEqual(compter(journal, 1, "", maintenant=fin), {"aaaaaaaaaaaa": 1})
+
+
+class FluxDesPlusLus(unittest.TestCase):
+    """Flux plus-lus.xml : le classement dans son ordre, sans tri par date ; retiré quand il n'y a pas de classement."""
+
+    def setUp(self):
+        import tempfile
+        import kioske.construction as c
+        self.c = c
+        self.tmp = tempfile.TemporaryDirectory()
+        self.build_origine = (c.BUILD, c.DATA, c.PLUS_LUS_INSTANTANE)
+        c.BUILD = Path(self.tmp.name)
+        c.DATA = Path(self.tmp.name) / "data"          # pas l'instantané réel de data/
+        c.PLUS_LUS_INSTANTANE = c.DATA / "plus-lus-semaine.json"
+
+    def tearDown(self):
+        self.c.BUILD, self.c.DATA, self.c.PLUS_LUS_INSTANTANE = self.build_origine
+        self.tmp.cleanup()
+
+    def test_ordre_du_classement(self):
+        from datetime import datetime, timezone
+        from kioske.rss import render_rss
+        plus_recent = {"title": "Récent", "source": "S", "link": "https://a.org/r", "date": datetime(2026, 11, 19, tzinfo=timezone.utc),
+                       "summary": "", "content": ""}
+        plus_ancien = {"title": "Ancien", "source": "S", "link": "https://a.org/a", "date": datetime(2026, 1, 1, tzinfo=timezone.utc),
+                       "summary": "", "content": ""}
+        xml = render_rss([plus_ancien, plus_recent], ordre=True)
+        self.assertLess(xml.index("Ancien"), xml.index("Récent"))   # l'ordre du classement est gardé
+        xml_date = render_rss([plus_ancien, plus_recent])
+        self.assertLess(xml_date.index("Récent"), xml_date.index("Ancien"))   # le flux général, lui, trie par date
+
+    def test_fichier_ecrit_puis_retire(self):
+        from datetime import datetime, timezone
+        item = {"title": "Un", "source": "S", "link": "https://a.org/u", "date": datetime(2026, 11, 19, tzinfo=timezone.utc),
+                "summary": "", "content": ""}
+        self.c.ecrire_flux_plus_lus([(item, 3)])
+        sortie = Path(self.tmp.name) / "plus-lus.xml"
+        self.assertTrue(sortie.exists())
+        self.assertIn("<title>", sortie.read_text(encoding="utf-8"))
+        # Classement vide : l'instantané de la semaine reste servi ; sans instantané, le fichier est retiré
+        self.c.ecrire_flux_plus_lus([])
+        self.assertTrue(sortie.exists())
+        self.c.PLUS_LUS_INSTANTANE.unlink()
+        self.c.ecrire_flux_plus_lus([])
+        self.assertFalse(sortie.exists())
+
+
+class FluxFigeLeVendredi(unittest.TestCase):
+    """Le flux des plus lus est figé du vendredi 8 h au vendredi 8 h suivant (heure de Paris)."""
+
+    def setUp(self):
+        import tempfile
+        import kioske.construction as c
+        self.c = c
+        self.tmp = Path(tempfile.mkdtemp())
+        self.origine = (c.BUILD, c.DATA, c.PLUS_LUS_INSTANTANE)
+        c.BUILD = self.tmp / "build"
+        c.DATA = self.tmp / "data"
+        c.PLUS_LUS_INSTANTANE = c.DATA / "plus-lus-semaine.json"
+
+    def tearDown(self):
+        import shutil
+        self.c.BUILD, self.c.DATA, self.c.PLUS_LUS_INSTANTANE = self.origine
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    @staticmethod
+    def article(titre):
+        from datetime import datetime, timezone
+        return {"title": titre, "source": "S", "link": f"https://a.org/{titre}", "date": datetime(2026, 11, 10, tzinfo=timezone.utc),
+                "summary": "", "content": ""}
+
+    def test_figee_jusquau_vendredi_suivant(self):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        P = ZoneInfo("Europe/Paris")
+        self.c.ecrire_flux_plus_lus([(self.article("semaine-1"), 5)], datetime(2026, 11, 13, 9, 0, tzinfo=P))
+        xml = (self.c.BUILD / "plus-lus.xml").read_text(encoding="utf-8")
+        self.assertIn("semaine-1", xml)
+        # Le classement a changé pendant la semaine : le flux ne bouge pas avant vendredi 8 h
+        self.c.ecrire_flux_plus_lus([(self.article("semaine-2"), 9)], datetime(2026, 11, 19, 12, 0, tzinfo=P))
+        xml = (self.c.BUILD / "plus-lus.xml").read_text(encoding="utf-8")
+        self.assertIn("semaine-1", xml)
+        self.assertNotIn("semaine-2", xml)
+        # Vendredi 8 h passé : un nouvel instantané est pris
+        self.c.ecrire_flux_plus_lus([(self.article("semaine-2"), 9)], datetime(2026, 11, 20, 8, 30, tzinfo=P))
+        xml = (self.c.BUILD / "plus-lus.xml").read_text(encoding="utf-8")
+        self.assertIn("semaine-2", xml)
+        self.assertNotIn("semaine-1", xml)
+
+    def test_sans_instantane_pas_de_fichier(self):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        self.c.ecrire_flux_plus_lus([], datetime(2026, 11, 19, 12, 0, tzinfo=ZoneInfo("Europe/Paris")))
+        self.assertFalse((self.c.BUILD / "plus-lus.xml").exists())
+
+
+class SourcesFrancaises(unittest.TestCase):
+    """sources/francaises.txt : liste lue, et les sources françaises passent en premier dans les galeries."""
+
+    def test_liste_lue_sans_commentaires(self):
+        import tempfile
+        from kioske.config import charger_sources_francaises
+        with tempfile.TemporaryDirectory() as dossier:
+            f = Path(dossier) / "f.txt"
+            f.write_text("# commentaire\n\nPOLITIS\n  Les Jours  \n", encoding="utf-8")
+            self.assertEqual(charger_sources_francaises(f), frozenset({"POLITIS", "Les Jours"}))
+            self.assertEqual(charger_sources_francaises(Path(dossier) / "absent.txt"), frozenset())
+
+    def test_priorite_avec_avance_de_date(self):
+        from datetime import datetime, timezone
+        from kioske import rendu
+        from kioske.rendu import _ordre_avec_priorite
+        d = lambda j: datetime(2026, 11, j, tzinfo=timezone.utc)
+        # avance de 3 jours : une française du 17 vaut le 20 (devant un anglais du 19) ; celle du 10 vaut le 13 (derrière l'anglais du 18)
+        items = [{"source": "Étranger", "date": d(19)}, {"source": "POLITIS", "date": d(17)},
+                 {"source": "Autre", "date": d(18)}, {"source": "POLITIS", "date": d(10)}]
+        with unittest.mock.patch.object(rendu, "SOURCES_FRANCAISES", frozenset({"POLITIS"})), \
+             unittest.mock.patch.object(rendu, "PRIORITE_FRANCAIS_HEURES", 72):
+            self.assertEqual(_ordre_avec_priorite(items), [1, 0, 2, 3])
+        with unittest.mock.patch.object(rendu, "SOURCES_FRANCAISES", frozenset({"POLITIS"})), \
+             unittest.mock.patch.object(rendu, "PRIORITE_FRANCAIS_HEURES", 0):
+            self.assertEqual(_ordre_avec_priorite(items), [0, 2, 1, 3])   # sans avance : tri par date seul

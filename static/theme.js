@@ -14,12 +14,23 @@
   let themes = [];
   let defaut = racine.dataset.theme || '';
   let galeriesDefaut = {};   // galeries affichées par défaut, depuis kioske.cfg ([site] galerie_plus_lus…)
+  let categoriesGalerie = [];   // catégories de la veille, groupées par panneau : page Paramètres
   try {
     const donnees = JSON.parse(document.getElementById('kioske-themes').textContent);
     themes = donnees.themes;
     defaut = donnees.defaut;
     galeriesDefaut = donnees.galeries || {};
+    categoriesGalerie = donnees.categories || [];
   } catch (e) {}
+  // Galerie d'une catégorie : masquée par défaut, affichée si le visiteur l'a activée (« 1 »).
+  const CLE_GALERIE_CAT = 'kioske-galerie-cat-';
+  function galerieCategorieAffichee(slug) {
+    try { return localStorage.getItem(CLE_GALERIE_CAT + slug) === '1'; } catch (e) { return false; }
+  }
+  function appliquerGalerieCategorie(slug, affichee) {
+    try { localStorage.setItem(CLE_GALERIE_CAT + slug, affichee ? '1' : '0'); } catch (e) {}
+    document.querySelectorAll('.galerie-slider-bloc[data-categorie="' + slug + '"]').forEach(el => { el.hidden = !affichee; });
+  }
   const galerieDefaut = (nom, sinon) => (typeof galeriesDefaut[nom] === 'boolean' ? galeriesDefaut[nom] : sinon);
 
   function lireChoix() {
@@ -42,7 +53,7 @@
   ];
   // Réglages remis par défaut par le bouton « Tout remettre par défaut » (page Paramètres). Une clé ajoutée pour
   // un nouveau réglage se déclare ici aussi. Les données (favoris, notifications, vus) n'y sont pas.
-  const REGLAGES = [CLE, CLE_SOBRE, ...GALERIES.map(g => g.cle),
+  const REGLAGES = [CLE, CLE_SOBRE, ...GALERIES.map(g => g.cle), 'kioske_accueil_masques',
     'kioske_flux_personnalise', 'kioske_flux_connus',   // flux personnalisé (flux_personnalise.js)
     'kioske_notifications', 'kioske_notif_site'];      // interrupteurs des notifications (notifications.js)
   function lireGalerie(g) {
@@ -143,6 +154,48 @@
       });
     });
 
+    // Galeries de chaque catégorie : masquées selon le choix mémorisé, et un bouton par catégorie (page Paramètres)
+    document.querySelectorAll('.galerie-slider-bloc[data-categorie]').forEach(el => {
+      el.hidden = !galerieCategorieAffichee(el.dataset.categorie);
+    });
+    const conteneurCategories = document.getElementById('galeries-categories');
+    if (conteneurCategories) {
+      // Un groupe par panneau : son titre, puis les boutons de ses catégories
+      categoriesGalerie.forEach(groupe => {
+        const bloc = document.createElement('details');
+        bloc.className = 'galeries-groupe reglages';
+        if (groupe.panneau) {
+          const resume = document.createElement('summary');
+          const titre = document.createElement('h4');
+          titre.textContent = groupe.panneau;
+          resume.appendChild(titre);
+          bloc.appendChild(resume);
+        }
+        groupe.categories.forEach(c => {
+        const bouton = document.createElement('button');
+        bouton.type = 'button';
+        bouton.className = 'menu-button';
+        bouton.id = 'btn-galerie-cat-' + c.slug;
+        const maj = () => {
+          const affichee = galerieCategorieAffichee(c.slug);
+          bouton.setAttribute('aria-pressed', String(affichee));
+          bouton.textContent = '🖼️ ' + c.nom + ' : ' + (affichee ? 'affichée' : 'masquée');
+        };
+        bouton.addEventListener('click', () => {
+          const activer = !galerieCategorieAffichee(c.slug);
+          appliquerGalerieCategorie(c.slug, activer);
+          // Une galerie de catégorie n'apparaît que si l'interrupteur général est allumé : on l'allume avec elle.
+          const general = document.getElementById('btn-galeries-blocs');
+          if (activer && general && racine.dataset.galeriesBlocs !== 'oui') general.click();
+          maj();
+        });
+        maj();
+        bloc.appendChild(bouton);
+        });
+        conteneurCategories.appendChild(bloc);
+      });
+    }
+
     // Boutons des galeries (page Paramètres) : « Les plus lus », « Grande galerie », « Galeries des catégories »
     GALERIES.forEach(g => {
       const bouton = document.getElementById(g.id);
@@ -196,6 +249,10 @@
         }
         clearTimeout(minuterie);
         REGLAGES.forEach(cle => { try { localStorage.removeItem(cle); } catch (e) {} });
+        try {
+          Object.keys(localStorage).filter(cle => cle.startsWith(CLE_GALERIE_CAT))
+            .forEach(cle => localStorage.removeItem(cle));
+        } catch (e) {}
         location.reload();
       });
     });

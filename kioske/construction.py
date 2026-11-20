@@ -16,7 +16,7 @@ import hashlib
 import re
 import json
 import shutil
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
@@ -24,7 +24,7 @@ from zoneinfo import ZoneInfo
 from . import apercus
 from .config import (ARTICLES_PAR_SOURCE, BUILD, CHAINES_TWITCH, DOMAINE, DOSSIER_RSS_CATEGORIES, FLUX_RSS,
                      HISTORIQUE_DB, NOM_PAGE, PAQUET, REGLAGES_FLUX, ROOT, STATIC, TWITCH_SCAN, URL_SITE, RSS_MAX,
-                     IP_JAMAIS_COMPTEES, JOURNAL_ACCES, PLUS_LUS_JOURS, PLUS_LUS_NOMBRE)
+                     IP_JAMAIS_COMPTEES, JOURNAL_ACCES, PLUS_LUS_JOURS, PLUS_LUS_NOMBRE, NOM_SITE, DATA)
 from .flux import load_feed
 from .historique import Historique
 from .images import appliquer_images, purger_images, telecharger_images
@@ -195,16 +195,86 @@ def version_service_worker() -> str:
     return version
 
 
-def ecrire_page(items: list[dict], previews: dict[str, dict], categories: dict[str, str], panneaux: dict[str, str] | None = None) -> None:
-    """Écrit build/index.html, avec la galerie « Les plus lus » quand le journal d'accès est lisible."""
+def classement_du_site(items: list[dict]) -> list[tuple[dict, int]]:
+    """Les articles les plus lus (galerie « Les + vus » et flux plus-lus.xml), calculé une seule fois par build."""
     from .plus_lus import compter, plus_lus
-    panneaux = panneaux or {}
     compte = compter(JOURNAL_ACCES, PLUS_LUS_JOURS, IP_JAMAIS_COMPTEES)
     classement = plus_lus(items, compte, PLUS_LUS_NOMBRE, article_id)
     if classement:
         print(f"   • Les plus lus : {len(classement)} article(s) sur {PLUS_LUS_JOURS} jours ({JOURNAL_ACCES})")
     else:
         print(f"   • Les plus lus : aucun (journal {JOURNAL_ACCES} absent, illisible ou vide) : galerie non écrite")
+    return classement
+
+
+# Le flux des plus lus ne change qu'une fois par semaine : le vendredi à 8 h (heure de Paris). Un instantané est
+# pris au premier build après ce moment, puis gardé jusqu'au vendredi suivant. Le bot Mastodon et l'édito lisent
+# ce même flux. La galerie « Les + vus », elle, reste à jour à chaque build.
+PLUS_LUS_INSTANTANE = DATA / "plus-lus-semaine.json"
+JOUR_PUBLICATION_PLUS_LUS = 4   # vendredi (lundi = 0)
+HEURE_PUBLICATION_PLUS_LUS = 8
+
+
+def dernier_moment_de_publication(maintenant: datetime) -> datetime:
+    """Le dernier vendredi 8 h (heure de Paris) qui n'est pas encore dépassé à « maintenant »."""
+    fuseau = ZoneInfo("Europe/Paris")
+    local = maintenant.astimezone(fuseau)
+    candidat = (local - timedelta(days=(local.weekday() - JOUR_PUBLICATION_PLUS_LUS) % 7)).replace(
+        hour=HEURE_PUBLICATION_PLUS_LUS, minute=0, second=0, microsecond=0)
+    return candidat if candidat <= local else candidat - timedelta(days=7)
+
+
+def _article_en_json(item: dict) -> dict:
+    d = item.get("date")
+    return {"title": item.get("title", ""), "source": item.get("source", ""), "link": item.get("link", ""),
+            "date": d.isoformat() if isinstance(d, datetime) else None,
+            "summary": item.get("summary", ""), "content": item.get("content", "")}
+
+
+def _article_depuis_json(donnees: dict) -> dict:
+    d = donnees.get("date")
+    return {**donnees, "date": datetime.fromisoformat(d) if d else None}
+
+
+def ecrire_flux_plus_lus(classement: list[tuple[dict, int]], maintenant: datetime | None = None) -> None:
+    """build/plus-lus.xml : le flux des articles les plus lus, figé depuis le dernier vendredi 8 h.
+    - Premier build après ce moment : l'instantané est pris sur le classement de ce build (data/, hors git).
+    - Sinon : l'instantané de la semaine est repris tel quel.
+    Sans instantané (jamais de classement), le fichier est retiré : pas de flux vide."""
+    import json
+    from .rss import render_rss
+    maintenant = maintenant or datetime.now(timezone.utc)
+    cle = dernier_moment_de_publication(maintenant).isoformat()
+    instantane = None
+    if PLUS_LUS_INSTANTANE.exists():
+        instantane = json.loads(PLUS_LUS_INSTANTANE.read_text(encoding="utf-8"))
+    if (instantane is None or instantane.get("cle") != cle) and classement:
+        instantane = {"cle": cle, "articles": [_article_en_json(item) for item, _ in classement]}
+        DATA.mkdir(parents=True, exist_ok=True)
+        tmp = PLUS_LUS_INSTANTANE.with_name(PLUS_LUS_INSTANTANE.name + ".tmp")
+        tmp.write_text(json.dumps(instantane, ensure_ascii=False, indent=1), encoding="utf-8")
+        tmp.replace(PLUS_LUS_INSTANTANE)
+        print(f"   • Les plus lus : instantané de la semaine pris (publication du {cle[:16].replace('T', ' ')})")
+    sortie = BUILD / "plus-lus.xml"
+    if instantane is None:
+        sortie.unlink(missing_ok=True)
+        return
+    articles = [_article_depuis_json(a) for a in instantane["articles"]]
+    BUILD.mkdir(parents=True, exist_ok=True)
+    sortie.write_text(render_rss(
+        articles, titre=f"{NOM_SITE} : les articles les plus lus",
+        adresse_flux=f"{URL_SITE}/plus-lus.xml",
+        description=f"Les {len(articles)} articles les plus ouverts sur {NOM_SITE} la semaine dernière.",
+        ordre=True, date_flux=datetime.fromisoformat(instantane["cle"])), encoding="utf-8")
+    print(f"OK : flux des plus lus écrit ({sortie.name}, {len(articles)} article(s), figé depuis {cle[:16]})")
+
+
+def ecrire_page(items: list[dict], previews: dict[str, dict], categories: dict[str, str], panneaux: dict[str, str] | None = None,
+                classement: list[tuple[dict, int]] | None = None) -> None:
+    """Écrit build/index.html, avec la galerie « Les plus lus » quand le journal d'accès est lisible."""
+    panneaux = panneaux or {}
+    if classement is None:
+        classement = classement_du_site(items)
     page = render_page(items, previews, categories, panneaux, classement, PLUS_LUS_JOURS)
     BUILD.mkdir(parents=True, exist_ok=True)
     sortie = BUILD / NOM_PAGE
@@ -504,7 +574,9 @@ def construire(args: argparse.Namespace) -> None:
 
         # === Pages principales ===
         print("8. GÉNÉRATION DES PAGES PRINCIPALES")
-        ecrire_page(items, previews, categories, panneaux)
+        classement = classement_du_site(items)
+        ecrire_page(items, previews, categories, panneaux, classement)
+        ecrire_flux_plus_lus(classement)
         ecrire_page_rss(categories, items)
         ecrire_code_de_conduite(items)
         if not args.simple:

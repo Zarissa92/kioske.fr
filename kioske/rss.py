@@ -19,10 +19,12 @@ def date_rss(d: datetime) -> str:
 
 
 def render_rss(items: list[dict], titre: str = DOMAINE, adresse_flux: str = f"{URL_SITE}/rss.xml",
-               description: str = "Articles et vidéos des sources suivies, mis à jour automatiquement.") -> str:
-    """Flux RSS 2.0 : les RSS_MAX articles les plus récents de la liste donnée."""
+               description: str = "Articles et vidéos des sources suivies, mis à jour automatiquement.",
+               ordre: bool = False, date_flux: datetime | None = None) -> str:
+    """Flux RSS 2.0 : les RSS_MAX articles les plus récents de la liste donnée. ordre=True : la liste est
+    reprise telle quelle (un classement, par exemple « Les + vus »), sans tri par date ni limite."""
     epoque = datetime.min.replace(tzinfo=timezone.utc)
-    recents = sorted(items, key=lambda i: i["date"] or epoque, reverse=True)[:RSS_MAX]
+    recents = list(items) if ordre else sorted(items, key=lambda i: i["date"] or epoque, reverse=True)[:RSS_MAX]
     lignes = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">',
@@ -32,6 +34,7 @@ def render_rss(items: list[dict], titre: str = DOMAINE, adresse_flux: str = f"{U
         f"<description>{esc(description)}</description>",
         "<language>fr-FR</language>",
         f"<lastBuildDate>{date_rss(datetime.now(timezone.utc))}</lastBuildDate>",
+        *([f"<pubDate>{date_rss(date_flux)}</pubDate>"] if date_flux else []),   # date du contenu figé (plus-lus.xml)
         f'<atom:link href="{esc(adresse_flux)}" rel="self" type="application/rss+xml"/>',
     ]
     for it in recents:

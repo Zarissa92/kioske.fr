@@ -203,3 +203,24 @@ def ordre_des_categories(items: list[dict], categories: dict[str, str]) -> list[
     if AUTRES in presentes:
         ordre.append(AUTRES)
     return ordre
+
+
+def ordres_du_fichier(feeds: Path, twitch: Path) -> tuple[list[str], list[str]]:
+    """Ordre des panneaux et des catégories tel qu'il est écrit dans les fichiers de sources (les en-têtes).
+    Lu dans les en-têtes et non dans les sources : une source listée dans deux catégories ne change pas l'ordre."""
+    panneaux: list[str] = []
+    categories: list[str] = []
+    for path in (feeds, twitch):
+        if not path.exists():
+            continue
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = retirer_commentaire(line)
+            match = BRACKET_RE.match(line) if line else None
+            if not match or ":" not in match.group(1):
+                continue
+            typ, nom = match.group(1).split(":", 1)
+            nom = nom.strip()
+            liste = panneaux if typ.strip().lower() == "panneau" else categories
+            if nom and nom not in liste:
+                liste.append(nom)
+    return panneaux, categories

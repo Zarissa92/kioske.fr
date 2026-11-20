@@ -52,8 +52,8 @@
 "https://splann.org/feed/integral-fr" #ecologie bretonne
 "https://editionslibertalia.com/spip.php?page=backend"
 "https://www.revolutionpermanente.fr/spip.php?page=backend&id_mot=151"
-"https://www.revolutionpermanente.fr/spip.php?page=backend&id_mot=16"
-
+"https://fr.anarchistlibraries.net/opds/new"
+"https://editionslibertalia.com/spip.php?page=backend"
 [Panneau: International]
 [International: Presse]
 "https://theintercept.com/feeds/"

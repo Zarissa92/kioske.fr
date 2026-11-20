@@ -174,3 +174,24 @@ body { min-height: 100vh; }
 .menu-partage { display: flex; justify-content: center; margin-top: 1.5rem; padding-top: 1.2rem; border-top: var(--border-article-lien); }
 .menu-partage .share-btn { display: inline-flex; flex-direction: column; align-items: center; gap: 0.25rem; margin: 0; }
 .menu-partage .partage-libelle { font-size: 0.75rem; }
+
+/* Page Paramètres : sections pliables (<details>), titres cliquables */
+.reglages { border-top: var(--border-article-lien); padding: 0.2rem 0; }
+.reglages > summary { cursor: pointer; list-style: none; padding: 0.4rem 0; }
+.reglages > summary::-webkit-details-marker { display: none; }
+.reglages > summary::before { content: "▸ "; }
+.reglages[open] > summary::before { content: "▾ "; }
+.reglages > summary h3, .reglages > summary h4 { display: inline; margin: 0; }
+.reglages > summary:focus-visible { outline: var(--outline-theme-bouton-focus-visible); outline-offset: 2px; }
+.reglages .reglages { padding-left: 0.6rem; }
+.reglages .reglages > summary h4 { font-size: 1rem; }
+.reglages > :not(summary) { margin-top: 0.6rem; }
+/* Section principale ouverte : même bleu que les boutons actifs (--color-text-main) */
+.reglages[open] > summary { background: var(--color-text-main); color: #000; padding: 0.4rem 0.6rem; }
+.reglages[open] > summary h3, .reglages[open] > summary h4 { color: #000; }
+/* Sous-menu (niveau 2) : texte blanc, plus petit, flèche de la couleur secondaire du thème ; bleue quand ouvert */
+.reglages .reglages > summary { background: none; padding: 0.3rem 0 0.3rem 1.2rem; }
+.reglages .reglages > summary::before { content: "▸ "; color: var(--sous-menu-fleche, var(--tag-survol)); }
+.reglages .reglages[open] > summary::before { content: "▾ "; color: var(--color-text-main); }
+.reglages .reglages > summary h4 { color: var(--color-light); font-size: 0.95rem; }
+.reglages .reglages[open] > summary h4 { color: var(--color-light); }

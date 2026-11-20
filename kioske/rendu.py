@@ -5,16 +5,17 @@ et le JavaScript dans kioske/js/. Ce module fabrique les morceaux qui dépendent
 from __future__ import annotations
 
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
-from .config import DOMAINE, GALERIE_PANNEAU, NOM_SITE, ORDRE_PANNEAUX, URL_SITE, CFG
+from .config import (CFG, CHAINES_TWITCH, DOMAINE, FLUX_RSS, GALERIE_CANDIDATS, GALERIE_PANNEAU, GALERIE_VISIBLES, NB_GALERIE_BLOC,
+                     NOM_SITE, ORDRE_PANNEAUX, PRIORITE_FRANCAIS_HEURES, SOURCES_FRANCAISES, URL_SITE)
 from .gabarits import remplir
 from .javascript import json_pour_page
-from .sources import AUTRES, ordre_des_categories
-from .texte import cle_alphabetique, esc, truncate_label, article_id, slug_article
+from .sources import AUTRES, ordre_des_categories, ordres_du_fichier
+from .texte import cle_alphabetique, esc, truncate_label, article_id, slug_article, slug_categorie
 from .themes import ATTRIBUTS_HTML, CHOIX_THEME, CSS, CSS_FAVORIS, CSS_MENU, SCRIPT_THEME, VARIABLES_HTML
 
 # Chemin vers le code de conduite
@@ -38,7 +39,6 @@ ICONE_RSS = (
 
 
 # Nombre d'images dans la galerie de chaque bloc de catégorie de l'accueil
-NB_GALERIE_BLOC = 12
 
 
 def ordre_des_panneaux(noms: list[str], demande: list[str]) -> list[str]:
@@ -51,6 +51,20 @@ def ordre_des_panneaux(noms: list[str], demande: list[str]) -> list[str]:
     return sorted(noms, key=lambda nom: rang.get(nom, len(rang)))  # tri stable
 
 
+def _ordre_avec_priorite(items: list[dict]) -> list[int]:
+    """Indices des articles, du plus « récent » au plus ancien. Un article français (sources/francaises.txt)
+    compte comme publié PRIORITE_FRANCAIS_HEURES plus tôt : un anglais plus récent que lui de plus de ce délai passe devant."""
+    epoque = datetime.min.replace(tzinfo=timezone.utc)
+    bonus = timedelta(hours=PRIORITE_FRANCAIS_HEURES)
+
+    def cle(i: int) -> datetime:
+        item = items[i]
+        date = item.get("date") or epoque
+        return date + bonus if item.get("source", "") in SOURCES_FRANCAISES else date
+
+    return sorted(range(len(items)), key=cle, reverse=True)
+
+
 def render_galerie_bloc(categorie: str, items: list[dict], previews: dict[str, dict]) -> str:
     """Petite galerie d'un bloc de catégorie de l'accueil : ses derniers articles ayant une image.
 
@@ -61,8 +75,7 @@ def render_galerie_bloc(categorie: str, items: list[dict], previews: dict[str, d
     cartes = []
     # Les articles arrivent source par source, pas par date : on trie d'abord, pour que la galerie montre
     # les plus récents de la catégorie (et non les premiers de la première source).
-    epoque = datetime.min.replace(tzinfo=timezone.utc)
-    for item in sorted(items, key=lambda i: i.get("date") or epoque, reverse=True):
+    for item in (items[i] for i in _ordre_avec_priorite(items)):
         if len(cartes) >= NB_GALERIE_BLOC:
             break
         apercu = previews.get(item["link"], {})
@@ -84,7 +97,7 @@ def render_galerie_bloc(categorie: str, items: list[dict], previews: dict[str, d
     if not cartes:
         return ""
     return (
-        f'<section class="galerie-slider galerie-slider-bloc" '
+        f'<section class="galerie-slider galerie-slider-bloc" data-categorie="{slug_categorie(categorie)}" '
         f'aria-label="Derniers articles en images : {esc(categorie)}">'
         '<button class="galerie-arrow-left" type="button" aria-label="Défiler vers la gauche">&lt;</button>'
         f'<div class="galerie galerie-bloc">{"".join(cartes)}</div>'
@@ -107,15 +120,16 @@ def render_galerie_plus_lus(classement: list[tuple[dict, int]], previews: dict[s
         article_url = f'/articles/{article_id(item["link"])}-{slug_article(title, item["link"])}/'
         if image:
             media = (f'<img src="{esc(image)}" alt="{esc(title)}" loading="lazy" referrerpolicy="no-referrer" '
-                     'data-repli="carte">')
+                     'data-repli="carte">'
+                     f'<div class="galerie-carte-titre">{esc(truncate_label(title))}</div>')
             classe = "galerie-carte"
         else:
+            # Sans image, le titre est déjà affiché dans la carte : pas de second libellé (il se chevauchait)
             media = f'<span class="galerie-carte-texte">{esc(title)}</span>'
             classe = "galerie-carte galerie-carte-sans-image"
         cartes.append(
             f'<div class="galerie-carte-wrapper" data-source="{esc(item.get("source", ""))}">'
-            f'<a href="{esc(article_url)}" class="{classe}" title="{esc(title)}">{media}'
-            f'<div class="galerie-carte-titre">{esc(truncate_label(title))}</div></a></div>'
+            f'<a href="{esc(article_url)}" class="{classe}" title="{esc(title)}">{media}</a></div>'
         )
     titre_galerie = "Les + vus " + ("de la semaine" if jours == 7 else f"des {jours} derniers jours")
     return (
@@ -129,14 +143,18 @@ def render_galerie_plus_lus(classement: list[tuple[dict, int]], previews: dict[s
     )
 
 
+# GALERIE_VISIBLES, GALERIE_CANDIDATS et NB_GALERIE_BLOC viennent de kioske.cfg (kioske/config.py).
+
+
 def render_galerie(items: list[dict], previews: dict[str, dict]) -> str:
-    """Galerie horizontale des 12 derniers articles avec image."""
+    """Grande galerie : les derniers articles avec image (GALERIE_CANDIDATS au plus, GALERIE_VISIBLES affichés)."""
     cartes_galerie = []
     gal_count = 0
     gal_indices = []  # Indice réels des articles avec image
 
-    for real_idx, item in enumerate(items):
-        if gal_count >= 12:
+    for real_idx in _ordre_avec_priorite(items):
+        item = items[real_idx]
+        if gal_count >= GALERIE_CANDIDATS:
             break
         title = previews.get(item["link"], {}).get("title") or item["title"]
         image = previews.get(item["link"], {}).get("image") or item["image"] or ""
@@ -189,7 +207,7 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> str:
         &lt;
       </button>
 
-      <div class="galerie">
+      <div class="galerie" data-visibles="{GALERIE_VISIBLES}">
         {"".join(cartes_galerie)}
       </div>
 
@@ -296,6 +314,10 @@ def render_page(items: list[dict], previews: dict[str, dict],
             par_panneau[""].setdefault(categorie, []).append(cle)
 
     ordre_categories = ordre_des_categories(items, categories)
+    # Ordre du fichier source (sources/RSS_feeds.txt) : catégories dans chaque panneau
+    _, ordre_fichier_categories = ordres_du_fichier(FLUX_RSS, CHAINES_TWITCH)
+    def dans_ordre_du_fichier(noms, ordre):
+        return sorted(noms, key=lambda n: ordre.index(n) if n in ordre else len(ordre))
 
     # Créer les blocs : pour chaque panneau, afficher ses catégories (ordre : [panneaux] ordre de kioske.cfg)
     par_panneau = {nom: par_panneau[nom] for nom in ordre_des_panneaux(list(par_panneau), ORDRE_PANNEAUX)}
@@ -306,7 +328,7 @@ def render_page(items: list[dict], previews: dict[str, dict],
         if panneau_nom:
             # Panneau avec sous-catégories
             blocs += f'<section class="groupe panneau"><h3 class="titre-panneau" data-category-name="{esc(panneau_nom)}">{esc(panneau_nom)}</h3>'
-            categories_du_panneau = sorted([c for c in categories_panneau.keys() if c != AUTRES])
+            categories_du_panneau = dans_ordre_du_fichier([c for c in categories_panneau.keys() if c != AUTRES], ordre_fichier_categories)
 
             for categorie in categories_du_panneau:
                 sources_keys = categories_panneau[categorie]
@@ -342,7 +364,7 @@ def render_page(items: list[dict], previews: dict[str, dict],
             blocs += '</section>'
         else:
             # Catégories sans panneau (filtrer AUTRES)
-            categories_du_panneau = sorted([c for c in categories_panneau.keys() if c != AUTRES])
+            categories_du_panneau = dans_ordre_du_fichier([c for c in categories_panneau.keys() if c != AUTRES], ordre_fichier_categories)
             for categorie in categories_du_panneau:
                 sources_keys = categories_panneau[categorie]
                 tags = []
@@ -442,7 +464,7 @@ def render_page(items: list[dict], previews: dict[str, dict],
     for panneau_nom, categories_panneau in par_panneau.items():
         if panneau_nom:  # Ignorer les sources sans panneau
             panneau_articles = []
-            for categorie in sorted([c for c in categories_panneau.keys() if c != AUTRES]):
+            for categorie in dans_ordre_du_fichier([c for c in categories_panneau.keys() if c != AUTRES], ordre_fichier_categories):
                 if categorie in categories_json:
                     panneau_articles.extend(categories_json[categorie])
             # Les articles sont déjà triés par catégorie, juste les ajouter au panneau

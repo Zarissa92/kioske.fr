@@ -1,9 +1,36 @@
 ---
 description: MAJ
 ordre: 2
+titre: Mises à jour
 ---
 
+
+## 20/11/2026 :
+
+### Matin 
+- Ton accueil, à ta façon. Sur chaque titre de panneau ou de catégorie, un bouton 👁 : tu masques ce que tu ne veux pas voir, et les galeries se remplissent avec le reste. L'œil se ferme quand c'est masqué ; un second clic réaffiche. Un bandeau te permet de tout remettre.
+- Les galeries par catégorie se choisissent. Elles sont masquées par défaut : active celles qui t'intéressent dans Paramètres, sous chaque panneau.
+- sDans les galeries, les articles des médias français passent en premier, sans cacher les autres.
+- Paramètres plus lisible. La page se déplie par sections, l'option active se voit en bleu, et les sous-menus sont distincts.
+- Une nouvelle source : Biblio Anar, la bibliothèque anarchiste, avec ses derniers ajouts.
+- Un doublon retiré dans la veille de Révolution Permanente.
+
+### Tres tot le matin
+- Hors connexion, les pages se gardent mieux. Une erreur du précache empêchait la mise en mémoire ; c'est corrigé.
+- Dans les galeries de l'accueil, les articles des médias français passent en premier. Un article anglais, plus récent de quelques jours, peut toujours apparaître avant eux.
+- **Une galerie par catégorie**, si vous voulez. Dans Paramètres, chaque catégorie a son interrupteur, rangé sous le titre de son panneau (LGBT, Médias Libre…). Elles sont masquées par défaut : activez celles qui vous intéressent.
+- Paramètres plus lisible. La page est découpée en menus dépliants : Thème, Affichage, Flux, Installation, Notifications, Réinitialiser.
+- Une option active se voit. Le bouton d'un réglage activé prend la même couleur que le survol, comme le thème choisi.
+- Une nouvelle source : Biblio Anar, la bibliothèque anarchiste, avec ses derniers ajouts.
+- Hors connexion, les pages se gardent mieux. Une erreur du précache empêchait les pages de se mettre en mémoire ; c'est corrigé.
+
+
 ## 19/11/2026 :
+
+### Soir : 
+- Resolution d'un bug sur les flux personnalise et la galerie. 
+- Les sources françaises passent maintenant en premier dans les galeries de l'accueil. Les médias d'ici sont donc les premiers qu'on voit, sans rien retirer aux autres : elles arrivent en tête, puis le reste suit par date.
+### Apres midi 
 - GitHub à jour
 - **Souci de deploiement, desole pour le ban de 5mn**
 - Nouvelle galerie en haut de l'accueil : « Les + vus de la semaine », les 10 articles les plus lus ces 7 derniers jours, mise à jour toutes les 30 minutes. Un simple décompte des visites, sans aucun suivi des personnes.
@@ -14,6 +41,11 @@ ordre: 2
 - App installée : un appui long sur l'icône donne des raccourcis vers la recherche, tes favoris, ton flux perso et le Menu.
 - Sans connexion, le site affiche une page claire au lieu d'une erreur. Les pages déjà visitées restent lisibles.
 - Corrections de sécurité sur le serveur.
+- La galerie « Les derniers articles » est maintenant en premier, au-dessus de « Les + vus ».
+- « Les + vus » compte aussi les articles que tu ouvres directement depuis un lien partagé.
+- Quand tu ajoutes un article à tes favoris, le cœur ♡ pulse et des étoiles jaillissent autour de lui.
+- Dans le Menu, les listes à sous-puces et les images sont mieux mises en page : les images sont centrées avec leur légende dessous, et les lignes vides que tu écris sont gardées.
+- Thème trans : les titres des galeries et le nom « kioske.fr » sont en blanc, avec un halo bleu. Les favoris et les bords des panneaux ont maintenant du rose.
 
 ## 18/11/2026 :
 

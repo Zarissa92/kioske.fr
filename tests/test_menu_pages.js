@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 // Menu et code de conduite : pages statiques (build/), vérifiées sans JavaScript de page.
 // Le sommaire, le document et la barre du haut viennent du build ; ces tests vérifient ce qui est écrit.
 const { attendre, charger, suite } = require('./outils');
@@ -9,7 +11,9 @@ const { attendre, charger, suite } = require('./outils');
   {
     const { w, d, erreurs } = charger('menu/index.html', '/menu/');
     await attendre(60);
-    t.verif('index : titre « Menu »', d.querySelector('main h1') && d.querySelector('main h1').textContent === 'Menu');
+    // Le titre de l'index vient de menu/index.md (clé titre:), pas d'un libellé fixe
+    const titreIndex = (fs.readFileSync(path.join(__dirname, '..', 'menu', 'index.md'), 'utf8').match(/^titre:\s*(.+)$/m) || [])[1] || 'Menu';
+    t.verif('index : titre celui de menu/index.md', d.querySelector('main h1') && d.querySelector('main h1').textContent === titreIndex.trim(), titreIndex);
     t.verif('index : sommaire présent', !!d.querySelector('.menu-sommaire'));
     t.verif('index : aucune erreur JavaScript', erreurs.length === 0, erreurs.join(' | '));
     const premier = d.querySelector('.menu-sommaire a[href^="/menu/"]:not([href="/menu/"])');

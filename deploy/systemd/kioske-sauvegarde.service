@@ -1,0 +1,13 @@
+# Sauvegarde quotidienne de kioske.fr (deploy/sauvegarder.sh). Modèle : deploy/sauvegarder.sh planifier remplace __DOSSIER__.
+[Unit]
+Description=Sauvegarde quotidienne de kioske.fr (projet, racine web, certificats, configuration)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=__DOSSIER__
+ExecStart=/bin/bash __DOSSIER__/deploy/sauvegarder.sh sauvegarder
+Nice=10
+TimeoutStartSec=3600

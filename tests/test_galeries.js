@@ -40,7 +40,7 @@ const { attendre, charger, clic, panneauOuvert, poserHistorique, surAccueil, sui
   const bloc = d.querySelector('.sous-categorie .galerie-slider-bloc');
   t.verif('galerie entre le titre et les étiquettes',
     bloc && bloc.previousElementSibling.tagName === 'H2' && bloc.nextElementSibling.classList.contains('nuage'));
-  t.verif('12 vignettes au plus', bloc.querySelectorAll('a.galerie-carte').length > 0 && bloc.querySelectorAll('a.galerie-carte').length <= 12);
+  t.verif('20 vignettes au plus', bloc.querySelectorAll('a.galerie-carte').length > 0 && bloc.querySelectorAll('a.galerie-carte').length <= 20);
   const gal = bloc.querySelector('.galerie');
   clic(w, bloc.querySelector('.galerie-arrow-right')); clic(w, bloc.querySelector('.galerie-arrow-right'));
   t.verif('la flèche > fait défiler', gal.scrollLeft === 500, '(' + gal.scrollLeft + ')');

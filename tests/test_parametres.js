@@ -38,5 +38,24 @@ const { attendre, charger, suite } = require('./outils');
   t.verif('les plus lus : masquée après clic', d.documentElement.dataset.galeriePlusLus === 'non' && r.w.localStorage.getItem('kioske-galerie-plus-lus') === '0');
   t.verif('Paramètres : aucune erreur JavaScript', r.erreurs.length === 0, r.erreurs.join(' | '));
   r.w.close();
+
+  // 3. Une galerie par catégorie : un bouton par catégorie, choix mémorisé et bouton mis à jour
+  r = charger('menu/parametres/index.html', '/menu/parametres/');
+  await attendre(200);
+  const boutonsCat = r.d.querySelectorAll('#galeries-categories button');
+  t.verif('une galerie par catégorie : boutons créés', boutonsCat.length > 0);
+  const premier = boutonsCat[0];
+  t.verif('boutons rangés sous le titre de leur panneau', !!r.d.querySelector('#galeries-categories .galeries-groupe h4'));
+  const slug = premier.id.replace('btn-galerie-cat-', '');
+  t.verif('catégorie : masquée par défaut', premier.textContent.includes('masquée'));
+  premier.click();
+  await attendre(30);
+  t.verif('catégorie : affichée après clic, choix mémorisé', premier.textContent.includes('affichée') && r.w.localStorage.getItem('kioske-galerie-cat-' + slug) === '1');
+  t.verif('catégorie : l\'interrupteur général s\'allume avec elle', r.d.documentElement.dataset.galeriesBlocs === 'oui');
+  premier.click();
+  await attendre(30);
+  t.verif('catégorie : masquée après second clic', premier.textContent.includes('masquée') && r.w.localStorage.getItem('kioske-galerie-cat-' + slug) === '0');
+  t.verif('Paramètres (catégories) : aucune erreur JavaScript', r.erreurs.length === 0, r.erreurs.join(' | '));
+  r.w.close();
   t.fin();
 })();

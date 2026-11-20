@@ -17,7 +17,6 @@ const ASSETS_TO_CACHE = [
   '/icon-192.png',
   '/icon-256.png',
   '/icon-512.png',
-  '/fonts/',
 ];
 
 self.addEventListener('install', (event) => {

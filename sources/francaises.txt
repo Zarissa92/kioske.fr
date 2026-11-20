@@ -1,0 +1,58 @@
+# Sources françaises : elles passent en premier dans les galeries de l'accueil (grande galerie et galeries des
+# catégories). Un nom par ligne, exactement comme il apparaît sur le site (voir la barre de recherche ou un article).
+# Les lignes qui commencent par # sont ignorées.
+
+🔴 Info Libertaire
+🔴 Info Libertaire Podcasts
+Info Libertaire
+POLITIS
+Les Couilles sur la table
+Blast - Le souffle de l’info
+BLAST, Le souffle de l'info
+Blast
+Portail des médias indépendants
+Next - Flux Complet
+Radio Nova
+Contre Attaque
+Révolution Permanente
+Arrêt sur Images - Le flux RSS
+RSS | Usbek & Rica
+Frustration Magazine
+Orient XXI
+Splann ! | Premier média d'enquête indépendant en Bretagne - Flux RSS fusionné (FR)
+StreetPress | Le magazine urbain
+Le Monde diplomatique
+Investigation
+Mediapart
+Mediapart (podcasts)
+Le Canard Réfractaire
+Framablog
+positions revue
+Basta!
+Histoires Crépues
+LinuxFr.org : les journaux
+LinuxFr.org : les dépêches
+PAINT
+Heu?reka
+Marouchka de Qu'est-ce qu'on lit ?
+Margorito
+Kiffe ta race
+PaduTeam
+F.D Signifier
+Stupid Economics
+Rezo.net
+À gauche
+Les Jours
+Reflets.info
+La Quadrature du Net
+Ajis Asso
+Disclose.ngo
+Les éditions Libertalia
+infokiosques.net
+La Déferlante
+Inter-LGBT
+OUTrans – Association féministe d’autosupport trans
+Canard PC
+Analyses politiques
+Problematik
+Biblio Anar

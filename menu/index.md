@@ -1,6 +1,7 @@
 ---
 description:
 ordre: 1
+titre: Accueil
 ---
 ## Bonjour
 
@@ -14,4 +15,4 @@ N'hésitez pas à m'envoyer vos propositions :
   - en rejoignant le [Discord](https://discord.gg/UwkxBJnX2) ;
   - par e-mail : [contact@kioske.fr](mailto:contact@kioske.fr).
 
-Dans [Mises a jour](Mise_à_jours.md), j'indiquerai lajouts des nouveaux liens
+Dans [Mises a jour](https://kioske.fr/menu/mise-a-jours/), j'indiquerai lajouts des nouveaux liens

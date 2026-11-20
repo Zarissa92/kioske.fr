@@ -11,8 +11,26 @@ import hashlib
 import json
 
 from .config import CFG, CONFIG, PAQUET
-from .config import GALERIES_DEFAUT
-from .texte import esc
+from .config import GALERIES_DEFAUT, CHAINES_TWITCH, FLUX_RSS
+from .sources import read_categories, read_panneaux
+from .texte import esc, slug_categorie
+
+
+def _categories_galerie() -> list[dict]:
+    """Catégories de la veille groupées par panneau (ordre du fichier) : une galerie par catégorie, réglable dans Paramètres.
+    Forme : [{"panneau": "LGBT", "categories": [{"slug": "lgbt-fr", "nom": "LGBT: FR"}, ...]}, ...]."""
+    categories = read_categories(FLUX_RSS, CHAINES_TWITCH)
+    panneaux = read_panneaux(FLUX_RSS, CHAINES_TWITCH)
+    groupes: dict[str, dict] = {}
+    for source, nom in categories.items():
+        panneau = panneaux.get(source, "")
+        groupe = groupes.setdefault(panneau, {"panneau": panneau, "categories": []})
+        if all(c["nom"] != nom for c in groupe["categories"]):
+            groupe["categories"].append({"slug": slug_categorie(nom), "nom": nom})
+    return list(groupes.values())
+
+
+CATEGORIES_GALERIE = _categories_galerie()
 
 
 def url_css_versionnee(css: str) -> str:
@@ -99,6 +117,7 @@ def _morceaux_de_page() -> tuple[str, str, str, str]:
     donnees = json.dumps(
         {"defaut": defaut,
          "galeries": GALERIES_DEFAUT,   # galeries de l'accueil affichées par défaut (kioske.cfg)
+         "categories": CATEGORIES_GALERIE,   # une galerie par catégorie (Paramètres)
          "themes": [{
              "id": t["id"],
              "fond": t["fond"],

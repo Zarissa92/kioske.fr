@@ -1,0 +1,11 @@
+# Lance kioske-sauvegarde.service chaque jour à minuit (heure du serveur, Europe/Paris).
+[Unit]
+Description=Sauvegarde de kioske.fr chaque jour à minuit
+
+[Timer]
+OnCalendar=*-*-* 00:00:00
+Unit=kioske-sauvegarde.service
+Persistent=true
+
+[Install]
+WantedBy=timers.target

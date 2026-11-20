@@ -16,3 +16,4 @@
 
 "https://www.mediapart.fr/journal/podcasts/rss" | Mediapart (podcasts)
 "https://agauche.org/feed/" | À gauche
+"https://fr.anarchistlibraries.net/opds/new" | Biblio Anar

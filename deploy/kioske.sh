@@ -33,7 +33,7 @@ LOG_HORS_SITE="/var/log/nginx/$DOMAINE.hors-site.log"   # écrit par nginx : adr
 DOSSIER_FILTRES_F2B="/etc/fail2ban/filter.d"
 JAIL_F2B="/etc/fail2ban/jail.d/kioske.local"
 ANCIENNE_JAIL_F2B="/etc/fail2ban/jail.d/kioske-scan.local"
-JAILS_F2B=(kioske-scan kioske-hors-site kioske-interdit kioske-debit)   # un filtre deploy/fail2ban/<nom>.conf chacune
+JAILS_F2B=(kioske-scan kioske-hors-site kioske-interdit kioske-debit kioske-useragent)   # un filtre deploy/fail2ban/<nom>.conf chacune
 IP_JAMAIS_BANNIES="$(cfg serveur ip_jamais_bannies)"
 IP_PARTAGEES="$(cfg serveur ip_partagees)"   # Cloudflare, robots de Google et Bing : voir kioske.cfg
 

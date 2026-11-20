@@ -21,6 +21,7 @@
   --background-html-body: var(--bg);
   --color-text-accent: var(--neon-halo);
   --color-text-main: var(--neon-coeur);
+  --sous-menu-fleche: var(--neon-halo);   /* flèche des sous-menus de Paramètres : couleur secondaire */
 }
 
 /* Titres des sous-catégories (h2.titre-panneau dans .sous-categorie) : texte blanc, bordure rose (ex-violet #ff33cc) */

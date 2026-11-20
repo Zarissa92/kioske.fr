@@ -135,9 +135,26 @@ function isFluxPersonnalise() {
 }
 
 // Filtre l'accueil pour n'afficher que les sources sélectionnées
+// La grande galerie : au plus data-visibles cartes (12), prises dans les candidates du site (60) et
+// acceptées par estVisible. Sans cela, le filtre cachait des cartes sans les remplacer : galerie plus courte.
+function filtrerGaleriePrincipale(estVisible) {
+  const galerie = document.querySelector('.galerie-principale .galerie');
+  if (!galerie) return;
+  const max = parseInt(galerie.dataset.visibles, 10) || 12;
+  let affichees = 0;
+  galerie.querySelectorAll(':scope > .galerie-carte-wrapper').forEach(carte => {
+    const ok = affichees < max && estVisible(carte);
+    if (ok) affichees++;
+    carte.style.display = ok ? '' : 'none';
+  });
+}
+
 function appliquerFiltreAccueil() {
   const customSources = getCustomFluxSources();
   const hasCustomFlux = Object.keys(customSources).length > 0;
+
+  // Cartes de la grande galerie : traitées à part (voir filtrerGaleriePrincipale)
+  const dansGrandeGalerie = carte => !!carte.closest('.galerie-principale');
 
   if (!hasCustomFlux) {
     // Réinitialiser : afficher tout
@@ -148,8 +165,9 @@ function appliquerFiltreAccueil() {
       groupe.style.display = '';
     });
     document.querySelectorAll('.galerie-carte').forEach(carte => {
-      carte.style.display = '';
+      if (!dansGrandeGalerie(carte)) carte.style.display = '';
     });
+    appliquerMasquesAccueil();
     return;
   }
 
@@ -162,25 +180,28 @@ function appliquerFiltreAccueil() {
 
   // Pour chaque groupe (catégorie), vérifier si au moins une source est visible
   document.querySelectorAll('.groupe').forEach(groupe => {
-    const tags = groupe.querySelectorAll('.tag');
-    const hasVisibleTag = Array.from(tags).some(tag => {
-      const sourceKey = tag.getAttribute('data-source-key');
-      return sourceVisible(customSources, sourceKey, connues);
-    });
-    groupe.style.display = hasVisibleTag ? '' : 'none';
+    const tags = groupe.querySelectorAll('.nuage .tag');
+    const auMoinsUne = [...tags].some(tag => tag.style.display !== 'none');
+    groupe.style.display = auMoinsUne ? '' : 'none';
   });
 
-  // Filtrer les cartes de galerie par source
+  // Une carte est visible si sa source est cochée (ou nouvelle)
+  const cleDeSource = nom => Object.keys(customSources).find(key =>
+    window.sourcesMetadata && window.sourcesMetadata[key] && window.sourcesMetadata[key].name === nom);
+  const sourceDeCarte = carte => {
+    const nom = carte.getAttribute('data-source');
+    const cle = nom ? cleDeSource(nom) : null;
+    return !!cle && sourceVisible(customSources, cle, connues);
+  };
+
+  // Galerie des catégories et galerie « Les + vus » : chaque carte suit sa source
   document.querySelectorAll('.galerie-carte-wrapper, .galerie-carte[data-source]').forEach(carte => {
-    const sourceName = carte.getAttribute('data-source');
-    if (sourceName) {
-      // Trouver la clé de la source correspondante
-      const sourceKey = Object.keys(customSources).find(key => {
-        return window.sourcesMetadata && window.sourcesMetadata[key] && window.sourcesMetadata[key].name === sourceName;
-      });
-      carte.style.display = (sourceKey && sourceVisible(customSources, sourceKey, connues)) ? '' : 'none';
-    }
+    if (dansGrandeGalerie(carte)) return;
+    if (carte.getAttribute('data-source')) carte.style.display = sourceDeCarte(carte) ? '' : 'none';
   });
+
+  // Grande galerie : les premières cartes des sources cochées, sans les catégories masquées
+  appliquerMasquesAccueil(sourceDeCarte);
 }
 
 // Crée un panneau de configuration du flux personnalisé
@@ -426,6 +447,7 @@ function updateFluxPersonnalise() {
 // Démarrage à DOMContentLoaded, donc après tout le bundle : en defer, readyState vaut déjà « interactive »
 // et les constantes de notifications.js (plus bas dans le même fichier) ne seraient pas encore définies.
 function demarrerFluxPersonnalise() {
+  ajouterBoutonsAccueil();
   appliquerFiltreAccueil();
   annoncerNouvellesSources();
 }

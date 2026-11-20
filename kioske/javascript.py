@@ -41,6 +41,7 @@ FICHIERS_ACCUEIL = [
     "accueil_panneaux.js", "accueil_recherche.js", "accueil_adresse.js", "accueil_favoris.js",
 ]
 JS_ACCUEIL = "".join(lire(nom) for nom in FICHIERS_ACCUEIL)
+JS_ACCUEIL_PERSONNALISATION = lire("accueil_personnalisation.js")  # épingles et masquages de l'accueil (Paramètres)
 JS_FLUX_PERSONNALISE = lire("flux_personnalise.js") # flux personnalisé : sélection des sources
 JS_NOTIFICATIONS = lire("notifications.js")        # cloche et notifications des flux personnalisés (off par défaut)
 JS_RAFRAICHISSEMENT = lire("rafraichissement.js")  # rechargement automatique quand une nouvelle version est publiée
@@ -60,7 +61,7 @@ JS_PAGE_RSS = lire("page_rss.js")
 # (cache longue durée sans risque). Écrit dans build/js/ par construction.py.
 import hashlib as _hashlib
 ORDRE_BUNDLE = [JS_DONNEES_ACCUEIL, JS_SERVICE_WORKER, JS_IMAGES_REPLI, JS_GALERIE, JS_FAVORIS, JS_PARTAGE,
-                JS_ACCUEIL, JS_FLUX_PERSONNALISE, JS_NOTIFICATIONS, JS_RAFRAICHISSEMENT, JS_CARTE_OUVERTE,
+                JS_ACCUEIL, JS_ACCUEIL_PERSONNALISATION, JS_FLUX_PERSONNALISE, JS_NOTIFICATIONS, JS_RAFRAICHISSEMENT, JS_CARTE_OUVERTE,
                 JS_RETOUR_APP, JS_INSTALLATION_PWA, JS_PAGE_ARTICLE, JS_PAGE_CATEGORIE, JS_PAGE_RSS]
 JS_BUNDLE = "\n".join(ORDRE_BUNDLE)
 EMPREINTE_BUNDLE = _hashlib.sha256(JS_BUNDLE.encode("utf-8")).hexdigest()[:12]
