@@ -207,20 +207,42 @@ def ordre_des_categories(items: list[dict], categories: dict[str, str]) -> list[
 
 def ordres_du_fichier(feeds: Path, twitch: Path) -> tuple[list[str], list[str]]:
     """Ordre des panneaux et des catégories tel qu'il est écrit dans les fichiers de sources (les en-têtes).
-    Lu dans les en-têtes et non dans les sources : une source listée dans deux catégories ne change pas l'ordre."""
+    Lu dans les en-têtes et non dans les sources : une source listée dans deux catégories ne change pas l'ordre.
+    - Ancien format [Cat] : chaque en-tête est une catégorie.
+    - Nouveau format : une source placée sous [Panneau:X] sans [Cat:...] range la catégorie implicite X
+      (même règle que read_panneaux_and_categories), à sa place dans le fichier."""
     panneaux: list[str] = []
     categories: list[str] = []
+
+    def ajouter(liste: list[str], nom: str) -> None:
+        if nom and nom not in liste:
+            liste.append(nom)
+
     for path in (feeds, twitch):
         if not path.exists():
             continue
+        ancien = detect_format(path) == "ancien"
+        panneau_actuel = categorie_actuelle = None
         for line in path.read_text(encoding="utf-8").splitlines():
             line = retirer_commentaire(line)
-            match = BRACKET_RE.match(line) if line else None
-            if not match or ":" not in match.group(1):
+            if not line:
                 continue
-            typ, nom = match.group(1).split(":", 1)
-            nom = nom.strip()
-            liste = panneaux if typ.strip().lower() == "panneau" else categories
-            if nom and nom not in liste:
-                liste.append(nom)
+            match = BRACKET_RE.match(line)
+            if not match:
+                # Ligne de source : catégorie implicite (le panneau) si aucune catégorie n'est ouverte
+                if not ancien and panneau_actuel and not categorie_actuelle:
+                    ajouter(categories, panneau_actuel)
+                continue
+            contenu = match.group(1)
+            if ancien:
+                ajouter(categories, contenu.strip())
+            elif ":" in contenu:
+                typ, nom = contenu.split(":", 1)
+                nom = nom.strip()
+                if typ.strip().lower() == "panneau":
+                    panneau_actuel, categorie_actuelle = nom, None
+                    ajouter(panneaux, nom)
+                else:
+                    categorie_actuelle = nom
+                    ajouter(categories, nom)
     return panneaux, categories

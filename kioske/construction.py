@@ -247,7 +247,15 @@ def ecrire_flux_plus_lus(classement: list[tuple[dict, int]], maintenant: datetim
     cle = dernier_moment_de_publication(maintenant).isoformat()
     instantane = None
     if PLUS_LUS_INSTANTANE.exists():
-        instantane = json.loads(PLUS_LUS_INSTANTANE.read_text(encoding="utf-8"))
+        # Instantané illisible (fichier vide ou tronqué : disque plein, coupure) : ignoré et repris sur ce build,
+        # au lieu de bloquer tous les builds suivants.
+        try:
+            instantane = json.loads(PLUS_LUS_INSTANTANE.read_text(encoding="utf-8"))
+            if not isinstance(instantane, dict) or not isinstance(instantane.get("articles"), list):
+                raise ValueError("structure inattendue")
+        except (OSError, ValueError) as erreur:
+            print(f"   ⚠ Instantané des plus lus illisible ({erreur}) : ignoré, repris sur ce build")
+            instantane = None
     if (instantane is None or instantane.get("cle") != cle) and classement:
         instantane = {"cle": cle, "articles": [_article_en_json(item) for item, _ in classement]}
         DATA.mkdir(parents=True, exist_ok=True)

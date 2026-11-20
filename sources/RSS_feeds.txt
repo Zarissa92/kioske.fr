@@ -84,6 +84,7 @@
 "https://www.outrans.org/feed/"
 "https://revueladeferlante.fr/feed/"
 "https://www.inter-lgbt.org/feed/"
+"https://similiqueer.com/feed/"
 [LGBT: EN]
 "https://thepinktimes.com/rss.xml"
 "https://www.thepinknews.com/feed/"

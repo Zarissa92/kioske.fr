@@ -2,9 +2,10 @@
 
 const CUSTOM_FLUX_KEY = 'kioske_flux_personnalise';
 
+// lireJsonLocal() : accueil_personnalisation.js (même bundle) ; stockage bloqué ou JSON abîmé → valeur par défaut.
 function getCustomFluxSources() {
-  const saved = localStorage.getItem(CUSTOM_FLUX_KEY);
-  return saved ? JSON.parse(saved) : {};
+  const choix = lireJsonLocal(CUSTOM_FLUX_KEY, {});
+  return choix && typeof choix === 'object' ? choix : {};
 }
 
 // Sources présentes au moment où le choix a été enregistré. Une source absente de cette liste est nouvelle :
@@ -12,8 +13,8 @@ function getCustomFluxSources() {
 const SOURCES_CONNUES_KEY = 'kioske_flux_connus';
 
 function getSourcesConnues() {
-  const saved = localStorage.getItem(SOURCES_CONNUES_KEY);
-  return saved ? JSON.parse(saved) : null;
+  const connues = lireJsonLocal(SOURCES_CONNUES_KEY, null);
+  return Array.isArray(connues) ? connues : null;
 }
 
 // Visible si la source est cochée, ou si elle est nouvelle (absente du choix enregistré).
@@ -123,9 +124,11 @@ function annoncerNouvellesSources() {
 }
 
 function saveCustomFluxSources(sources) {
-  localStorage.setItem(CUSTOM_FLUX_KEY, JSON.stringify(sources));
   const connues = [...new Set([...document.querySelectorAll('.nuage .tag')].map(t => t.getAttribute('data-source-key')))];
-  localStorage.setItem(SOURCES_CONNUES_KEY, JSON.stringify(connues));
+  try {
+    localStorage.setItem(CUSTOM_FLUX_KEY, JSON.stringify(sources));
+    localStorage.setItem(SOURCES_CONNUES_KEY, JSON.stringify(connues));
+  } catch (e) {}
   appliquerFiltreAccueil();
   if (typeof majCloche === 'function') majCloche();   // cloche des notifications (notifications.js)
 }
@@ -164,7 +167,8 @@ function appliquerFiltreAccueil() {
     document.querySelectorAll('.groupe').forEach(groupe => {
       groupe.style.display = '';
     });
-    document.querySelectorAll('.galerie-carte').forEach(carte => {
+    // Les wrappers aussi : appliquerMasquesAccueil cache ceux de « Les + vus »
+    document.querySelectorAll('.galerie-carte-wrapper, .galerie-carte').forEach(carte => {
       if (!dansGrandeGalerie(carte)) carte.style.display = '';
     });
     appliquerMasquesAccueil();
@@ -185,12 +189,9 @@ function appliquerFiltreAccueil() {
     groupe.style.display = auMoinsUne ? '' : 'none';
   });
 
-  // Une carte est visible si sa source est cochée (ou nouvelle)
-  const cleDeSource = nom => Object.keys(customSources).find(key =>
-    window.sourcesMetadata && window.sourcesMetadata[key] && window.sourcesMetadata[key].name === nom);
+  // Une carte est visible si sa source est cochée (ou nouvelle). cleDeNomSource : accueil_personnalisation.js
   const sourceDeCarte = carte => {
-    const nom = carte.getAttribute('data-source');
-    const cle = nom ? cleDeSource(nom) : null;
+    const cle = cleDeNomSource(carte.getAttribute('data-source'));
     return !!cle && sourceVisible(customSources, cle, connues);
   };
 

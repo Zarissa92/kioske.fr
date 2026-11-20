@@ -53,7 +53,8 @@ def ordre_des_panneaux(noms: list[str], demande: list[str]) -> list[str]:
 
 def _ordre_avec_priorite(items: list[dict]) -> list[int]:
     """Indices des articles, du plus « récent » au plus ancien. Un article français (sources/francaises.txt)
-    compte comme publié PRIORITE_FRANCAIS_HEURES plus tôt : un anglais plus récent que lui de plus de ce délai passe devant."""
+    est classé comme s'il était PRIORITE_FRANCAIS_HEURES heures plus récent : un anglais plus récent que lui de plus de
+    ce délai passe devant."""
     epoque = datetime.min.replace(tzinfo=timezone.utc)
     bonus = timedelta(hours=PRIORITE_FRANCAIS_HEURES)
 
@@ -166,7 +167,7 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> str:
         gal_indices.append(real_idx)
         gal_count += 1
 
-    for real_idx in gal_indices:
+    for rang, real_idx in enumerate(gal_indices):
           item = items[real_idx]
           title = previews.get(item["link"], {}).get("title") or item["title"]
           image = previews.get(item["link"], {}).get("image") or item["image"] or ""
@@ -188,8 +189,11 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> str:
           titre_court = truncate_label(title)
           source_name = item.get("source", "")
 
+          # Au-delà de GALERIE_VISIBLES : candidates cachées dès le HTML (sans JavaScript, la galerie garde
+          # sa taille) ; filtrerGaleriePrincipale (flux_personnalise.js) les réaffiche pour remplacer les filtrées.
+          cache = ' style="display:none"' if rang >= GALERIE_VISIBLES else ""
           cartes_galerie.append(
-              f'<div class="galerie-carte-wrapper" data-source="{esc(source_name)}">'
+              f'<div class="galerie-carte-wrapper" data-source="{esc(source_name)}"{cache}>'
               f'<a href="{esc(article_url)}" class="galerie-carte" '
               f'title="{esc(title)}">{media}<div class="galerie-carte-titre">{esc(titre_court)}</div></a>'
               f'</div>'
@@ -317,7 +321,8 @@ def render_page(items: list[dict], previews: dict[str, dict],
     # Ordre du fichier source (sources/RSS_feeds.txt) : catégories dans chaque panneau
     _, ordre_fichier_categories = ordres_du_fichier(FLUX_RSS, CHAINES_TWITCH)
     def dans_ordre_du_fichier(noms, ordre):
-        return sorted(noms, key=lambda n: ordre.index(n) if n in ordre else len(ordre))
+        # Absentes des en-têtes : à la fin, par ordre alphabétique
+        return sorted(noms, key=lambda n: (ordre.index(n) if n in ordre else len(ordre), cle_alphabetique(n)))
 
     # Créer les blocs : pour chaque panneau, afficher ses catégories (ordre : [panneaux] ordre de kioske.cfg)
     par_panneau = {nom: par_panneau[nom] for nom in ordre_des_panneaux(list(par_panneau), ORDRE_PANNEAUX)}

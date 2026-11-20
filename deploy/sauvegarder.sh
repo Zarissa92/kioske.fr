@@ -12,7 +12,8 @@
 # Ce qui est sauvegardé :
 #   projet/        le dossier kioske.fr : code, réglages (kioske.cfg), données (data/ : historique, caches,
 #                  instantané des plus lus), bot Mastodon (comptes.cfg, mastodon.db), sources, menu, .git.
-#                  Exclus : build/ (régénéré par le timer), venv/ et venv_blog/ (recréables), __pycache__.
+#                  Exclus : build/ (régénéré par le timer), venv/ et venv_blog/ (recréables),
+#                  tests/node_modules/, __pycache__.
 #   racine-web/    la racine servie par nginx (RACINE_WEB, /srv/kioske.fr par défaut) : régénérable, mais
 #                  copié pour une restauration immédiate.
 #   systeme/       certificats Let's Encrypt (/etc/letsencrypt), nginx (/etc/nginx), fail2ban (/etc/fail2ban),
@@ -116,16 +117,34 @@ sauvegarder() {
     ecrire sudo chown "$COMPTE_SAUV": "$SAUVEGARDES" "$dossier_sauv"
     ecrire sudo chmod 700 "$SAUVEGARDES" "$dossier_sauv"
 
+    # Lance une commande tar. Code 1 (« fichier modifié pendant la lecture » : un build tournait en même temps)
+    # = archive utilisable, simple avertissement. Code > 1 = échec : le dossier daté, incomplet, est supprimé
+    # pour ne pas compter dans la rotation.
+    archiver() {
+        local code=0
+        "$@" || code=$?
+        if (( code > 1 )); then
+            sudo rm -rf "$dossier_sauv"
+            erreur "tar a échoué (code $code). Sauvegarde incomplète écartée : $dossier_sauv"
+        fi
+        (( code == 1 )) && avert "Des fichiers ont changé pendant l'archivage (build en cours ?) : archive gardée."
+        return 0
+    }
+
     # 1. Projet (utilisateur normal, sans sudo : tout appartient à l'utilisateur)
-    local excl=(
-        --exclude='./build' --exclude='./venv' --exclude='./venv_blog' --exclude='./tests/node_modules'
+    # L'archive part du dossier parent (-C) : les chemins commencent par le nom du projet, pas par « ./ ».
+    local projet excl
+    projet="$(basename "$DOSSIER")"
+    excl=(
+        --exclude="$projet/build" --exclude="$projet/venv" --exclude="$projet/venv_blog"
+        --exclude="$projet/tests/node_modules"
         --exclude='__pycache__' --exclude='*.pyc' --exclude='*.tmp'
     )
     info "1/3 projet : $DOSSIER"
     if (( SIMULATION )); then
-        echo "   [simulation] tar … $DOSSIER -> projet-$date_jour.tar.gz (sans build/, venv/, venv_blog/)"
+        echo "   [simulation] tar … $DOSSIER -> projet-$date_jour.tar.gz (sans build/, venv/, venv_blog/, node_modules/)"
     else
-        tar -czf "$dossier_sauv/projet-$date_jour.tar.gz" -C "$(dirname "$DOSSIER")" "${excl[@]}" "$(basename "$DOSSIER")"
+        archiver tar -czf "$dossier_sauv/projet-$date_jour.tar.gz" -C "$(dirname "$DOSSIER")" "${excl[@]}" "$projet"
     fi
 
     # 2. Racine web
@@ -134,7 +153,7 @@ sauvegarder() {
         if (( SIMULATION )); then
             echo "   [simulation] tar … $RACINE_WEB -> racine-web-$date_jour.tar.gz"
         else
-            sudo tar -czf "$dossier_sauv/racine-web-$date_jour.tar.gz" -C "$(dirname "$RACINE_WEB")" "$(basename "$RACINE_WEB")"
+            archiver sudo tar -czf "$dossier_sauv/racine-web-$date_jour.tar.gz" -C "$(dirname "$RACINE_WEB")" "$(basename "$RACINE_WEB")"
         fi
     fi
 
@@ -147,7 +166,7 @@ sauvegarder() {
     if (( SIMULATION )); then
         echo "   [simulation] tar … -C / ${presents[*]} -> systeme-$date_jour.tar.gz"
     else
-        sudo tar -czf "$dossier_sauv/systeme-$date_jour.tar.gz" -C / "${presents[@]}"
+        archiver sudo tar -czf "$dossier_sauv/systeme-$date_jour.tar.gz" -C / "${presents[@]}"
     fi
 
     (( SIMULATION )) && { info "Simulation : rien écrit."; return 0; }

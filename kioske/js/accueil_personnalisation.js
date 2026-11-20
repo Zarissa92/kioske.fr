@@ -13,6 +13,30 @@ function lireJsonLocal(cle, defaut) {
   }
 }
 
+// Lecture brute du stockage : null si la clé manque ou si le stockage est bloqué (cookies refusés, mode privé).
+function lireTexteLocal(cle) {
+  try {
+    return localStorage.getItem(cle);
+  } catch (e) {
+    return null;
+  }
+}
+
+// Clé d'une source (window.sourcesMetadata) à partir de son nom affiché (attribut data-source des cartes).
+// Table construite une fois, partagée avec flux_personnalise.js (même bundle).
+let tableNomsSources = null;
+function cleDeNomSource(nom) {
+  if (!nom) return null;
+  if (!tableNomsSources) {
+    tableNomsSources = new Map();
+    const meta = window.sourcesMetadata || {};
+    Object.keys(meta).forEach(cle => {
+      if (meta[cle] && !tableNomsSources.has(meta[cle].name)) tableNomsSources.set(meta[cle].name, cle);
+    });
+  }
+  return tableNomsSources.get(nom) || null;
+}
+
 function masquesAccueil() {
   const m = lireJsonLocal(CLE_MASQUES_ACCUEIL, {});
   return { panneaux: Array.isArray(m.panneaux) ? m.panneaux : [], categories: Array.isArray(m.categories) ? m.categories : [] };
@@ -46,7 +70,7 @@ function reduireBloc(bloc, titre, cacher) {
     } else if (enfant.dataset.masqueAccueil === '1') {
       delete enfant.dataset.masqueAccueil;
       // Une galerie de catégorie revient selon son réglage ; le reste revient affiché
-      enfant.hidden = enfant.dataset.categorie ? localStorage.getItem('kioske-galerie-cat-' + enfant.dataset.categorie) !== '1' : false;
+      enfant.hidden = enfant.dataset.categorie ? lireTexteLocal('kioske-galerie-cat-' + enfant.dataset.categorie) !== '1' : false;
     }
   });
 }
@@ -77,10 +101,8 @@ function appliquerMasquesAccueil(visible = () => true) {
 
   // Cartes : celles d'une catégorie masquée sortent des galeries
   const carteMasquee = carte => {
-    const nom = carte.getAttribute('data-source');
-    const meta = window.sourcesMetadata || {};
-    const cle = nom ? Object.keys(meta).find(k => meta[k].name === nom) : null;
-    return !!cle && categorieMasquee(meta[cle].category);
+    const cle = cleDeNomSource(carte.getAttribute('data-source'));
+    return !!cle && categorieMasquee(window.sourcesMetadata[cle].category);
   };
 
   // La grande galerie est recomplétée depuis ses cartes candidates (voir filtrerGaleriePrincipale)

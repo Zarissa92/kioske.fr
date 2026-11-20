@@ -100,7 +100,7 @@ GALERIE_VISIBLES = entier_opt("site", "grande_galerie_nombre", 20)
 GALERIE_CANDIDATS = entier_opt("site", "grande_galerie_candidats", 80)
 NB_GALERIE_BLOC = entier_opt("site", "galeries_blocs_nombre", 12)
 # Avance accordée aux articles des sources françaises dans les galeries (en heures). 0 = pas de priorité.
-PRIORITE_FRANCAIS_HEURES = entier_opt("site", "priorite_francais_heures", 72)
+PRIORITE_FRANCAIS_HEURES = entier_opt("site", "priorite_francais_heures", 6)
 if GALERIE_CANDIDATS < GALERIE_VISIBLES:
     raise SystemExit(f"{CONFIG.name} : grande_galerie_candidats ({GALERIE_CANDIDATS}) doit être au moins "
                      f"grande_galerie_nombre ({GALERIE_VISIBLES})")
