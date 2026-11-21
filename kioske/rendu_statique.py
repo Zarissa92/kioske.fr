@@ -65,7 +65,12 @@ def render_article_page(item: dict, preview: dict, prev_article: dict | None = N
         nav_buttons += f'<a href="{esc(f"/articles/{next_id}-{next_slug}/")}" class="nav-btn nav-next" aria-label="Article suivant">Suivant</a>'
     nav_buttons += '</div>'
 
-    canonical = f"{URL_SITE}/articles/{article_id(item['link'])}-{slug_article(title, item['link'])}/"
+    adresse_page = f"{URL_SITE}/articles/{article_id(item['link'])}-{slug_article(title, item['link'])}/"
+    # Adresse canonique : l'article d'origine. La page du KiosKe n'en est qu'un résumé avec un lien ; les moteurs
+    # créditent la source et n'indexent pas une copie (pas de concurrence avec le média, pas de « contenu dupliqué »).
+    # Lien d'origine invalide (pas http(s)) : la page elle-même. og:url reste la page du KiosKe (partage).
+    canonical = adresse_sure(item["link"], "") or adresse_page
+    meta_date = f'<meta property="article:published_time" content="{date.isoformat()}">' if date else ""
 
     # Image de partage : utiliser le preview "carte Pokémon" si disponible, sinon l'image de l'article
     share_image = preview_image if preview_image else image
@@ -83,7 +88,9 @@ def render_article_page(item: dict, preview: dict, prev_article: dict | None = N
         variables_html=VARIABLES_HTML,
         titre=esc(title),
         description=esc(summary[:160]),
-        adresse_canonique=canonical,
+        adresse_canonique=esc(canonical),
+        adresse_page=adresse_page,
+        meta_date=meta_date,
         nom_site=esc(NOM_SITE),
         meta_og_image=meta_og_image,
         meta_og_dimensions=meta_og_dimensions,

@@ -59,10 +59,7 @@ const { attendre, charger, clic, touche, panneauOuvert, poserHistorique, surAccu
   clic(w, panneauOuvert(d).querySelector('.categorie-backdrop')); await attendre();
   t.verif('clic sur le fond sombre', !panneauOuvert(d) && surAccueil(w));
 
-  clic(w, d.querySelector('.btn-favs')); await attendre();
-  t.verif('♡ de la barre ouvre « Mes favoris »', panneauOuvert(d) && panneauOuvert(d).id === 'container-favoris');
-  clic(w, d.querySelector('#favoris .categorie-fermer')); await attendre();
-  t.verif('× des favoris', !panneauOuvert(d) && surAccueil(w));
+  t.verif('♡ de la barre : un lien vers la page « Mes favoris », pas un panneau', d.querySelector('a.btn-favs')?.getAttribute('href') === '/menu/favoris/');
 
   clic(w, btnCat); await attendre();
   w.history.back(); await attendre();

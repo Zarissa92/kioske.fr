@@ -12,7 +12,7 @@ async function tuilesVisibles(avant) {
   const { w, d, erreurs } = charger('index.html', '/', { avant });
   await attendre(300);
   const tuiles = [...d.querySelectorAll('.sous-categorie .nuage .tag')]
-    .filter(t => t.closest('.sous-categorie').querySelector('h2').dataset.categoryName === 'FR');
+    .filter(t => t.closest('.sous-categorie').querySelector('.titre-categorie').dataset.categoryName === 'FR');
   return { visibles: tuiles.filter(t => t.style.display !== 'none').map(t => t.dataset.sourceKey), erreurs };
 }
 

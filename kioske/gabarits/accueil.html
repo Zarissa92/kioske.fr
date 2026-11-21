@@ -8,6 +8,7 @@
 <meta name="description" content="${description}">
 <meta name="keywords" content="${mots_cles}">
 <link rel="canonical" href="${url_site}/">
+<script type="application/ld+json">${donnees_structurees}</script>
 <meta name="theme-color" content="#000000">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="${nom_site}">
@@ -39,6 +40,7 @@ ${script_theme}
 <body data-page="accueil">
 ${barre_haut}
 <main class="panel">
+  <h1 class="sr-only">${titre}</h1>
   ${galerie}
   ${nuage}
 </main>
@@ -46,10 +48,7 @@ ${panneaux_communs}
 
 <section class="cartes" aria-label="Conteneur des panneaux">
 </section>
-<p class="mentions">Chaque article renvoie vers sa source d'origine. Textes, images et vidéos : leurs auteur.ice.s et sites respectifs.</p>
-<p class="mentions"><a href="https://github.com/Zarissa92/kioske.fr" target="_blank" rel="noopener noreferrer">GitHub du projet (GPL v3)</a></p>
-  <p class="mentions"><a href="/menu/dispositions-legales/">Dispositions légales</a></p>
-<p class="mentions">en Dev · Maj : ${date_maj}</p>
+${pied_page}
 ${script_bundle}
 </body>
 </html>

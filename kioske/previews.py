@@ -60,7 +60,13 @@ FONT_LETTRE = _police(360, 800)   # lettre de repli, au centre de la zone d'imag
 # garde son ancien fichier. v2 (2026-11-19) : police du site, lettre de repli tirée de la source.
 # Refaire une carte télécharge l'image de l'article (jusqu'à 15 s si le site est lent) : nombre ET durée bornés,
 # pour rester loin de la limite du timer (TimeoutStartSec=900). Rien n'est refait en build --simple (sans réseau).
-VERSION_PREVIEW = 3   # v3 (2026-11-19) : image de l'aperçu de la page quand le flux n'en donne pas
+# v3 (2026-11-19) : image de l'aperçu de la page quand le flux n'en donne pas.
+# v4 (2026-11-20) : JPEG au lieu de PNG. Le PNG gardait la photo presque sans compression (1 à 2 Mo par carte,
+# téléchargés par chaque robot qui lit og:image) ; en JPEG, 200 à 300 Ko pour la même carte.
+VERSION_PREVIEW = 4
+EXTENSION_PREVIEW = ".jpg"
+QUALITE_JPEG = 82
+EXTENSIONS_ANCIENNES = (".png", ".jpg")   # cartes des versions précédentes, retirées une fois refaites
 REFAITES_PAR_BUILD = 150
 REFAITES_DUREE_MAX = 180   # secondes par build
 
@@ -72,7 +78,7 @@ def chemin_preview(link: str) -> str:
 
 def nom_preview(link: str) -> str:
     """Nom du fichier de la carte, version comprise (img/previews/<nom>)."""
-    return f"{chemin_preview(link)}-v{VERSION_PREVIEW}.png"
+    return f"{chemin_preview(link)}-v{VERSION_PREVIEW}{EXTENSION_PREVIEW}"
 
 
 def lettre_repli(meta: str, titre: str) -> str:
@@ -85,7 +91,7 @@ def lettre_repli(meta: str, titre: str) -> str:
 
 
 def generer_preview(image_path: str | None, titre: str, meta: str, link: str) -> bytes:
-    """Génère une image PNG au format 'carte Pokémon'.
+    """Génère une image JPEG au format 'carte Pokémon'.
 
     Retourne les bytes de l'image.
     """
@@ -180,18 +186,22 @@ def generer_preview(image_path: str | None, titre: str, meta: str, link: str) ->
     if current_line:
         draw.text((margin, y_offset), current_line, fill=COLOR_WHITE, font=FONT_TITLE)
 
-    # Convertir en PNG
+    # JPEG progressif : six à sept fois plus léger que le PNG pour une carte avec photo
     buffer = BytesIO()
-    img.save(buffer, format="PNG", optimize=True)
+    img.save(buffer, format="JPEG", quality=QUALITE_JPEG, optimize=True, progressive=True)
     return buffer.getvalue()
 
 
 def _anciennes_cartes(link: str) -> list[Path]:
-    """Cartes d'une version précédente pour ce lien (<empreinte>.png, <empreinte>-v1.png…)."""
+    """Cartes d'une version précédente pour ce lien (<empreinte>.png, <empreinte>-v1.png, -v3.png…), la plus
+    récente d'abord : c'est elle qui est servie tant que la carte n'est pas refaite."""
     dossier = BUILD / DOSSIER_PREVIEWS
     base = chemin_preview(link)
-    return [f for f in [dossier / f"{base}.png", *dossier.glob(f"{base}-v*.png")]
-            if f.exists() and f.name != nom_preview(link)]
+    candidates = []
+    for ext in EXTENSIONS_ANCIENNES:
+        candidates += [dossier / f"{base}{ext}", *dossier.glob(f"{base}-v*{ext}")]
+    anciennes = {f for f in candidates if f.exists() and f.name != nom_preview(link)}
+    return sorted(anciennes, key=lambda f: f.stat().st_mtime, reverse=True)
 
 
 def preview_local(link: str, image_path: str | None, titre: str, meta: str, telecharger: bool = True) -> str:

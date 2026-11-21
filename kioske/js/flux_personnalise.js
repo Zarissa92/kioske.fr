@@ -401,6 +401,12 @@ function openCustomFluxPanel() {
     return;
   }
 
+  // Articles des panneaux pas encore chargés (donnees_accueil.js) : les charger, puis rouvrir
+  if (!window.sourcesData) {
+    avecDonneesAccueil(openCustomFluxPanel);
+    return;
+  }
+
   // Filtrer les articles des sources sélectionnées
   const articles = [];
   Object.keys(customSources).forEach(sourceKey => {

@@ -21,7 +21,7 @@ from .javascript import NOM_BUNDLE
 from .verrou import verrou
 
 # Sans ces fichiers, rien n'est publié.
-OBLIGATOIRES = [NOM_PAGE, "favicon.svg", "preview.png", "apple-touch-icon.png", "rss.xml", "fonts/russo-one.woff2", "fonts/inter.woff2",
+OBLIGATOIRES = [NOM_PAGE, "donnees-accueil.json", "favicon.svg", "preview.png", "apple-touch-icon.png", "rss.xml", "fonts/russo-one.woff2", "fonts/inter.woff2",
                "menu/index.html", "code-de-conduite.html",
                f"js/{NOM_BUNDLE}"]   # sans bundle, les pages n'ont aucun JavaScript (plus de script en ligne)
 # Dossiers entièrement générés : un fichier qui n'est plus dans build/ est retiré de la racine web.

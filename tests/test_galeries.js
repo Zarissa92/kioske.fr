@@ -9,6 +9,7 @@ const { attendre, charger, clic, panneauOuvert, poserHistorique, surAccueil, sui
     const { w, d, erreurs } = charger('index.html', '/');
     await attendre(300);
     poserHistorique(w);
+    await w.chargerDonneesAccueil();   // articles des panneaux : fichier à part, chargé à la demande
     const cats = Object.keys(w.categoriesData);
     w.categoriesData[cats[0]].forEach((a, i) => { a.image = '/img/veille/factice' + i + '.jpg'; });
     const bouton = (nom) => [...d.querySelectorAll('.titre-panneau[data-category-name]')].find(b => b.getAttribute('data-category-name') === nom);
@@ -32,14 +33,14 @@ const { attendre, charger, clic, panneauOuvert, poserHistorique, surAccueil, sui
       '<button class="galerie-arrow-left" type="button" aria-label="Défiler vers la gauche">&lt;</button>' +
       '<div class="galerie galerie-bloc">' + cartes + '</div>' +
       '<button class="galerie-arrow-right" type="button" aria-label="Défiler vers la droite">&gt;</button></section>';
-    return html.replace(/(<div class="sous-categorie"><h2[^>]*>.*?<\/h2>)/, '$1' + bloc);
+    return html.replace(/(<div class="sous-categorie"><(h[23])[^>]*>.*?<\/\2>)/, '$1' + bloc);
   };
   ({ w, d, erreurs } = charger('index.html', '/', { html: factice }));
   await attendre(300);
   poserHistorique(w);
   const bloc = d.querySelector('.sous-categorie .galerie-slider-bloc');
   t.verif('galerie entre le titre et les étiquettes',
-    bloc && bloc.previousElementSibling.tagName === 'H2' && bloc.nextElementSibling.classList.contains('nuage'));
+    bloc && bloc.previousElementSibling.classList.contains('titre-categorie') && bloc.nextElementSibling.classList.contains('nuage'));
   t.verif('20 vignettes au plus', bloc.querySelectorAll('a.galerie-carte').length > 0 && bloc.querySelectorAll('a.galerie-carte').length <= 20);
   const gal = bloc.querySelector('.galerie');
   clic(w, bloc.querySelector('.galerie-arrow-right')); clic(w, bloc.querySelector('.galerie-arrow-right'));

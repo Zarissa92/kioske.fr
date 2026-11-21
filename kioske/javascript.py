@@ -50,6 +50,7 @@ JS_CARTE_OUVERTE = lire("carte_ouverte.js")        # carte d'article affichée p
 # Accueil, pages d'article et de catégorie
 JS_RETOUR_APP = lire("retour_app.js")              # bouton précédent du téléphone dans l'app installée
 JS_FAVORIS = lire("favoris.js")                    # ♡ des articles, favoris enregistrés dans le navigateur
+JS_ETIQUETTES = lire("etiquettes.js")              # étiquettes des favoris : stockage, saisie, « + » des cartes d'article
 JS_PARTAGE = lire("partage.js")                    # bouton 📤 des articles
 JS_INSTALLATION_PWA = lire("installation_pwa.js")  # invite d'installation, bouton « Installer l'app »
 # Pages statiques
@@ -60,7 +61,7 @@ JS_PAGE_RSS = lire("page_rss.js")
 # Bundle unique : tout le JavaScript des pages, dans un ordre fixe. Son nom porte une empreinte du contenu
 # (cache longue durée sans risque). Écrit dans build/js/ par construction.py.
 import hashlib as _hashlib
-ORDRE_BUNDLE = [JS_DONNEES_ACCUEIL, JS_SERVICE_WORKER, JS_IMAGES_REPLI, JS_GALERIE, JS_FAVORIS, JS_PARTAGE,
+ORDRE_BUNDLE = [JS_DONNEES_ACCUEIL, JS_SERVICE_WORKER, JS_IMAGES_REPLI, JS_GALERIE, JS_FAVORIS, JS_ETIQUETTES, JS_PARTAGE,
                 JS_ACCUEIL, JS_ACCUEIL_PERSONNALISATION, JS_FLUX_PERSONNALISE, JS_NOTIFICATIONS, JS_RAFRAICHISSEMENT, JS_CARTE_OUVERTE,
                 JS_RETOUR_APP, JS_INSTALLATION_PWA, JS_PAGE_ARTICLE, JS_PAGE_CATEGORIE, JS_PAGE_RSS]
 JS_BUNDLE = "\n".join(ORDRE_BUNDLE)

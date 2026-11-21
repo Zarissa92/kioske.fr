@@ -16,6 +16,8 @@ function saveFavorites(fav) {
     console.error('Impossible de sauvegarder les favoris');
   }
   updateHearts();
+  // Les étiquettes des cartes d'article suivent (etiquettes.js)
+  document.dispatchEvent(new Event('kioske-favoris'));
 }
 
 // Animation du ♡ à l'ajout : il pulse et des étoiles jaillissent autour de lui. Désactivée par « réduire les

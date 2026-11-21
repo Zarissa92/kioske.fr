@@ -65,6 +65,12 @@
     @media (prefers-reduced-motion: reduce) {
       a { transition: none; }
     }
+    /* body est en flex : le pied de page passe sous le contenu, sur toute la largeur */
+    body { flex-wrap: wrap; }
+    .pied-page { flex: 0 0 100%; box-sizing: border-box; margin: 2.5rem auto 0; max-width: 36rem; padding: 1rem 0 0; border-top: 1px solid var(--color-text-main); font-size: .75rem; line-height: 1.5; opacity: .85; }
+    .pied-page p { margin: 0 0 .4rem; font-size: inherit; }
+    .pied-page a { border: 0; padding: 0; background: none; color: var(--color-text-main); text-decoration: underline; }
+    .pied-page a:hover, .pied-page a:focus-visible { color: var(--neon-coeur); }
   </style>
 </head>
 <body>
@@ -77,5 +83,9 @@
       <a href="/rss.html">Flux RSS</a>
     </nav>
   </main>
+  <footer class="pied-page">
+    <p>Chaque article renvoie vers sa source d'origine. Textes, images et vidéos : leurs auteur.ice.s et sites respectifs.</p>
+    <p><a href="/menu/dispositions-legales/">Dispositions légales</a></p>
+  </footer>
 </body>
 </html>

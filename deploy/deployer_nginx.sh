@@ -60,6 +60,8 @@ map $uri $kioske_cache_control {
     /sw.js                            "no-cache, must-revalidate, max-age=0";
     # Manifest PWA : 1 jour
     /manifest.json                    "public, max-age=86400";
+    # Articles des panneaux de l'accueil : changent avec chaque build, comme la page qui les appelle
+    /donnees-accueil.json             "no-cache, must-revalidate, max-age=0";
     # Icônes PWA : 1 an
     ~/icon-[0-9]+\.png$               "public, max-age=31536000, immutable";
     # Images de la veille : 30 jours
@@ -111,9 +113,12 @@ limit_req_zone $kioske_cle_robot zone=kioske_robots:10m rate=30r/m;
 
 # Robots d'IA (même liste que ROBOTS_IA dans kioske/construction.py, qui leur demande Crawl-delay: 10) :
 # 6 pages/min, soit une toutes les 10 secondes. S'ajoute à la limite des robots (30/min) : la plus stricte joue.
+# Clé = le nom du robot (capture $1), pas l'adresse IP : Amazonbot et d'autres changent d'IP (AWS) à chaque requête,
+# une limite par IP ne les freinait jamais. Toutes les IP d'un même robot partagent donc le même compteur.
+# Les 429 restent rares par IP : kioske-debit (60 en 10 min par IP) ne bannit pas toutes les plages du robot.
 map $http_user_agent $kioske_cle_robot_ia {
     default "";
-    "~*(gptbot|chatgpt-user|claudebot|claude-web|anthropic-ai|ccbot|bytespider|perplexitybot|perplexity-user|amazonbot|meta-externalagent|meta-externalfetcher|facebookbot|cohere-ai|cohere-training-data-crawler|diffbot|omgilibot|omgili|imagesiftbot|youbot|ai2bot|timpibot|mistralai-user|img2dataset|duckassistbot|pangubot|kangaroo bot|webzio-extended|velenpublicwebcrawler)" $binary_remote_addr;
+    "~*(gptbot|chatgpt-user|claudebot|claude-web|anthropic-ai|ccbot|bytespider|perplexitybot|perplexity-user|amazonbot|meta-externalagent|meta-externalfetcher|facebookbot|cohere-ai|cohere-training-data-crawler|diffbot|omgilibot|omgili|imagesiftbot|youbot|ai2bot|timpibot|mistralai-user|img2dataset|duckassistbot|pangubot|kangaroo bot|webzio-extended|velenpublicwebcrawler)" $1;
 }
 limit_req_zone $kioske_cle_robot_ia zone=kioske_robots_ia:10m rate=6r/m;
 NGINX
@@ -146,7 +151,7 @@ EMPLACEMENTS="$(cat <<'NGINX'
     }
 
     # Pages et données à la racine : accueil, page des flux, flux RSS, plan du site, index de recherche
-    location ~ ^/(index\.html|rss\.html|hors-ligne\.html|code-de-conduite\.html|rss\.xml|plus-lus\.xml|sitemap\.xml|robots\.txt|articles-index\.json)$ {
+    location ~ ^/(index\.html|rss\.html|hors-ligne\.html|code-de-conduite\.html|rss\.xml|plus-lus\.xml|sitemap\.xml|robots\.txt|articles-index\.json|donnees-accueil\.json)$ {
         limit_req zone=kioske_pages burst=40 nodelay;
         limit_req zone=kioske_robots burst=10 nodelay;
         limit_req zone=kioske_robots_ia burst=3 nodelay;

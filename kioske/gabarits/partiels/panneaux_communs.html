@@ -3,12 +3,10 @@
   <div id="favoris" class="categorie-panneau">
     <button type="button" class="categorie-fermer" data-article-id="favoris" aria-label="Fermer">×</button>
     <h2>Mes favoris</h2>
+    <div class="fav-etiquettes" id="fav-etiquettes" role="toolbar" aria-label="Étiquettes des favoris" hidden></div>
+    <div class="fav-bandeau" id="fav-bandeau" role="toolbar" aria-label="Outils des étiquettes"></div>
+    <datalist id="fav-etiquettes-liste"></datalist>
     <div class="grille" id="fav-grille"></div>
-    <div class="fav-controls">
-      <button type="button" class="fav-export" id="fav-export-btn">Télécharger mes favoris</button>
-      <button type="button" class="fav-import" id="fav-import-btn">Charger des favoris</button>
-      <button type="button" class="fav-export" id="fav-clear-btn">Effacer tous les favoris</button>
-    </div>
   </div>
 </div>
 <input type="file" id="fav-file-input" accept=".json" aria-label="Charger un fichier de favoris">

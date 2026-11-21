@@ -524,7 +524,8 @@ h1 { font-size: clamp(1.8rem, 6vw, 2.8rem); line-height: 1.2; margin-bottom: 0.6
 @media (max-width: 960px) { .grille { --colonnes: 4; } }
 @media (max-width: 640px) { .grille { --colonnes: 2; gap: .6rem; } }
 .categorie-panneau h2 { font-size: clamp(1.1rem, 2.6vw, 1.5rem); text-transform: uppercase; color: var(--color-categorie-panneau-h2); margin: 0 2.4rem 1rem 0; }
-.categorie-fermer { position: absolute; z-index: 300; top: .5rem; right: .5rem; width: 2rem; height: 2rem; border: var(--border-article-lien); background: #000; color: var(--color-text-main); font: inherit; font-size: 1.2rem; cursor: pointer; }
+/* × centré dans sa case (grille), sans marge intérieure : le glyphe ne se décale pas quand la taille change */
+.categorie-fermer { position: absolute; z-index: 300; top: .5rem; right: .5rem; width: 2rem; height: 2rem; display: grid; place-items: center; padding: 0; border: var(--border-article-lien); background: #000; color: var(--color-text-main); font: inherit; font-size: 1.2rem; line-height: 1; cursor: pointer; }
 .categorie-fermer:hover, .categorie-fermer:focus-visible { background: var(--color-text-main); color: #000; }
 .compte { font-weight: 400; opacity: .7; font-size: .8rem; }
 /* panneau d'un article : s'ouvre au clic sur la carte, dans la page, sans aller sur le site */
@@ -562,7 +563,8 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 @media (max-width: 640px) {
   .categorie-panneau { width: 98vw; max-height: 85vh; padding: 1.2rem var(--espacement-panneau-horizontal, .5rem); }
   .categorie-panneau h2 { font-size: 1.3rem; margin-bottom: 0.8rem; }
-  .categorie-fermer { width: 2.2rem !important; height: 2.2rem !important; font-size: 1.4rem !important; }
+  /* Tailles réduites : seulement la croix carrée ; celle de l'en-tête reste une barre pleine largeur, × au centre */
+  .categorie-fermer:not(.fermer-entete) { width: 2.2rem !important; height: 2.2rem !important; font-size: 1.4rem !important; }
 }
 /* Moins de 360 px : 🏠 et les quatre autres boutons restent sur une seule ligne (plus petits, sans retour à la ligne) */
 @media (max-width: 359px) {
@@ -573,14 +575,14 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 @media (max-width: 429px) {
   .categorie-panneau { width: 96vw; max-height: 80vh; padding: 1rem var(--espacement-panneau-horizontal, .5rem); }
   .categorie-panneau h2 { font-size: 1.2rem; margin-bottom: 0.6rem; }
-  .categorie-fermer { width: 1.8rem !important; height: 1.8rem !important; font-size: 1.1rem !important; padding: 0.2rem 0.4rem !important; }
+  .categorie-fermer:not(.fermer-entete) { width: 1.8rem !important; height: 1.8rem !important; font-size: 1.1rem !important; }
   .grille { --colonnes: 1; gap: 0.4rem; }
   .pagination-btn { font-size: 0.75rem !important; padding: 0.3rem 0.5rem !important; }
 }
 @media (max-width: 300px) {
   .categorie-panneau { width: 95vw; max-height: 75vh; padding: 0.8rem var(--espacement-panneau-horizontal, .5rem); }
   .categorie-panneau h2 { font-size: 1.1rem; margin-bottom: 0.5rem; }
-  .categorie-fermer { width: 1.6rem !important; height: 1.6rem !important; font-size: 1rem !important; padding: 0.1rem 0.3rem !important; }
+  .categorie-fermer:not(.fermer-entete) { width: 1.6rem !important; height: 1.6rem !important; font-size: 1rem !important; }
   .pagination-btn { font-size: 0.65rem !important; padding: 0.2rem 0.4rem !important; }
 }
 .article-texte { flex: 1; margin: 0 0.99rem; overflow-wrap: anywhere; color: var(--color-light); overflow-y: auto; }
@@ -631,6 +633,18 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .mentions { position: relative; z-index: 0; max-width: 1200px; width: calc(100% - 32px); margin: 0 auto; font-size: .8rem; opacity: .85; text-align: center; pointer-events: auto; }
 .mentions a { color: var(--color-light); text-decoration: none; transition: all .2s; }
 .mentions a:hover, .mentions a:focus-visible { color: var(--color-text-main); text-decoration: underline; opacity: 1; outline: none; }
+/* Pied de page de l'accueil : mentions, liens (GitHub, dispositions légales) et date, dans une bande séparée
+   par un filet de la couleur du thème. Le bouton « Réafficher » des catégories masquées reste dans <main>. */
+.pied-page { position: relative; z-index: 0; box-sizing: border-box; max-width: 560px; width: calc(100% - 32px); margin: 2rem auto 0; padding: 1rem 0 1.4rem; border-top: 1px solid var(--color-text-main); display: flex; flex-direction: column; gap: .4rem; }
+.pied-page .mentions { width: auto; max-width: none; margin: 0; }
+/* Le pied de page a la largeur du panneau de l'accueil et des pages à colonne (mêmes seuils que « .panel ») :
+   le trait du haut se pose sous le bord du panneau. Sur téléphone, le panneau va d'un bord à l'autre : le trait aussi,
+   et seul le texte garde une marge. */
+@media (max-width: 640px) { .pied-page { width: 100%; max-width: none; padding-left: 16px; padding-right: 16px; } }
+@media (min-width: 900px) { .pied-page { max-width: 1000px; } }
+@media (min-width: 1100px) { .pied-page { width: min(1100px, calc((100vw - 2rem) / 1.25)); max-width: none; } }
+.pied-liens { display: flex; flex-wrap: wrap; justify-content: center; row-gap: .2rem; }
+.pied-liens > span[aria-hidden] { padding: 0 .45rem; opacity: .6; }
 /* ----- nuage des sources (même principe que la page principale) ----- */
 .nuage { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem; margin: 0.5rem 0 0; padding: .7rem;
   background: #0a0000; border: var(--border-carte-plus); }
@@ -654,21 +668,21 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   .carte-plus { width: 0.6rem; height: 0.6rem; font-size: 0.4rem; right: 0.15rem; bottom: 0.15rem; }
 }
 .titre-panneau { padding: 0.8rem; margin-top: 0.5rem; border-radius: var(--border-radius-titre-panneau); margin-bottom: 0.5rem; transition: all 0.2s; border: 2px solid transparent; }
-.groupe h3.titre-panneau { color: var(--color-groupe-h3-titre-panneau); font-weight: 700; display: block; border-color: var(--border-color-groupe-h3-titre-panneau); text-shadow: var(--text-shadow-groupe-h3-titre-panneau); }
-.groupe h2.titre-panneau { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--color-groupe-h2-titre-panneau); font-weight: 700; display: block; border-color: var(--border-color-groupe-h2-titre-panneau); text-shadow: var(--text-shadow-groupe-h2-titre-panneau); }
+.groupe :is(h2, h3).titre-du-panneau { font-size: 1.17em; color: var(--color-groupe-h3-titre-panneau); font-weight: 700; display: block; border-color: var(--border-color-groupe-h3-titre-panneau); text-shadow: var(--text-shadow-groupe-h3-titre-panneau); }
+.groupe :is(h2, h3).titre-categorie { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--color-groupe-h2-titre-panneau); font-weight: 700; display: block; border-color: var(--border-color-groupe-h2-titre-panneau); text-shadow: var(--text-shadow-groupe-h2-titre-panneau); }
 .titre-panneau:hover { background: rgba(255, 255, 255, 0.05); transform: translateY(-2px); }
-.groupe h3.titre-panneau:hover { text-shadow: var(--text-shadow-groupe-h3-titre-panneau-hove); }
-.groupe h2.titre-panneau:hover { text-shadow: var(--text-shadow-groupe-h2-titre-panneau-hove); }
+.groupe :is(h2, h3).titre-du-panneau:hover { text-shadow: var(--text-shadow-groupe-h3-titre-panneau-hove); }
+.groupe :is(h2, h3).titre-categorie:hover { text-shadow: var(--text-shadow-groupe-h2-titre-panneau-hove); }
 .groupe .nuage { margin: 0; padding: 0; border: 0; background: none; justify-content: flex-start; }
 /* deux blocs qui se suivent dans un panneau (sous-catégorie puis source directe) : un espace entre eux */
 .groupe .sous-categorie + .sous-categorie, .groupe .sous-categorie + .nuage, .groupe .nuage + .nuage { margin-top: .6rem; }
 /* marge à droite du titre : ancienne place de l'icône RSS, gardée pour ne pas changer la mise en page */
 .groupe { position: relative; }
-.groupe h2 { padding-right: 2rem; }
+.groupe :is(h2, h3).titre-categorie { padding-right: 2rem; }
 /* ----- Effets néon légers sur les titres de panneaux ----- */
-.groupe h3.titre-panneau:hover { }
+.groupe :is(h2, h3).titre-du-panneau:hover { }
 .groupe { position: relative; }
-.groupe h2 { padding-right: 2rem; }
+.groupe :is(h2, h3).titre-categorie { padding-right: 2rem; }
 /* Écrans larges (PC) : le panneau n'est plus une colonne de téléphone, et la veille tient sur deux colonnes. */
 @media (min-width: 900px) {
   .panel { max-width: 1000px; padding: 1.5rem 2rem; }
@@ -697,11 +711,11 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
 .fav-heart:hover { transform: scale(1.15); color: var(--color-fav-heart); border-color: var(--border-color-fav-heart-active); outline: none; }
 .fav-heart:focus-visible { outline: var(--border-carte-lien); outline-offset: 2px; }
 .fav-heart.active { color: var(--color-fav-heart); background: rgba(255, 255, 255, 0.15); border-color: var(--border-color-fav-heart-active); }
-.share-btn { padding: 0.5rem 0.8rem; margin: 0 0.8rem; font-size: 1.4rem; line-height: 1; cursor: pointer; transition: all 0.2s; color: var(--color-fav-heart); user-select: none; border: var(--border-fav-heart); background: #000; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--border-radius-fav-heart); }
-.share-btn:hover { transform: scale(1.15); color: var(--color-text-main); border-color: var(--border-color-btn-retour-hover-btn-retour); outline: none; }
-.share-btn:focus-visible { outline: var(--border-carte-lien); outline-offset: 2px; }
+.share-btn, .etiquette-btn { padding: 0.5rem 0.8rem; margin: 0 0.8rem; font-size: 1.4rem; line-height: 1; cursor: pointer; transition: all 0.2s; color: var(--color-fav-heart); user-select: none; border: var(--border-fav-heart); background: #000; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--border-radius-fav-heart); }
+.share-btn:hover, .etiquette-btn:hover:not(:disabled) { transform: scale(1.15); color: var(--color-text-main); border-color: var(--border-color-btn-retour-hover-btn-retour); outline: none; }
+.share-btn:focus-visible, .etiquette-btn:focus-visible { outline: var(--border-carte-lien); outline-offset: 2px; }
+.etiquette-btn:disabled { opacity: .4; cursor: default; }   /* 🏷 des cartes d'article (etiquettes.js) : style de 📤 */
 /* Boutons de contrôle des favoris dans le panneau */
-.fav-controls { flex: 0 0 auto; padding: 1rem 0; border-top: var(--border-article-lien); text-align: center; gap: 0.5rem; display: flex; flex-direction: column; }
 /* Favoris et résultats de recherche : la grille est directement dans le panneau, qui a une hauteur
    maximale. Elle défile au lieu de déborder ; le titre et les boutons restent en place. */
 /* Panneaux (source, catégorie, recherche, favoris, code de conduite) : plein écran, au-dessus de la
@@ -714,8 +728,6 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
    « auto » se tassent sous la hauteur des cartes (les cartes ont overflow: hidden, donc une hauteur
    minimale nulle) et les cartes se superposent. */
 .categorie-panneau > .grille { flex: 1 1 auto; min-height: 0; overflow-y: auto; align-content: start; grid-auto-rows: max-content; overscroll-behavior: contain; }
-.fav-export, .fav-import { display: block; padding: 0.6rem; border: var(--border-article-lien); background: #000; color: var(--color-light); font: inherit; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; text-align: center; }
-.fav-export:hover, .fav-import:hover { background: var(--color-text-main); color: #000; border-color: var(--border-color-btn-retour-hover-btn-retour); }
 #fav-file-input { display: none; }
 /* Conteneur défilant */
 
@@ -1140,16 +1152,24 @@ button.carte { font: inherit; padding: 0; cursor: pointer; }
   background: #0a0000;
   z-index: 5;
 }
-/* Barre du bas de la carte ouverte, petits écrans : quatre éléments (Précédent, ♡, partager, Suivant)
-   sur une seule ligne dépassaient la carte sous ~375 px, et overflow: hidden coupait « Suivant ».
-   Retour à la ligne possible, marges réduites sous 400 px. */
-:where(.panel-article) .article-nav { flex-wrap: wrap; row-gap: .3rem; }
-:where(.panel-article) .article-nav > * { min-width: 0; }
-@media (max-width: 400px) {
-  :where(.panel-article) .article-nav { gap: .3rem; padding: .4rem; }
-  :where(.panel-article) .article-nav .nav-btn { font-size: .8rem; padding: .4rem .5rem; }
+/* Barre du bas de la carte : cinq éléments (Précédent, ♡, 📤, 🏷, Suivant) toujours sur une seule ligne
+   (choix de l'utilisatrice). Pas de retour à la ligne : sur petit écran, marges et tailles réduites pour que
+   tout tienne (jusqu'à ~280 px). Les étiquettes de l'article sont au-dessus de la barre (style_favoris.css). */
+:where(.panel-article) .article-nav { flex-wrap: nowrap; align-items: center; }
+:where(.panel-article) .article-nav > * { min-width: 0; flex: 0 1 auto; }
+@media (max-width: 480px) {
+  :where(.panel-article) .article-nav { gap: .25rem; padding: .4rem .3rem; }
+  :where(.panel-article) .article-nav .nav-btn { font-size: .8rem; padding: .4rem .45rem; white-space: nowrap; }
   :where(.panel-article) .article-nav .fav-heart,
-  :where(.panel-article) .article-nav .share-btn { margin: 0 .2rem; padding: .3rem .5rem; font-size: 1.1rem; }
+  :where(.panel-article) .article-nav .share-btn,
+  :where(.panel-article) .article-nav .etiquette-btn { margin: 0 .1rem; padding: .3rem .45rem; font-size: 1.1rem; }
+}
+@media (max-width: 340px) {
+  :where(.panel-article) .article-nav { gap: .15rem; padding: .35rem .2rem; }
+  :where(.panel-article) .article-nav .nav-btn { font-size: .72rem; padding: .35rem .3rem; }
+  :where(.panel-article) .article-nav .fav-heart,
+  :where(.panel-article) .article-nav .share-btn,
+  :where(.panel-article) .article-nav .etiquette-btn { margin: 0; padding: .25rem .35rem; font-size: 1rem; }
 }
 /* Carte d'article ouverte en JavaScript par-dessus la page */
 .carte-ouverte { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; overflow: auto; }
@@ -1225,7 +1245,11 @@ html[data-pluie="oui"] #pluie { display: block; }
 /* Bouton 👁 des titres de l'accueil (kioske/js/accueil_personnalisation.js) */
 .titre-panneau:has(> .accueil-outils) { position: relative; }
 .accueil-outils { position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); display: inline-flex; gap: 0.25rem; }
-.accueil-outil { margin-left: 0; padding: 0 0.3rem; font: inherit; font-size: 0.75rem; line-height: 1.4; color: var(--color-text-main); background: transparent; border: var(--border-nuage-tag); border-radius: 3px; cursor: pointer; vertical-align: middle; }
+.accueil-outil { margin-left: 0; padding: 0; font: inherit; font-size: 0.75rem; line-height: 1; color: var(--color-text-main); background: transparent; border: var(--border-nuage-tag); border-radius: 0.5rem; cursor: pointer; vertical-align: middle;
+  /* Taille fixe et icône centrée (avant : l'icône suivait la ligne de texte et tombait décalée) ; coins arrondis
+     comme les titres qui l'entourent */
+  display: inline-flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.35rem; box-sizing: border-box; }
+.accueil-outil svg { display: block; flex: 0 0 auto; }
 /* Survol, focus et option active : mêmes couleurs que les étiquettes des sources (--tag-survol, défini par thème) */
 .accueil-outil:hover, .accueil-outil:focus-visible, .accueil-outil[aria-pressed="true"] { background: var(--tag-survol); color: #fff; border-color: var(--tag-survol); }
 .accueil-outil:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
@@ -1233,3 +1257,6 @@ html[data-pluie="oui"] #pluie { display: block; }
 .accueil-bandeau { margin: 0 0 0.6rem; text-align: center; }
 .accueil-bandeau[hidden] { display: none; }
 .accueil-bandeau-bouton { font: inherit; font-size: 0.8rem; padding: 0.3rem 0.6rem; color: var(--color-light); background: transparent; border: 1px solid currentColor; border-radius: 3px; cursor: pointer; }
+
+/* Premier panneau de l'accueil : articles en cours de téléchargement (donnees_accueil.js, avecDonneesAccueil) */
+html.chargement-donnees, html.chargement-donnees * { cursor: progress !important; }

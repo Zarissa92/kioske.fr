@@ -201,22 +201,24 @@ document.querySelectorAll('.nuage .tag').forEach(tag => {
     const sourceKey = tag.getAttribute('data-source-key');
     const sourceName = tag.getAttribute('data-source-name');
     if (sourceKey && sourceName) {
-      createSourcePanel(sourceKey, sourceName);
-      const sourceId = idPanneau('source-', sourceKey);
-      showPopover(sourceId);
+      avecDonneesAccueil(() => {   // donnees_accueil.js : articles chargés au premier panneau ouvert
+        createSourcePanel(sourceKey, sourceName);
+        showPopover(idPanneau('source-', sourceKey));
+      });
     }
   });
 });
 
-// Gestion des titres cliquables (h2, h3) pour ouvrir les panneaux
+// Gestion des titres cliquables (panneaux et catégories) pour ouvrir les panneaux
 document.querySelectorAll('.titre-panneau').forEach(titre => {
   titre.addEventListener('click', (e) => {
     e.preventDefault();
     const categoryName = titre.getAttribute('data-category-name');
     if (categoryName) {
-      createCategoryPanel(categoryName);
-      const categoryId = idPanneau('cat-', categoryName);
-      showPopover(categoryId);
+      avecDonneesAccueil(() => {
+        createCategoryPanel(categoryName);
+        showPopover(idPanneau('cat-', categoryName));
+      });
     }
   });
 });

@@ -6,15 +6,21 @@ const { attendre, charger, clic, touche, panneauOuvert, nbFavoris, premierArticl
   let t = suite('Accueil');
   let { w, d, erreurs } = charger('index.html', '/');
   await attendre(300);
-  t.verif('données lues depuis le JSON de la page',
+  t.verif('articles des panneaux absents de la page (fichier à part)',
+    w.sourcesData === null && w.categoriesData === null && !d.getElementById('kioske-donnees').textContent.includes('"categories"'));
+  await w.chargerDonneesAccueil();
+  t.verif('articles des panneaux chargés depuis /donnees-accueil.json',
     Object.keys(w.sourcesData).length > 0 && Object.keys(w.categoriesData).length > 0);
+  // Le fichier ne recopie pas les articles dans les catégories : des références, remplacées au chargement
+  const articlesCat = Object.values(w.categoriesData).flat();
+  const articlesSrc = new Set(Object.values(w.sourcesData).flat());
+  t.verif('catégories : de vrais articles (références remplacées)',
+    articlesCat.length > 0 && articlesCat.every(a => a && typeof a.title === 'string' && !Array.isArray(a)));
+  t.verif('catégories : les mêmes objets que dans les sources (rien de dupliqué)',
+    articlesCat.every(a => articlesSrc.has(a)));
   const onclicks = [...d.querySelectorAll('[onclick]')];
   t.verif('aucun onclick dans la page', onclicks.length === 0, '(' + onclicks.length + ')');
-  let ouvertures = 0; d.getElementById('fav-file-input').click = () => { ouvertures++; };
-  clic(w, d.querySelector('.btn-favs')); await attendre();
-  clic(w, d.getElementById('fav-import-btn'));
-  t.verif('« Charger des favoris » ouvre le choix de fichier', ouvertures === 1);
-  clic(w, d.querySelector('#favoris .categorie-fermer')); await attendre();
+  t.verif('♡ de la barre : lien vers la page « Mes favoris »', d.querySelector('a.btn-favs')?.getAttribute('href') === '/menu/favoris/');
 
   clic(w, d.querySelector('.titre-panneau[data-category-name]')); await attendre();
   clic(w, panneauOuvert(d).querySelector('a.carte')); await attendre(300);
@@ -38,6 +44,7 @@ const { attendre, charger, clic, touche, panneauOuvert, nbFavoris, premierArticl
   t = suite('Accueil : recherche');
   ({ w, d, erreurs } = charger('index.html', '/'));
   await attendre(300);
+  await w.chargerDonneesAccueil();   // articles des panneaux : fichier à part, chargé à la demande
   const mot = Object.values(w.categoriesData)[0][0].title.split(/\s+/).find(m => m.length > 4) || 'a';
   const champ = d.getElementById('recherche');
   champ.value = mot;

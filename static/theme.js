@@ -55,7 +55,8 @@
   // un nouveau réglage se déclare ici aussi. Les données (favoris, notifications, vus) n'y sont pas.
   const REGLAGES = [CLE, CLE_SOBRE, ...GALERIES.map(g => g.cle), 'kioske_accueil_masques',
     'kioske_flux_personnalise', 'kioske_flux_connus',   // flux personnalisé (flux_personnalise.js)
-    'kioske_notifications', 'kioske_notif_site'];      // interrupteurs des notifications (notifications.js)
+    'kioske_notifications', 'kioske_notif_site', 'kioske_notif_vie',   // interrupteurs des notifications (notifications.js)
+    'kioske_tri_favoris'];                             // tri des cartes de « Mes favoris » (accueil_favoris.js)
   function lireGalerie(g) {
     try {
       const choix = localStorage.getItem(g.cle);

@@ -4,7 +4,7 @@
 
 - **Menu** (`/menu/`, ex-« Ressources ») : documents Markdown, sommaire, Paramètres, mises à jour du site, dispositions légales ; une adresse par document, Markdown avec sous-puces, images centrées et légendées, espaces conservés.
 - **Accueil** : galerie « Les + vus de la semaine » (classement d'après les cartes ouvertes, sans suivi) et « Les derniers articles » ; réglages par défaut dans `kioske.cfg` ; recherche en direct.
-- **Favoris** : animation du ♡ à l'ajout.
+- **Favoris** : animation du ♡ à l'ajout ; étiquettes (sur les cartes et les articles), filtres par étiquette et par média, tri, sauvegarde avec les étiquettes.
 - **Paramètres** : bouton « Tout remettre par défaut » (les favoris sont gardés).
 - **PWA** : raccourcis de l'app installée, page hors connexion.
 - **Cartes de partage** : police du site, image de l'article, version 3.
@@ -78,7 +78,7 @@ L'image est une capture figée : l'animation se voit dans la page.
 | `bin/` | Points d'entrée : `build_site.py`, `publier_public.py`. Quelques lignes chacun. |
 | `deploy/` | Scripts du serveur : `kioske.sh` (point d'entrée), `installer_serveur.sh`, `deployer_nginx.sh`, `verifier_serveur.sh`, `lib_config.sh`, `systemd/`, `fail2ban/`, `sauvegarder.sh` (sauvegarde quotidienne dans `~/kioske-sauvegardes` : projet sans `build/`, venv ni `tests/node_modules`, racine web, certificats et configuration ; un `tar` qui signale seulement un fichier modifié pendant la lecture garde l'archive, un vrai échec supprime le dossier daté incomplet). |
 | `data/` | `historique.db`, `cache/`, `build.lock` (locaux, jamais publiés). |
-| `build/` | **Le site généré**, complet : `index.html` (accueil), `rss.html` (découverte des flux RSS), `articles/{id}-{slug}/index.html` (une page par article), `categories/{slug}/index.html` (une page par catégorie), `articles-index.json` (index de tous les articles : recherche et favoris), `rss.xml` (flux général), `img/previews/` (cartes de partage ; les images des articles restent chez leur source), copie de `static/`, CSS des thèmes (copiés depuis `kioske/`), `robots.txt`, `sitemap.xml`. Hors git, jamais édité à la main. Sur le serveur, il est reconstruit toutes les 30 minutes par le timer (`deploy/kioske.sh veille`) et copié dans la racine web ; le build du PC sert aux tests et n'est jamais envoyé. |
+| `build/` | **Le site généré**, complet : `index.html` (accueil), `rss.html` (découverte des flux RSS), `articles/{id}-{slug}/index.html` (une page par article), `categories/{slug}/index.html` (une page par catégorie), `articles-index.json` (index de tous les articles : recherche et favoris), `donnees-accueil.json` (articles des panneaux de l'accueil, rangés par source ; les catégories et panneaux n'y sont que des références `[rang de la source, rang de l'article]`, remplacées par les articles au chargement (`categoriesDepuisReferences`) ; téléchargé au premier panneau ouvert, pas avec la page), `rss.xml` (flux général), `img/previews/` (cartes de partage ; les images des articles restent chez leur source), copie de `static/`, CSS des thèmes (copiés depuis `kioske/`), `robots.txt`, `sitemap.xml`. Hors git, jamais édité à la main. Sur le serveur, il est reconstruit toutes les 30 minutes par le timer (`deploy/kioske.sh veille`) et copié dans la racine web ; le build du PC sert aux tests et n'est jamais envoyé. |
 | `requirements.txt` | Dépendances Python (`feedparser`, `yt-dlp`, `legacy-cgi`). |
 | `apercu/preview.svg` | Source de `static/preview.png` (image de partage social) : générer avec `rsvg-convert -w 1200 -h 630 apercu/preview.svg -o static/preview.png`. |
 | `docs/img/` | Captures de ce README. |
@@ -99,7 +99,7 @@ Le paquet `kioske/` :
 | `rendu_statique.py` | Contenu des pages statiques d'articles et de catégories (image, navigation, cartes ; le squelette est dans `gabarits/`). Aucun CSS (il est dans `style.css`) ni JavaScript (il est dans `js/`). |
 | `gabarits.py`, `gabarits/` | Squelettes HTML des pages : `accueil.html`, `article.html`, `categorie.html`, `rss.html`. `${nom}` marque l'endroit d'une valeur ; ni boucle ni condition dans un gabarit. `gabarits.py` fournit `remplir("page.html", nom=valeur, …)` : une valeur manquante arrête le build, et le texte est échappé par Python (`esc()`) avant d'être passé. Un vrai signe dollar s'écrit `$$`. Pour modifier le HTML fixe d'une page, éditer son gabarit ; pour y ajouter une valeur, écrire `${nom}` dans le gabarit et passer `nom=…` dans l'appel `remplir()` de `rendu.py` ou `rendu_statique.py`. |
 | `gabarits/menu.html`, `gabarits/texte.html`, `gabarits/partiels/`, `style_menu.css` | Pages statiques : `menu.html` (index et documents, un seul gabarit), `texte.html` (code de conduite). `partiels/` : en-tête commun (`tete_page.html`), barre du haut et panneaux communs (`barre_haut.html`, `panneaux_communs.html`), remplis par `barre_et_panneaux()` et `valeurs_barre()` (`rendu.py`). `style_menu.css` : sommaire, document, menu ≡ sur petit écran. |
-| `javascript.py`, `js/` | Tout le JavaScript écrit dans les pages. `js/` : un fichier par rôle — `accueil_personnalisation.js` (masquages de l'accueil : `appliquerMasquesAccueil()`, appelée par `flux_personnalise.js`), `accueil_*.js` (l'accueil, découpé en sept fichiers concaténés dans cet ordre : `accueil_historique` panneaux et adresse, `accueil_clavier`, `accueil_cartes`, `accueil_panneaux`, `accueil_recherche`, `accueil_adresse`, `accueil_favoris` ; la liste est dans `javascript.py`), `notifications.js` (cloche et notifications des flux personnalisés, désactivées par défaut ; elles arrivent pendant que le site est ouvert ; aujourd'hui seuls les **nouveaux flux** notifient (`notifierNouvellesSources()`) ; si « Me prévenir des changements du site » est activé, les nouveaux points de la page Mise à jour et les nouveaux documents de Menu notifient aussi (`verifierMisesAJour()`, `verifierMenu()`) ; les notifications d'**articles** sont en pause (`NOTIF_ARTICLES = false`, code gardé pour plus tard) ; la cloche est toujours visible ; point rouge en haut à droite tant qu'une notification est non lue ; les notifications restent dans la liste « Mes notifications » jusqu'à « Tout effacer » (qui n'efface que les notifications) ; la page Mise à jour est relue (`/menu/mise-a-jours/`) : un nouveau point déclenche une notification « Mise à jour du site »), `rafraichissement.js` (l'accueil se recharge seul quand une nouvelle version est publiée, sauf si un panneau est ouvert), `favoris.js` (♡ et favoris enregistrés dans le navigateur, sur toutes les pages qui montrent un article), `partage.js` (bouton 📤), `galerie.js` (flèches des galeries), `carte_ouverte.js` (carte d'article par-dessus la page), `retour_app.js` (bouton précédent dans l'app installée), `installation_pwa.js`, `donnees_accueil.js` (lit le JSON des articles), `service_worker.js`, `page_article.js`, `page_categorie.js`, `page_rss.js`. `javascript.py` les lit (constantes `JS_…`) et fournit `json_pour_page()` pour les données. Pour ajouter un script : créer le fichier dans `js/`, ajouter sa constante dans `javascript.py` et l'inscrire dans `ORDRE_BUNDLE`. Tout le JavaScript des pages est dans un seul bundle, `build/js/kioske.<empreinte>.js`, chargé en `defer` par chaque page ; les pages n'ont plus de script en ligne. |
+| `javascript.py`, `js/` | Tout le JavaScript écrit dans les pages. `js/` : un fichier par rôle — `accueil_personnalisation.js` (masquages de l'accueil : `appliquerMasquesAccueil()`, appelée par `flux_personnalise.js`), `accueil_*.js` (l'accueil, découpé en sept fichiers concaténés dans cet ordre : `accueil_historique` panneaux et adresse, `accueil_clavier`, `accueil_cartes`, `accueil_panneaux`, `accueil_recherche`, `accueil_adresse`, `accueil_favoris` ; la liste est dans `javascript.py`), `notifications.js` (cloche et notifications des flux personnalisés, désactivées par défaut ; elles arrivent pendant que le site est ouvert ; aujourd'hui seuls les **nouveaux flux** notifient (`notifierNouvellesSources()`) ; si « Me prévenir des changements du site » est activé, les nouveaux points de la page Mise à jour et les nouveaux documents de Menu notifient aussi (`verifierMisesAJour()`, `verifierMenu()`) ; les notifications d'**articles** sont en pause (`NOTIF_ARTICLES = false`, code gardé pour plus tard) ; la cloche est toujours visible ; point rouge en haut à droite tant qu'une notification est non lue ; les notifications restent dans la liste « Mes notifications » jusqu'à « Tout effacer » (qui n'efface que les notifications) ; la page Mise à jour est relue (`/menu/mise-a-jours/`) : un nouveau point déclenche une notification « Mise à jour du site »), `rafraichissement.js` (l'accueil se recharge seul quand une nouvelle version est publiée, sauf si un panneau est ouvert), `favoris.js` (♡ et favoris enregistrés dans le navigateur, sur toutes les pages qui montrent un article), `etiquettes.js` (étiquettes des favoris : stockage, saisie et menu des étiquettes existantes, bouton 🏷 des cartes d'article), `partage.js` (bouton 📤), `galerie.js` (flèches des galeries), `carte_ouverte.js` (carte d'article par-dessus la page), `retour_app.js` (bouton précédent dans l'app installée), `installation_pwa.js`, `donnees_accueil.js` (lit le JSON de la page : métadonnées des sources ; `chargerDonneesAccueil()` et `avecDonneesAccueil()` téléchargent `/donnees-accueil.json` au premier panneau ouvert, `window.sourcesData`/`window.categoriesData` valent `null` d'ici là), `service_worker.js`, `page_article.js`, `page_categorie.js`, `page_rss.js`. `javascript.py` les lit (constantes `JS_…`) et fournit `json_pour_page()` pour les données. Pour ajouter un script : créer le fichier dans `js/`, ajouter sa constante dans `javascript.py` et l'inscrire dans `ORDRE_BUNDLE`. Tout le JavaScript des pages est dans un seul bundle, `build/js/kioske.<empreinte>.js`, chargé en `defer` par chaque page ; les pages n'ont plus de script en ligne. |
 | `verrou.py` | Un seul build ou une seule publication à la fois. |
 | `construction.py`, `publication.py` | Le build (`build/`) et la copie vers la racine web. |
 
@@ -161,6 +161,7 @@ parcours des visiteurs dans jsdom, sans navigateur, sur les pages de `build/` :
 | `test_fermeture.js` | ×, double appui, Échap, fond sombre, bouton précédent : aucune fermeture ne remonte plus loin que l'accueil. |
 | `test_galeries.js` | Panneaux ouverts sans galerie ; galerie des blocs de l'accueil : contenu, flèches, cartes sans image : le titre à la place de la vignette. |
 | `test_pages.js` | Favoris, partage, données et recherche sur l'accueil, une page d'article, une page de catégorie et `rss.html` ; le lien vers le code de conduite. |
+| `test_etiquettes.js` | Étiquettes des favoris : tuiles hors du lien, saisie (Entrée, Échap), doublons et texte piégé écartés, filtre, retrait, rangement (◀ ▶, A → Z), suppression ; bandeau (créer, sélectionner, supprimer la sélection, trier, filtres Média et Étiquette) ; menu des étiquettes existantes ; bouton 🏷 de la carte d'article ; panneau mis à jour depuis une carte ouverte ; sauvegarde et chargement (formats 1 et 2). |
 | `test_securite.js` | Un titre ou un résumé contenant du HTML reste du texte ; un fichier de favoris trafiqué ne passe pas d'adresse `javascript:`. |
 | `test_mises_a_jour.js` | Changements du site : première lecture silencieuse, point nouveau notifié, panneau qui affiche la mise à jour, liste qui garde les notifications jusqu'à « Tout effacer » (qui ne touche pas au flux), effacées qui ne reviennent pas. |
 | `test_notifications.js` | Cloche selon le flux, notifications désactivées par défaut, articles en pause (rien n'est envoyé), notification d'un nouveau flux seulement si activées, arrêt à la désactivation (API Notification simulée). |
@@ -260,7 +261,8 @@ jusqu'à la ligne `[…]` suivante. Une source sans catégorie tombe dans le blo
 
 ### Accueil
 
-- **Barre du haut** (fixe en haut de l'écran) : le nom « kioske.fr » (lien vers l'index) avec le nombre d'articles et de sources, champ de recherche, bouton ♡ (favoris), bouton 🔔 (notifications, point rouge en cas de notification non lue) et bouton Menu (menu sandwich, lien vers `/menu/`). Le bouton ⚙️ et le menu déroulant ont été retirés ; les réglages sont dans la page Paramètres. Sur petit écran, les compteurs sont masqués et le nom et les boutons tiennent sur une ligne.
+- **Pied de page** (`<footer class="pied-page">`, partiel commun `kioske/gabarits/partiels/pied_page.html`, inséré par `${pied_page}` dans tous les gabarits visibles ; `pied_de_page()` dans `kioske/rendu.py`, et `valeurs_barre()` le fournit) :  mention des sources, puis sur une ligne GitHub · Dispositions légales · date de mise à jour, sous un filet de la couleur du thème. Le bouton « Réafficher les catégories et panneaux masqués » reste dans la page, sous les catégories.
+- **Barre du haut** (fixe en haut de l'écran) : le nom « kioske.fr » (lien vers l'index) avec le nombre d'articles et de sources, champ de recherche, lien ♡ vers la page « Mes favoris » (`/menu/favoris/`), bouton 🔔 (notifications, point rouge en cas de notification non lue) et bouton Menu (menu sandwich, lien vers `/menu/`). Le bouton ⚙️ et le menu déroulant ont été retirés ; les réglages sont dans la page Paramètres. Sur petit écran, les compteurs sont masqués et le nom et les boutons tiennent sur une ligne.
   Le nom du site et le drapeau sont agrandis (1,5 rem et 1,9 rem sur ordinateur, réduits sur tablette et téléphone) par `style_menu.css`, avec des sélecteurs `.kioske-navbar` pour passer devant les feuilles de thème.
 - **Thème au choix du visiteur** : boutons `.theme-bouton`, gérés par `static/theme.js`. Le choix est gardé
   dans `localStorage` (clé `kioske-theme`, aucun cookie) et s'applique à toutes les pages. Le build pose le
@@ -271,6 +273,7 @@ jusqu'à la ligne `[…]` suivante. Une source sans catégorie tombe dans le blo
 - **Markdown des documents du Menu** (`kioske/menu.py`) : sous-puces écrites à 2, 3 ou 4 espaces (`_sous_listes()`, ramenées à 4 par niveau) ; images seules centrées en figure avec leur texte alternatif dessous (`_figures_images()`, `figure.menu-image` dans `style_menu.css`) ; tests des fonctions dans `FonctionsDuMarkdown`.
 - **Mise en forme des documents du Menu** (`_html_du_markdown()` dans `kioske/menu.py`, `.menu-texte p` dans `style_menu.css`) : chaque ligne vide en trop devient un espace visible (`<p class="menu-espace">`) ; les espaces répétés dans une phrase et le retrait après un saut de ligne sont gardés (`white-space: pre-wrap` sur les paragraphes). Les listes et les blocs de code ne changent pas.
 - **Animation du ♡** : à l'ajout d'un favori, le cœur pulse et six étoiles violettes jaillissent autour de lui (`animerAjout()` dans `kioske/js/favoris.js`, styles dans `kioske/style_favoris.css`). Rien au retrait. Désactivée par le mode sobre et par « réduire les animations » du système.
+- **Notifications** (cloche, `kioske/js/notifications.js`) : deux interrupteurs indépendants, désactivés par défaut. « Mises à jour du site » : seulement les points de la page Mise à jour (le changelog) ; clé `kioske_notif_site`. « Vie du site » : les nouveaux documents du Menu ; clé `kioske_notif_vie`. Sans cette clé (réglages d'avant), la vie du site suit l'ancien interrupteur. Les deux sont dans `REGLAGES` (`static/theme.js`).
 - **Tout remettre par défaut** (page Paramètres, bouton `[data-reglage="reinitialiser"]`, `static/theme.js`) : efface les réglages de ce navigateur (liste `REGLAGES` : thème, mode sobre, galeries, flux personnalisé et sources connues avec lui, interrupteurs des notifications), puis recharge la page. Deux clics : le premier demande confirmation sur le bouton (pas de fenêtre de dialogue), sinon il revient à son texte après 5 s. **Gardés** : favoris, notifications reçues, éléments vus ou effacés, sources déjà annoncées. L'autorisation des notifications du navigateur reste (le site ne peut pas la retirer). Un nouveau réglage stocké doit être ajouté à `REGLAGES`.
 - **Mode sobre** (page Paramètres, bouton `[data-reglage="sobre"]`, clé `localStorage` `kioske-sobre` : `1` activé, `0` coupé) :
   pas de pluie, pas de halo (`text-shadow`, `box-shadow`), pas d'animation, pas de reflet des favoris. `theme.js`
@@ -317,10 +320,41 @@ jusqu'à la ligne `[…]` suivante. Une source sans catégorie tombe dans le blo
   (30 cartes par page, pagination). Le bouton « + » d'un titre de catégorie ouvre le panneau de la catégorie,
   toutes sources mélangées, du plus récent au plus ancien.
 - **Favoris** : cœur ♡ dans la carte ouverte, violet quand l'article est en favori. Stockage dans le
-  navigateur (`localStorage`), sans serveur ni pistage. Le bouton ♡ de la barre ouvre « Mes favoris » :
+  navigateur (`localStorage`), sans serveur ni pistage. Le ♡ de la barre est un lien vers la **page « Mes favoris »**,
+  `/menu/favoris/` (écrite par `render_page_favoris`, `kioske/rendu.py`, via `ecrire_page_favoris` après le Menu ;
+  hors du Menu : ni sommaire ni entrée dans la liste ; absente du sitemap ; une seule colonne, gabarit
+  `texte.html`). Le panneau `#favoris` de `panneaux_communs.html` y est posé dans `<div id="page-favoris">`
+  (`installerPageFavoris`, `accueil_favoris.js`) ; une carte s'y ouvre par-dessus la page. Contenu :
   cartes des favoris, export et import en JSON, effacement. Les favoris enregistrés par une ancienne version
   (lien du site d'origine seul) sont complétés à l'ouverture du panneau à partir de `articles-index.json` ;
   un article qui n'est plus dans l'index garde son lien d'origine.
+- **Étiquettes des favoris** (`kioske/js/etiquettes.js` : stockage, règles, saisie, bouton 🏷 des cartes d'article ;
+  `kioske/js/accueil_favoris.js` : panneau ; styles dans `kioske/style_favoris.css`). Tuiles dans le coin en haut
+  à droite de chaque carte de « Mes favoris », une par ligne (× retire, clic filtre ; le « + » d'ajout est en bas au
+  centre de la carte ; au-delà de 65 % de la hauteur de la carte, la colonne défile). Au-dessus
+  de la grille : la barre (« Tous », puis chaque étiquette avec son nombre de favoris, 0 compris, et un ×
+  pour la **supprimer** de la liste et de tous les favoris, après la question « Supprimer « X » de tous les
+  favoris ? Oui / Non » posée dans la tuile ; focus sur « Non », Échap annule ; les favoris restent), puis le
+  **bandeau** : « Sélectionner » (plusieurs étiquettes : favoris qui les ont toutes ; « Supprimer » la
+  sélection, confirmé de même dans le bandeau ; « Tout désélectionner »), « + Créer une étiquette » (elle existe sans favori, jusqu'à sa
+  suppression), « ✎ Modifier une étiquette » (clic sur une étiquette : nouveau nom, couleur dans une palette ou couleur libre, Supprimer ; le renommage suit dans tous les favoris, un nom déjà pris est refusé ; couleurs dans `kioske_couleurs_etiquettes`, dans la sauvegarde), trois sélecteurs côte à côte : « Trier » (ordre d'ajout ; par média, de A à Z, « Sans
+  média » à la fin ; par étiquettes, dans l'ordre de la barre, sans étiquette à la fin ; choix dans
+  `kioske_tri_favoris`, effacé par « Tout remettre par défaut »), « Média » (filtre ; média = `source`, sinon
+  `host`, majuscules et accents ignorés) et « Étiquette » (filtre, le même que la barre, avec « Sans étiquette » pour les favoris sans étiquette) ; les filtres
+  s'additionnent, « Ranger »
+  (◀ ▶, ×, « A → Z »). **Saisie** (« + » d'une carte, 🏷 d'un article) : un menu « Étiquettes existantes »
+  s'ouvre avec le champ (tuiles, sauf celles déjà posées ; filtré par le texte tapé ; clic = ajout ; ↓ ↑ au
+  clavier). **Carte d'article** (ouverte ou page `/articles/…`) : bouton 🏷 (`.etiquette-btn`) juste
+  après 📤, même style que ♡ et 📤 ; un article pas encore en favori y est ajouté (comme ♡). Ses étiquettes sont
+  sur une ligne posée au-dessus de la barre (cachée s'il n'y en a pas) ; la barre Précédent / ♡ / 📤 / 🏷 /
+  Suivant reste toujours sur une seule ligne (tailles réduites sous 480 px et 340 px). Couleur des tuiles : celle du ♡ du thème
+  (`--color-fav-heart`). **Sauvegarde** (« Télécharger mes favoris ») : `{kioske: "favoris", version: 2, favoris,
+  etiquettes}` (étiquettes dans l'ordre, celles sans favori comprises) ; « Charger des favoris » lit aussi
+  l'ancien format (favoris à plat) et ne perd rien (étiquettes réunies, ordre local gardé). Majuscules
+  et accents ne comptent pas (une seule écriture gardée). 30 caractères par étiquette, 12 par favori. Stockage :
+  `favorites[clé].etiquettes` (part avec l'export, réunie à l'import), liste et ordre dans `kioske_etiquettes`.
+  `saveFavorites` envoie l'évènement `kioske-favoris` : les cartes d'article et le panneau « Mes favoris », s'il est ouvert, se mettent à jour. La carte est un
+  lien : les tuiles (boutons) sont posées à côté, dans `div.carte-fav`, jamais dans le `<a>`.
 - **Code de conduite** : page statique `/code-de-conduite.html`, ouverte depuis la page Menu.
 - **Heures en Paris** : toutes les dates affichées sont en heure de Paris (CET/CEST). L'attribut HTML
   `datetime` reste en UTC.
@@ -415,7 +449,7 @@ jusqu'à la ligne `[…]` suivante. Une source sans catégorie tombe dans le blo
 ### Mise en page
 
 - **Panneaux** : fond noir semi-transparent (70 %) autour du panneau, cliquable pour fermer ; croix × ;
-  Échap. Un panneau remplit tout l'écran, au-dessus de la barre du haut (taille en % de son conteneur fixe, pour rester juste quand la page est agrandie) ; il se ferme par la croix × ou Échap, et ses cartes défilent à l'intérieur. Pour les sources et les
+  Échap. La croix de l'en-tête (`.fermer-entete`) est une barre pleine largeur, × au centre, sur ordinateur comme sur téléphone ; les tailles réduites des `@media` ne visent que la croix carrée (`.categorie-fermer:not(.fermer-entete)`), dont le × est centré par une grille. Un panneau remplit tout l'écran, au-dessus de la barre du haut (taille en % de son conteneur fixe, pour rester juste quand la page est agrandie) ; il se ferme par la croix × ou Échap, et ses cartes défilent à l'intérieur. Pour les sources et les
   catégories, la zone défilante est créée par le script ; pour les favoris et les résultats de recherche,
   c'est la grille elle-même (`.categorie-panneau > .grille` dans `kioske/style.css`).
 - **Téléphone** (640 px et moins) : deux cartes par ligne, image en haut, seul le titre est affiché.
@@ -437,8 +471,10 @@ Le CSS est dans `kioske/style.css`, inséré dans la page au build.
 - **Images des articles** : jamais copiées. Le navigateur les charge depuis le site d'origine (chaque
   visite envoie donc l'adresse du visiteur à ce site). Une image qui ne charge pas laisse la lettre de
   repli (cartes, pages d'article) ou disparaît de la galerie. Seules les adresses https sont gardées.
-- **Cartes de partage** (`build/img/previews/<empreinte>-v3.png`, `kioske/previews.py`) : composées au build à
-  partir de l'image d'origine, lue en mémoire et jamais écrite ; seule la carte, petite, est stockée.
+- **Cartes de partage** (`build/img/previews/<empreinte>-v4.jpg`, `kioske/previews.py`) : composées au build à
+  partir de l'image d'origine, lue en mémoire et jamais écrite ; seule la carte est stockée, en JPEG progressif
+  (qualité 82, `QUALITE_JPEG`) : 200 à 300 Ko, contre 1 à 2 Mo en PNG jusqu'à la v3. Les robots lisent `og:image`
+  pour chaque article : le poids des cartes fait l'essentiel de leur trafic.
   - **Police** : Inter, celle du site (`static/fonts/inter.woff2`, variable : titre en gras, date en normal).
     Aucune dépendance aux polices de la machine (sur le serveur, DejaVu manquait : texte minuscule). Couvre le
     français et l'Europe de l'Ouest ; les lettres d'Europe centrale (ł, č, ő…) sortent en carré vide.
@@ -536,7 +572,7 @@ sudo systemctl start kioske-veille.service   # publier tout de suite
 
 | Adresse | Réponse |
 |---|---|
-| `/`, `/index.html`, `/rss.html`, `/hors-ligne.html`, `/rss.xml`, `/sitemap.xml`, `/robots.txt`, `/articles-index.json` | servie (débit « pages ») |
+| `/`, `/index.html`, `/rss.html`, `/hors-ligne.html`, `/rss.xml`, `/sitemap.xml`, `/robots.txt`, `/articles-index.json`, `/donnees-accueil.json` | servie (débit « pages ») ; `donnees-accueil.json` en `no-cache` comme les pages |
 | `/articles/<id>-<titre>/`, `/categories/<nom>/` | servie, ou 404 ordinaire si la page a disparu |
 | `/menu/`, `/menu/<catégorie>/[<sous-catégorie>/]<document>/` | servie (débit « pages ») |
 | `/ressources/…` (ancienne adresse du Menu) | redirection 301 vers `/menu/…` |
@@ -586,9 +622,13 @@ Pour assouplir une jail : augmenter `maxretry` ou réduire `bantime` dans `deplo
 
 ## Référencement
 
-Le titre et la description de la page décrivent son contenu réel : `nom` de `kioske.cfg`,
-nombre de sources et noms des catégories du jour. La page a une adresse canonique, des balises Open
-Graph et Twitter (image `preview.png`), un `robots.txt` (généré par `texte_robots()` : robots d'IA autorisés avec `Crawl-delay: 10`, liste `ROBOTS_IA` dans `kioske/construction.py` ; autres robots sans restriction) et un `sitemap.xml`. Chaque flux RSS est
+Accueil (`render_page`, `kioske/rendu.py`) : titre de 50 à 60 caractères (`nom` de `kioske.cfg` suivi de
+« veille des médias indépendants et des luttes »), description de 100 à 130 caractères (au-delà, les moteurs
+la coupent), et un `<h1>` du même texte, caché à l'écran (`sr-only`) mais lu par les moteurs et les lecteurs
+d'écran. Titres sans niveau sauté : `h1` > `h2` (galeries, panneaux, catégories hors panneau) > `h3` (catégories
+d'un panneau). Le CSS et le JS repèrent ces titres par leur rôle (`titre-du-panneau`, `titre-categorie`), pas par
+la balise. La page a une adresse canonique, des balises Open
+Graph et Twitter (image `preview.png`), un `robots.txt` (généré par `texte_robots()` : robots d'IA autorisés avec `Crawl-delay: 10`, liste `ROBOTS_IA` dans `kioske/construction.py` ; autres robots sans restriction ; nginx fait respecter ce délai par la zone `kioske_robots_ia`, comptée **par nom de robot** et non par IP, car Amazonbot et d'autres changent d'adresse AWS à chaque requête) et un `sitemap.xml` (accueil, catégories, Menu, avec `<lastmod>` : date du fichier). Données structurées schema.org (`WebSite`, JSON-LD) sur l'accueil. **Pages d'article** : leur `<link rel="canonical">` pointe vers l'article d'origine (le KiosKe n'en publie qu'un résumé : les moteurs créditent la source, pas de contenu dupliqué) ; `og:url` reste la page du KiosKe pour le partage ; elles ne sont donc pas dans le sitemap. Elles portent `article:published_time`. **Performance de l'accueil** : la page ne contient plus les articles des panneaux (`donnees-accueil.json`, chargé à la demande) : 56 Ko compressés au lieu de 1,5 Mo, et le fichier de données 481 Ko compressés (les articles n'y sont qu'une fois) ; les 5 premières cartes de la grande galerie se chargent sans attendre (la première en `fetchpriority="high"`), les suivantes en différé. Chaque flux RSS est
 déclaré dans l'en-tête.
 
 ## PWA (Progressive Web App)
@@ -611,7 +651,7 @@ application native, et fonctionne partiellement hors ligne.
 - **Via le navigateur** :
   - **Téléphone** (Chrome, Firefox, Edge) : visiter le site, puis « Installer » dans le menu du navigateur.
   - **Ordinateur** (Chrome, Edge) : visiter le site, cliquer sur l'icône « Installer » dans la barre d'adresse.
-- **Raccourcis de l'app** (`shortcuts` du manifest, appui long ou clic droit sur l'icône) : Rechercher (`/?recherche`, curseur dans le champ), Mes favoris (`/?favoris`, ouvre le panneau), Personnaliser mon flux (`/?flux=personnaliser`), Menu (`/menu/`). Les deux premières adresses sont lues par `kioske/js/accueil_adresse.js`.
+- **Raccourcis de l'app** (`shortcuts` du manifest, appui long ou clic droit sur l'icône) : Rechercher (`/?recherche`, curseur dans le champ), Mes favoris (`/menu/favoris/` ; l'ancienne adresse `/?favoris` y renvoie), Personnaliser mon flux (`/?flux=personnaliser`), Menu (`/menu/`). `/?recherche` et `/?favoris` sont lues par `kioske/js/accueil_adresse.js`.
 
 **Cache headers** (nginx) :
 - Service worker (`sw.js`) : `no-cache, max-age=0` (toujours vérifier les mises à jour).

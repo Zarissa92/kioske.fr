@@ -31,7 +31,7 @@ from .images import appliquer_images, purger_images, telecharger_images
 from .previews import REFAITES_PAR_BUILD, generer_previews
 from .menu import ecrire_menu
 from .javascript import JS_BUNDLE, NOM_BUNDLE
-from .rendu import render_page, render_rss_page
+from .rendu import FICHIER_DONNEES_PANNEAUX, render_page, render_rss_page
 from .rendu_statique import render_article_page, render_category_page
 from .rss import render_rss
 from .sources import AUTRES, ordre_des_categories, read_categories, read_feeds, read_local, read_twitch, read_panneaux
@@ -146,22 +146,36 @@ def copier_statiques() -> None:
 
 
 # Dossiers du build dont chaque index.html est une page publique à référencer.
-DOSSIERS_SITEMAP = ("articles", "categories", "menu")
+# Pas les pages d'article : leur adresse canonique est l'article d'origine (render_article_page), un sitemap
+# ne liste que des adresses canoniques.
+DOSSIERS_SITEMAP = ("categories", "menu")
 
 
 def ecrire_sitemap() -> int:
-    """Écrit build/sitemap.xml à partir des pages réellement produites : accueil, code de conduite, articles,
-    catégories et Menu. Renvoie le nombre d'adresses."""
+    """Écrit build/sitemap.xml à partir des pages réellement produites : accueil, code de conduite, catégories
+    et Menu. Chaque adresse porte sa date de modification (<lastmod>, date du fichier) : les moteurs ne
+    reviennent que sur ce qui a changé. Renvoie le nombre d'adresses."""
     from xml.sax.saxutils import escape
-    adresses = [f"{URL_SITE}/"]
+    pages = [(f"{URL_SITE}/", BUILD / NOM_PAGE)]
     if (BUILD / "code-de-conduite.html").is_file():
-        adresses.append(f"{URL_SITE}/code-de-conduite.html")
+        pages.append((f"{URL_SITE}/code-de-conduite.html", BUILD / "code-de-conduite.html"))
     for dossier in DOSSIERS_SITEMAP:
         racine = BUILD / dossier
         if racine.is_dir():
             for page in sorted(racine.rglob("index.html")):
-                adresses.append(f"{URL_SITE}/{page.parent.relative_to(BUILD).as_posix()}/")
-    lignes = [f"<url><loc>{escape(a)}</loc></url>" for a in adresses]
+                # « Mes favoris » : propre à chaque navigateur, rien à indexer
+                if page.parent.relative_to(BUILD).as_posix() == "menu/favoris":
+                    continue
+                pages.append((f"{URL_SITE}/{page.parent.relative_to(BUILD).as_posix()}/", page))
+
+    def lastmod(fichier: Path) -> str:
+        if not fichier.is_file():
+            return ""
+        date = datetime.fromtimestamp(fichier.stat().st_mtime, timezone.utc).replace(microsecond=0)
+        return f"<lastmod>{date.isoformat().replace('+00:00', 'Z')}</lastmod>"
+
+    adresses = [a for a, _ in pages]
+    lignes = [f"<url><loc>{escape(a)}</loc>{lastmod(f)}</url>" for a, f in pages]
     ecrire_si_change(BUILD / "sitemap.xml",
                      '<?xml version="1.0" encoding="UTF-8"?>\n'
                      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
@@ -283,8 +297,13 @@ def ecrire_page(items: list[dict], previews: dict[str, dict], categories: dict[s
     panneaux = panneaux or {}
     if classement is None:
         classement = classement_du_site(items)
-    page = render_page(items, previews, categories, panneaux, classement, PLUS_LUS_JOURS)
+    page, donnees_panneaux = render_page(items, previews, categories, panneaux, classement, PLUS_LUS_JOURS)
     BUILD.mkdir(parents=True, exist_ok=True)
+    # Données des panneaux d'abord : la nouvelle page ne doit pas précéder ses données
+    donnees = BUILD / FICHIER_DONNEES_PANNEAUX
+    tmp = donnees.with_name(donnees.name + ".tmp")
+    tmp.write_text(donnees_panneaux, encoding="utf-8")
+    tmp.replace(donnees)
     sortie = BUILD / NOM_PAGE
     tmp = sortie.with_name(sortie.name + ".tmp")
     tmp.write_text(page, encoding="utf-8")
@@ -297,6 +316,14 @@ def ecrire_code_de_conduite(items: list[dict]) -> None:
     from .menu import ecrire_fichier
     from .rendu import render_code_de_conduite
     ecrire_fichier(BUILD / "code-de-conduite.html", render_code_de_conduite(len(items), len({i["key"] for i in items})))
+
+
+def ecrire_page_favoris(items: list[dict]) -> None:
+    """Écrit build/menu/favoris/index.html, la page « Mes favoris ». Après ecrire_menu, qui reconstruit build/menu/."""
+    from .menu import ecrire_fichier
+    from .rendu import ADRESSE_FAVORIS, render_page_favoris
+    ecrire_fichier(BUILD / ADRESSE_FAVORIS.strip("/") / "index.html",
+                   render_page_favoris(len(items), len({i["key"] for i in items})))
 
 
 def ecrire_flux_rss(items: list[dict], categories: dict[str, str]) -> None:
@@ -593,6 +620,7 @@ def construire(args: argparse.Namespace) -> None:
         shutil.rmtree(BUILD / DOSSIER_RSS_CATEGORIES, ignore_errors=True)
         print("   • Page Menu (documents de menu/)")
         ecrire_menu(len(items), len({i["key"] for i in items}))
+        ecrire_page_favoris(items)   # dans build/menu/ : après ecrire_menu, qui reconstruit ce dossier
 
         # === Fichiers statiques ===
         print("9. COPIE DES FICHIERS STATIQUES")

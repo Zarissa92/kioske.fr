@@ -46,12 +46,12 @@ function masquesAccueil() {
 function sectionsDeCategories() {
   const sections = new Map();
   // Le titre de catégorie est dans sa boîte : section.groupe (hors panneau) ou div.sous-categorie (dans un panneau)
-  document.querySelectorAll('h2[data-category-name]').forEach(titre => {
+  document.querySelectorAll('.titre-categorie[data-category-name]').forEach(titre => {
     const nom = titre.dataset.categoryName;
     if (sections.has(nom)) return;   // premier titre du nom : le titre visuel masqué d'une galerie vient après
     const section = titre.parentElement;
     const parentPanneau = section.parentElement ? section.parentElement.closest('section.groupe.panneau') : null;
-    const titrePanneau = parentPanneau ? parentPanneau.querySelector('h3[data-category-name]') : null;
+    const titrePanneau = parentPanneau ? parentPanneau.querySelector('.titre-du-panneau[data-category-name]') : null;
     sections.set(nom, { section, panneau: titrePanneau ? titrePanneau.dataset.categoryName : '' });
   });
   return sections;
@@ -90,12 +90,12 @@ function appliquerMasquesAccueil(visible = () => true) {
 
   // Panneaux masqués : leur titre reste (grisé, avec 👁 fermé pour le réactiver) ; leur contenu est caché
   document.querySelectorAll('section.groupe.panneau').forEach(panneau => {
-    const titre = panneau.querySelector('h3[data-category-name]');
+    const titre = panneau.querySelector('.titre-du-panneau[data-category-name]');
     reduireBloc(panneau, titre, !!titre && masques.panneaux.includes(titre.dataset.categoryName));
   });
   // Catégories masquées : même principe
   categories.forEach((info, nom) => {
-    const titre = Array.from(info.section.children).find(e => e.tagName === 'H2');
+    const titre = Array.from(info.section.children).find(e => e.classList.contains('titre-categorie'));
     reduireBloc(info.section, titre, categorieMasquee(nom));
   });
 
@@ -153,11 +153,11 @@ function ajouterBoutonsAccueil() {
     titre.appendChild(groupe);
   };
 
-  document.querySelectorAll('section.groupe.panneau > h3[data-category-name]').forEach(h3 =>
-    ajouter(h3, h3.dataset.categoryName, 'panneau'));
-  document.querySelectorAll('h2[data-category-name]').forEach(h2 => {
-    if (h2.closest('.accueil-outil')) return;
-    ajouter(h2, h2.dataset.categoryName, 'categorie');
+  document.querySelectorAll('section.groupe.panneau > .titre-du-panneau[data-category-name]').forEach(titre =>
+    ajouter(titre, titre.dataset.categoryName, 'panneau'));
+  document.querySelectorAll('.titre-categorie[data-category-name]').forEach(titre => {
+    if (titre.closest('.accueil-outil')) return;
+    ajouter(titre, titre.dataset.categoryName, 'categorie');
   });
 
   const groupes = document.querySelector('.groupes');

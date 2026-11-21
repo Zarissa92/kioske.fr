@@ -12,6 +12,7 @@ const sain = (el) => !el.querySelector('b, img[onerror], script') && el.textCont
   // ---------- panneaux de catégorie et de source
   let { w, d, erreurs } = charger('index.html', '/');
   await attendre(300);
+  await w.chargerDonneesAccueil();   // articles des panneaux : fichier à part, chargé à la demande
   const cat = Object.keys(w.categoriesData)[0];
   const a = w.categoriesData[cat][0];
   Object.assign(a, { title: PIEGE, summary: PIEGE, host: PIEGE, date: PIEGE, source: PIEGE, image: '' });
@@ -40,7 +41,7 @@ const sain = (el) => !el.querySelector('b, img[onerror], script') && el.textCont
   t.verif('aucun code du piège exécuté', w.pirate === undefined);
 
   // ---------- favoris : données enregistrées ou importées trafiquées
-  ({ w, d, erreurs } = charger('index.html', '/', {
+  ({ w, d, erreurs } = charger('menu/favoris/index.html', '/menu/favoris/', {
     avant: (fenetre) => fenetre.localStorage.setItem('kioske_favoris', JSON.stringify({
       'https://exemple.test/a': { title: PIEGE, summary: PIEGE, host: PIEGE, source: PIEGE, url: 'javascript:window.pirate=1', image: 'javascript:window.pirate=1' },
       'https://exemple.test/b': { title: 'Favori ordinaire', url: '/articles/abc-def/', image: '/img/veille/x.jpg' },
@@ -48,7 +49,6 @@ const sain = (el) => !el.querySelector('b, img[onerror], script') && el.textCont
     }))
   }));
   await attendre(300);
-  clic(w, d.querySelector('.btn-favs')); await attendre();
   const cartes = [...d.querySelectorAll('#fav-grille a.carte')];
   t.verif('favoris : trois cartes', cartes.length === 3, '(' + cartes.length + ')');
   t.verif('favoris : le texte reste du texte', cartes[0] && sain(cartes[0]));

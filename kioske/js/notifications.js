@@ -1,6 +1,7 @@
 // Notifications. Désactivées par défaut ; la cloche est toujours là (barre du haut). Deux types :
 //  - les nouveaux flux ajoutés au site (si un flux personnalisé est choisi) ;
-//  - les changements du site : nouveaux points de la page Mise à jour (menu/Mise_à_jours.md).
+//  - les mises à jour du site : nouveaux points de la page Mise à jour (menu/Mise_à_jours.md), le changelog seul ;
+//  - la vie du site : nouveaux documents du Menu (kioske_notif_vie, indépendant des mises à jour).
 // Le site n'a pas de serveur qui pousse les nouveautés : les notifications arrivent pendant que le site
 // est ouvert (dans un onglet ou dans l'app installée). Rien ne passe par un service tiers.
 //
@@ -10,6 +11,7 @@ const NOTIF_ARTICLES = false;                        // notifications des nouvea
 
 const NOTIF_ACTIVEES_KEY = 'kioske_notifications';   // « 1 » si l'utilisateur veut les nouveaux flux
 const NOTIF_SITE_KEY = 'kioske_notif_site';          // « 1 » si l'utilisateur veut les changements du site
+const NOTIF_VIE_KEY = 'kioske_notif_vie';            // « 1 » / « 0 » : vie du site (nouveaux documents du Menu). Absente : suit l'ancien interrupteur
 const MAJ_URL = '/menu/mise-a-jours/';               // page Mise à jour, construite par le build
 const MAJ_VUES_KEY = 'kioske_maj_vues';              // points de la page Mise à jour déjà connus
 const MAJ_EFFACEES_KEY = 'kioske_maj_effacees';      // points effacés avec « Tout effacer » : ils ne reviennent pas
@@ -38,6 +40,18 @@ function siteNotifActive() {
 
 function setSiteNotifActive(on) {
   try { localStorage.setItem(NOTIF_SITE_KEY, on ? '1' : '0'); } catch (e) {}
+}
+
+// Vie du site : si le réglage n'existe pas encore (avant cette case), il suit l'ancien interrupteur « changements du site »
+function vieNotifActive() {
+  try {
+    const valeur = localStorage.getItem(NOTIF_VIE_KEY);
+    return valeur === null ? siteNotifActive() : valeur === '1';
+  } catch (e) { return false; }
+}
+
+function setVieNotifActive(on) {
+  try { localStorage.setItem(NOTIF_VIE_KEY, on ? '1' : '0'); } catch (e) {}
 }
 
 function lireTableau(cle) {
@@ -187,7 +201,9 @@ function reprendreAnciennesVuesMenu() {
   try { localStorage.removeItem(ANCIENNE_MENU_VUES_KEY); } catch (e) {}
 }
 
-async function verifierMenu() {
+// « baseline » : les documents déjà présents sont connus, sans notification (à l'activation de la vie du site)
+async function verifierMenu(baseline = false) {
+  if (!vieNotifActive()) return;
   reprendreAnciennesVuesMenu();
   let html;
   try { html = await fetch(MENU_URL, { cache: 'no-cache' }).then(r => r.text()); } catch (e) { return; }
@@ -201,7 +217,7 @@ async function verifierMenu() {
   const cles = [...liens.keys()];
   const documents = cles.filter(h => !cles.some(autre => autre !== h && autre.startsWith(h)));
   const connus = lireTableau(MENU_VUES_KEY);
-  if (connus.length > 0) {
+  if (!baseline && connus.length > 0) {
     documents.filter(h => !connus.includes(h))
       .forEach(h => ajouterNotif('menu:' + h, 'menu', 'Nouveau dans Menu', liens.get(h) || h, h));
   }
@@ -262,14 +278,27 @@ function desactiverNotifications() {
   arreterVerification();
 }
 
-// Case « changements du site ». Renvoie « granted » si activé. À l'activation, les points existants sont connus.
+// Case « mises à jour du site » (changelog seul). Renvoie « granted » si activé. À l'activation, les points existants sont connus.
 async function activerNotifSite() {
   const autorisation = await demanderAutorisation();
   if (autorisation !== 'granted') return autorisation;
   setSiteNotifActive(true);
   await verifierMisesAJour(true);
-  await verifierMenu();   // documents déjà présents : mémorisés sans notification s'ils sont inconnus
   return 'granted';
+}
+
+// Case « vie du site » (nouveaux documents du Menu). Renvoie « granted » si activé. Les documents déjà présents
+// sont mémorisés sans notification.
+async function activerNotifVie() {
+  const autorisation = await demanderAutorisation();
+  if (autorisation !== 'granted') return autorisation;
+  setVieNotifActive(true);
+  await verifierMenu(true);
+  return 'granted';
+}
+
+function desactiverNotifVie() {
+  setVieNotifActive(false);
 }
 
 function desactiverNotifSite() {
@@ -425,15 +454,25 @@ function createNotificationsPanel() {
     'pendant que le site est ouvert, dans un onglet ou dans l\'app installée. Site fermé, il ne peut rien t\'envoyer.</li>' +
     '</ul>';
 
-  // Case « changements du site »
+  // Case « mises à jour du site » : le changelog seul
   const ligneSite = document.createElement('label');
   ligneSite.className = 'notif-activation';
   const caseSite = document.createElement('input');
   caseSite.type = 'checkbox';
   caseSite.id = 'notif-site';
   const libelleSite = document.createElement('span');
-  libelleSite.textContent = 'Me prévenir des changements du site';
+  libelleSite.textContent = 'Me prévenir des mises à jour du site (le changelog)';
   ligneSite.append(caseSite, libelleSite);
+
+  // Case « vie du site » : nouveaux documents du Menu
+  const ligneVie = document.createElement('label');
+  ligneVie.className = 'notif-activation';
+  const caseVie = document.createElement('input');
+  caseVie.type = 'checkbox';
+  caseVie.id = 'notif-vie';
+  const libelleVie = document.createElement('span');
+  libelleVie.textContent = 'Me prévenir de la vie du site (nouvelles pages du Menu)';
+  ligneVie.append(caseVie, libelleVie);
 
   // Case « nouveaux flux » (utile seulement avec un flux personnalisé)
   const ligne = document.createElement('label');
@@ -456,6 +495,16 @@ function createNotificationsPanel() {
       if (resultat !== 'granted') caseSite.checked = false;
     } else {
       desactiverNotifSite();
+    }
+    majPanneauNotifications();
+  });
+
+  caseVie.addEventListener('change', async () => {
+    if (caseVie.checked) {
+      const resultat = await activerNotifVie();
+      if (resultat !== 'granted') caseVie.checked = false;
+    } else {
+      desactiverNotifVie();
     }
     majPanneauNotifications();
   });
@@ -497,7 +546,7 @@ function createNotificationsPanel() {
   contenuMaj.textContent = 'Chargement…';
   maj.append(titreMaj, contenuMaj);
 
-  corps.append(explication, ligneSite, ligne, etat, notifs, maj);
+  corps.append(explication, ligneSite, ligneVie, ligne, etat, notifs, maj);
   panneau.append(header, corps);
   container.append(backdrop, panneau);
   document.body.appendChild(container);
@@ -507,16 +556,18 @@ function createNotificationsPanel() {
 function majPanneauNotifications() {
   const caseActiver = document.getElementById('notif-activer');
   const caseSite = document.getElementById('notif-site');
+  const caseVie = document.getElementById('notif-vie');
   const etat = document.getElementById('notif-etat');
-  if (!caseActiver || !caseSite || !etat) return;
+  if (!caseActiver || !caseSite || !caseVie || !etat) return;
   const permission = permissionNotifications();
   caseActiver.checked = notificationsActivees() && permission === 'granted';
   caseSite.checked = siteNotifActive() && permission === 'granted';
+  caseVie.checked = vieNotifActive() && permission === 'granted';
   if (permission === 'indisponible') {
     etat.textContent = 'Ce navigateur ne permet pas les notifications.';
   } else if (permission === 'denied') {
     etat.textContent = 'Les notifications sont refusées pour ce site : à autoriser dans les réglages du navigateur.';
-  } else if (caseActiver.checked || caseSite.checked) {
+  } else if (caseActiver.checked || caseSite.checked || caseVie.checked) {
     etat.textContent = 'Notifications activées.';
   } else {
     etat.textContent = 'Notifications désactivées.';
@@ -540,8 +591,8 @@ function ouvrirPanneauNotifications() {
   if (siteNotifActive() && permissionNotifications() === 'granted') {
     verifierMisesAJour();
   }
-  // Nouveaux documents du Menu : seulement si « changements du site » est activé (désactivé par défaut)
-  if (siteNotifActive()) verifierMenu();
+  // Nouveaux documents du Menu : seulement si « vie du site » est activé (désactivé par défaut)
+  if (vieNotifActive()) verifierMenu();
   if (NOTIF_ARTICLES && isFluxPersonnalise() && notificationsActivees() && permissionNotifications() === 'granted') {
     verifierNouveautes();
     demarrerVerification();

@@ -209,7 +209,8 @@ class DispositionsLegales(unittest.TestCase):
         self.assertFalse((self.RACINE / "static" / "dispositions-legales.html").exists())
 
     def test_lien_sous_github(self):
-        gabarit = (self.RACINE / "kioske" / "gabarits" / "accueil.html").read_text(encoding="utf-8")
+        # Le pied de page est un partiel commun à toutes les pages visibles (accueil, Menu, articles…)
+        gabarit = (self.RACINE / "kioske" / "gabarits" / "partiels" / "pied_page.html").read_text(encoding="utf-8")
         self.assertIn('href="/menu/dispositions-legales/"', gabarit)
         self.assertLess(gabarit.index("GitHub du projet"), gabarit.index("/menu/dispositions-legales/"))
 
@@ -500,7 +501,7 @@ class MenuEtHorsLigne(unittest.TestCase):
         import json
         manifeste = json.loads((self.RACINE / "static" / "manifest.json").read_text(encoding="utf-8"))
         adresses = [r["url"] for r in manifeste.get("shortcuts", [])]
-        self.assertEqual(adresses, ["/?recherche", "/?favoris", "/?flux=personnaliser", "/menu/"])
+        self.assertEqual(adresses, ["/?recherche", "/menu/favoris/", "/?flux=personnaliser", "/menu/"])
         for r in manifeste["shortcuts"]:
             self.assertTrue(r["name"] and r["icons"][0]["src"].startswith("/"))
 
@@ -557,7 +558,20 @@ class CartesDePartage(unittest.TestCase):
         self.assertNotEqual(self.p.lettre_repli("01/01/2026 · Les Jours", ""), "H")   # plus le « h » de https
 
     def test_version_dans_le_nom(self):
-        self.assertTrue(self.p.nom_preview("https://a.org/x").endswith(f"-v{self.p.VERSION_PREVIEW}.png"))
+        self.assertTrue(self.p.nom_preview("https://a.org/x").endswith(f"-v{self.p.VERSION_PREVIEW}.jpg"))
+
+    def test_carte_en_jpeg_et_ancienne_png_retiree(self):
+        # v4 : la carte est un JPEG ; l'ancienne carte PNG (v3) est servie en attendant, puis retirée
+        dossier = self.p.BUILD / self.p.DOSSIER_PREVIEWS
+        lien = "https://a.org/jpeg"
+        ancienne = dossier / f"{self.p.chemin_preview(lien)}-v3.png"
+        ancienne.write_bytes(b"ancienne")
+        self.assertEqual(self.p.preview_local(lien, None, "T", "01/01/2026 · S", telecharger=False),
+                         f"{self.p.DOSSIER_PREVIEWS}/{ancienne.name}")
+        chemin = self.p.preview_local(lien, None, "T", "01/01/2026 · S", telecharger=True)
+        self.assertTrue(chemin.endswith(".jpg"))
+        self.assertEqual((self.p.BUILD / chemin).read_bytes()[:3], b"\xff\xd8\xff", "en-tête JPEG")
+        self.assertFalse(ancienne.exists(), "ancienne carte PNG retirée")
 
     def test_anciennes_cartes_refaites_par_lots(self):
         from datetime import datetime, timezone

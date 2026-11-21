@@ -63,6 +63,7 @@ function afficherCarte(contenu, u) {
   }
   document.title = contenu.titre || titreAccueil;
   updateHearts();
+  rafraichirEtiquettesArticles();   // « + » des étiquettes en bas à gauche (etiquettes.js)
 }
 
 function masquerCarte() {

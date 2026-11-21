@@ -1,6 +1,6 @@
 // Recherche en direct : les résultats arrivent pendant la frappe (après une courte pause), le champ garde
 // le curseur, aucun résultat donne un message (pas d'alerte), champ vidé = panneau fermé.
-// Raccourcis de l'app installée : /?recherche (curseur dans le champ) et /?favoris (panneau des favoris).
+// Raccourcis de l'app installée : /?recherche (curseur dans le champ) ; /?favoris (ancienne adresse) mène à la page « Mes favoris ».
 const { attendre, charger, suite } = require('./outils');
 
 const ouvert = (d, id) => { const c = d.getElementById(id); return !!c && !c.hidden; };
@@ -11,6 +11,7 @@ const taper = (w, champ, texte) => { champ.focus(); champ.value = texte; champ.d
   let { w, d, erreurs } = charger('index.html', '/');
   await attendre(300);
   const champ = d.getElementById('recherche');
+  await w.chargerDonneesAccueil();   // articles des panneaux : fichier à part, chargé à la demande
   const mot = Object.values(w.categoriesData)[0][0].title.split(/\s+/).find(m => m.length > 4) || 'a';
 
   taper(w, champ, mot.slice(0, 1));
@@ -42,9 +43,10 @@ const taper = (w, champ, texte) => { champ.focus(); champ.value = texte; champ.d
   t.verif('raccourci /?recherche : curseur dans le champ', d.activeElement === d.getElementById('recherche'));
   w.close();
 
+  const manifeste = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', 'build', 'manifest.json'), 'utf8'));
+  t.verif('raccourci « Mes favoris » de l\'app : la page /menu/favoris/', manifeste.shortcuts.some(r => r.url === '/menu/favoris/'));
   ({ w, d, erreurs } = charger('index.html', '/?favoris'));
   await attendre(300);
-  t.verif('raccourci /?favoris : panneau des favoris ouvert', ouvert(d, 'container-favoris'));
   t.verif('raccourcis : aucune erreur JavaScript', erreurs.length === 0, erreurs.join(' | '));
   t.fin();
 })();

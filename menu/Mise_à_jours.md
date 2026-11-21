@@ -4,13 +4,36 @@ ordre: 2
 titre: Mises à jour
 ---
 
-
+## 21/11/2026 Petit matin : 
+- Dans « Mes favoris », tu peux maintenant **renommer** une étiquette, **changer sa couleur** (palette ou couleur libre) et la **supprimer** depuis le bouton « Modifier une étiquette ». Sur une carte ouverte, les étiquettes se rangent dans le **coin en haut à droite**.
+- Les notifications sont séparées : **Mises à jour du site** ne te prévient que du changelog, et **Vie du site** te prévient des nouvelles pages du Menu.
 ## 20/11/2026 :
 
+### Nuit
+-corrections et ameliorations de laffichage pour mobiles
+### Soir
+- **Étiquette tes favoris !** Dans « Mes favoris », le **+** en bas de chaque carte ajoute des étiquettes. Tes étiquettes déjà créées te sont proposées : un clic suffit, ou tape pour en créer une nouvelle (plusieurs d'un coup, séparées par des virgules). Elles s'affichent dans le coin en haut à droite de la carte.
+- Depuis un article ouvert, le bouton **🏷️** à côté de 📤 fait la même chose, et l'article passe en favori au passage.
+- Clique sur une étiquette pour ne voir que ses favoris. Avec **Sélectionner**, choisis-en plusieurs pour retrouver les favoris qui les ont toutes.
+- **Trie et filtre tes favoris** : par ordre d'ajout, par média ou par étiquettes, et n'affiche qu'un média ou qu'une étiquette avec les menus du bandeau.
+- **Crée tes étiquettes à l'avance**, range-les dans l'ordre que tu veux, ou trie-les de A à Z.
+- Une étiquette ne te sert plus ? Le **×** à côté d'elle, dans la barre de « Mes favoris », la supprime de tous tes favoris, après confirmation. Tes favoris restent.
+- « Télécharger mes favoris » sauvegarde aussi toutes tes étiquettes et leur ordre. Tout reste dans ton navigateur : rien n'est envoyé au site.
+
+### Après-midi
+- **L'accueil s'ouvre beaucoup plus vite** : la page est 25 fois plus légère. Les articles des panneaux ne se téléchargent plus d'avance : ils arrivent quand tu ouvres ton premier panneau, avec un court temps de chargement la première fois seulement.
+- Les premières images de la galerie s'affichent plus tôt.
+- Les images de partage (Discord, Mastodon…) sont six fois plus légères, à qualité égale. Les anciennes sont remplacées petit à petit.
+- **Chaque article crédite son média.** Pour les moteurs de recherche, la vraie page d'un article est désormais celle du média qui l'a écrit, pas celle du KiosKe. On relaie, on ne prend pas la place.
+- Meilleure lecture au lecteur d'écran : les titres de l'accueil suivent maintenant un ordre logique (panneau, puis ses catégories).
+- Corrigé : après « Réafficher », certaines cartes de « Les + vus » restaient cachées jusqu'au rechargement de la page.
+- Corrigé : avec les cookies bloqués ou en navigation privée, masquer une catégorie pouvait bloquer l'accueil.
+- Corrigé : une source tout juste ajoutée gardait ses tags, mais ses articles n'apparaissaient pas dans les galeries de ton flux personnalisé.
+- Les robots d'indexation des IA respectent mieux le rythme demandé, ce qui ménage le serveur.
 ### Matin 
 - Ton accueil, à ta façon. Sur chaque titre de panneau ou de catégorie, un bouton 👁 : tu masques ce que tu ne veux pas voir, et les galeries se remplissent avec le reste. L'œil se ferme quand c'est masqué ; un second clic réaffiche. Un bandeau te permet de tout remettre.
 - Les galeries par catégorie se choisissent. Elles sont masquées par défaut : active celles qui t'intéressent dans Paramètres, sous chaque panneau.
-- sDans les galeries, les articles des médias français passent en premier, sans cacher les autres.
+- Dans les galeries, les articles des médias français passent en premier, sans cacher les autres.
 - Paramètres plus lisible. La page se déplie par sections, l'option active se voit en bleu, et les sous-menus sont distincts.
 - Une nouvelle source : Biblio Anar, la bibliothèque anarchiste, avec ses derniers ajouts.
 - Un doublon retiré dans la veille de Révolution Permanente.

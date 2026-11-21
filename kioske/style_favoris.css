@@ -171,3 +171,218 @@ html[data-sobre="oui"] .etoiles, html[data-sobre="oui"] button.fav-heart.coeur-a
   }
 }
 
+
+/* ----- Étiquettes des favoris (etiquettes.js, accueil_favoris.js)
+   La carte est un lien : ses étiquettes (des boutons) sont posées à côté, dans .carte-fav, par-dessus le coin
+   en haut à droite de la carte. La boîte entière se soulève au survol, étiquettes comprises.
+   Couleur : celle du ♡ et de 📤 du thème (--color-fav-heart), dans les cinq thèmes. Étiquette choisie : fond
+   plus soutenu, contour épais et texte blanc gras (lisible que la couleur du thème soit claire ou foncée). */
+.etiquettes, .fav-etiquettes, .fav-bandeau, .carte-fav { --couleur-etiquette: var(--color-fav-heart, var(--neon-coeur, #b57bff)); }
+.carte-fav { position: relative; min-width: 0; transition: transform .2s; }
+.carte-fav > .carte:hover, .carte-fav > .carte:focus-visible { transform: none; }
+.carte-fav:hover, .carte-fav:focus-within { transform: translateY(-2px); }
+/* Coin en haut à droite de la carte : une étiquette par ligne, alignées à droite. « + » à part, en bas au centre.
+   Au-delà de la place (65 % de la hauteur de la carte), la colonne défile. Fond des tuiles presque opaque :
+   elles restent lisibles sur l'image de l'article. */
+.carte-fav .etiquettes {
+  --decalage-etiquettes: .4rem;
+  position: absolute; top: var(--decalage-etiquettes); right: var(--decalage-etiquettes); z-index: 20;
+  max-width: calc(100% - 2 * var(--decalage-etiquettes)); max-height: 65%;
+  display: flex; flex-direction: column; flex-wrap: nowrap; align-items: flex-end; gap: .25rem;
+  overflow-y: auto; overflow-x: hidden; scrollbar-width: none; overscroll-behavior: contain;
+}
+.carte-fav .etiquettes .etiquette, .carte-fav > .etiquette-ajout {
+  background: color-mix(in srgb, var(--couleur-etiquette) 25%, rgba(0, 0, 0, .85));
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .6);
+}
+/* Arrondis : tuiles plus arrondies, et la première (dans le coin) suit la courbe du coin de la carte : même
+   centre que le coin, rayon = rayon de la carte moins le décalage de la colonne. */
+.carte-fav .etiquettes .etiquette { border-radius: .6rem; }
+.carte-fav .etiquettes .etiquette:first-child {
+  border-top-right-radius: max(.6rem, calc(var(--rayon-carte, 20px) - var(--decalage-etiquettes)));
+}
+.carte-fav .etiquettes .etiquette.choisie { background: color-mix(in srgb, var(--couleur-etiquette) 55%, #000); }
+/* « + » et son champ de saisie : en bas au centre de la carte */
+.carte-fav > .etiquette-ajout, .carte-fav > .etiquette-saisie {
+  position: absolute; bottom: .4rem; left: 50%; transform: translateX(-50%); z-index: 3;
+}
+.carte-fav > .etiquette-ajout { opacity: .9; }
+/* Le texte de la carte s'arrête au-dessus du « + » (margin : un padding ne réserverait rien, le texte défile) */
+.carte-fav .carte-corps { margin-bottom: 1.9rem; }
+.carte-fav > .etiquette-saisie { width: 7rem; max-width: calc(100% - .8rem); }
+.etiquettes > * { flex: 0 0 auto; }
+/* Tuile : le nom (filtre) et son × (retrait), collés. Taille des tuiles des cartes : --taille-etiquette. */
+.etiquettes { --taille-etiquette: .75rem; }
+.etiquette {
+  display: inline-flex; align-items: stretch; max-width: 100%;
+  border: 1px solid var(--couleur-etiquette); border-radius: .4rem;
+  background: color-mix(in srgb, var(--couleur-etiquette) 22%, transparent); overflow: hidden;
+}
+.etiquette.choisie { background: color-mix(in srgb, var(--couleur-etiquette) 55%, #000); box-shadow: inset 0 0 0 1px var(--couleur-etiquette); }
+.etiquette button, .etiquette .etiquette-texte, .etiquette-ajout, .etiquette-outil, .fav-etiquettes > .etiquette-nom {
+  margin: 0; padding: .1rem .45rem; border: 0; background: none; color: #fff;
+  font: inherit; font-size: var(--taille-etiquette, .83rem); line-height: 1.4; cursor: pointer;
+}
+.etiquette .etiquette-texte { cursor: default; }
+.etiquette .etiquette-nom, .etiquette .etiquette-texte { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; max-width: 12rem; }
+.etiquette.choisie button { color: #fff; font-weight: 700; }
+.etiquette .etiquette-retirer, .etiquette .etiquette-deplacer { padding: .1rem .35rem; opacity: .75; }
+.etiquette button:hover, .etiquette button:focus-visible { background: rgba(255, 255, 255, .2); opacity: 1; outline: none; }
+.etiquette button:disabled { opacity: .25; cursor: default; background: none; }
+.etiquette-ajout {
+  min-width: 1.8em; border: 1px dashed var(--couleur-etiquette); border-radius: .4rem; opacity: .75; font-weight: 700;
+}
+.etiquette-ajout:hover, .etiquette-ajout:focus-visible,
+.carte-fav:hover .etiquette-ajout { opacity: 1; background: color-mix(in srgb, var(--couleur-etiquette) 35%, transparent); outline: none; }
+.etiquette-saisie {
+  width: 9rem; max-width: calc(100% - .2rem); padding: .1rem .4rem; font: inherit; font-size: var(--taille-etiquette, .83rem);
+  color: #fff; background: #000; border: 1px solid var(--couleur-etiquette); border-radius: .4rem;
+}
+.etiquette-saisie:focus { outline: 2px solid var(--couleur-etiquette); outline-offset: 1px; }
+
+/* Barre au-dessus de la grille : Tous, puis les étiquettes dans l'ordre choisi */
+.fav-etiquettes { --taille-etiquette: .85rem; flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; padding: 0 1.2rem .6rem; }
+.fav-etiquettes[hidden] { display: none; }
+.fav-etiquettes .etiquette button { padding: .15rem .5rem; }
+.fav-etiquettes > .etiquette-nom, .etiquette-outil {
+  padding: .2rem .6rem; border: 1px solid var(--color-light); border-radius: .4rem; background: #000;
+}
+.fav-etiquettes .etiquette:has([aria-pressed="true"]) { background: color-mix(in srgb, var(--couleur-etiquette) 55%, #000); box-shadow: inset 0 0 0 1px var(--couleur-etiquette); }
+.fav-etiquettes .etiquette [aria-pressed="true"],
+.fav-etiquettes > [aria-pressed="true"] { color: #fff; font-weight: 700; }
+.fav-etiquettes > [aria-pressed="true"] { background: color-mix(in srgb, var(--couleur-etiquette) 55%, #000); border-color: var(--couleur-etiquette); }
+/* Mode Sélectionner : les étiquettes non choisies ont un contour pointillé (elles attendent un clic) */
+.fav-etiquettes.selection .etiquette:not(:has([aria-pressed="true"])) { border-style: dashed; }
+.fav-etiquettes > .etiquette-nom:hover, .fav-etiquettes > .etiquette-nom:focus-visible,
+.etiquette-outil:hover:not(:disabled), .etiquette-outil:focus-visible { border-color: var(--couleur-etiquette); outline: none; }
+
+/* Bandeau d'outils, sous la barre, sur toute la largeur : Sélectionner, Créer une étiquette … Ranger */
+.fav-bandeau {
+  --taille-etiquette: .85rem; flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: .4rem;
+  margin: 0 1.2rem .4rem; padding: .45rem .6rem;
+  border-top: 1px solid color-mix(in srgb, var(--couleur-etiquette) 35%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--couleur-etiquette) 35%, transparent);
+  background: color-mix(in srgb, var(--couleur-etiquette) 8%, transparent);
+}
+.fav-bandeau .etiquette-outil { color: var(--color-light); }
+.fav-bandeau .etiquette-outil:disabled { opacity: .4; cursor: default; }
+.fav-bandeau [data-action="creer"] { border-color: var(--couleur-etiquette); }
+/* Sauvegarde (Télécharger / Charger / Effacer) : groupe à droite du bandeau, même style que ses boutons */
+.fav-bandeau .bandeau-fichiers { display: inline-flex; flex-wrap: nowrap; gap: .4rem; margin-left: auto; }
+/* Gestion des favoris : fond teinté, pour les distinguer des boutons de tri et d'étiquettes */
+.fav-bandeau .bandeau-fichiers .etiquette-outil { background: color-mix(in srgb, var(--couleur-etiquette) 32%, #000); border-color: var(--couleur-etiquette); }
+.fav-bandeau .bandeau-fichiers .etiquette-outil:hover:not(:disabled), .fav-bandeau .bandeau-fichiers .etiquette-outil:focus-visible { background: var(--couleur-etiquette); color: #000; }
+/* Éditeur d'une étiquette (bandeau, « Modifier une étiquette ») : nom, palette, Enregistrer / Supprimer / Annuler */
+.fav-bandeau .couleurs { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .3rem; }
+.fav-bandeau .couleur-pastille {
+  width: 1.5rem; height: 1.5rem; padding: 0; border-radius: 50%; cursor: pointer;
+  background: var(--pastille, var(--couleur-etiquette)); border: 2px solid #000; box-shadow: 0 0 0 1px var(--couleur-etiquette);
+}
+.fav-bandeau .couleur-pastille.couleur-defaut { background: linear-gradient(135deg, var(--couleur-etiquette) 50%, #000 50%); }
+.fav-bandeau .couleur-pastille[aria-pressed="true"] { outline: 2px solid #fff; outline-offset: 2px; }
+.fav-bandeau .couleur-pastille:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.fav-bandeau .couleur-libre { width: 1.9rem; height: 1.5rem; padding: 0; border: 1px solid var(--couleur-etiquette); background: #000; cursor: pointer; }
+/* Le champ de l'éditeur prend la largeur de son texte (attribut size, posé par accueil_favoris.js) */
+.fav-bandeau .etiquette-saisie { width: auto; max-width: 100%; }
+.fav-bandeau .etiquette-retirer-texte, .fav-bandeau .etiquette-annuler, .fav-bandeau .etiquette-confirmer {
+  font: inherit; font-size: var(--taille-etiquette); padding: .25rem .6rem; cursor: pointer; color: var(--color-light);
+  background: #000; border: 1px solid var(--couleur-etiquette); border-radius: .5rem;
+}
+.fav-bandeau .etiquette-retirer-texte:hover, .fav-bandeau .etiquette-retirer-texte:focus-visible { background: #b00020; color: #fff; }
+.fav-bandeau .etiquette-confirmer:hover, .fav-bandeau .etiquette-confirmer:focus-visible,
+.fav-bandeau .etiquette-annuler:hover, .fav-bandeau .etiquette-annuler:focus-visible { background: var(--couleur-etiquette); color: #000; outline: none; }
+.fav-bandeau .bandeau-texte.erreur { color: #ffb3c6; }
+.fav-bandeau .outil-droite { margin-left: auto; }
+.bandeau-texte { font-size: var(--taille-etiquette); color: var(--color-light); margin-right: auto; }
+.bandeau-texte ~ .outil-droite { margin-left: 0; }
+
+/* Carte d'article (ouverte ou page d'article) : ses étiquettes en colonne dans le coin en haut à droite,
+   comme dans « Mes favoris ». La colonne est posée dans le panneau de l'article (zoneEtiquettesArticle, JS),
+   pas dans la barre Précédent / ♡ / 📤 / 🏷 / Suivant, qui est collante et sert de bloc de référence.
+   Le bouton 🏷 a le style de 📤 (style_default.css). */
+:where(.panel-article) { position: relative; }
+:where(.panel-article) > .etiquettes-article[hidden] { display: none; }
+:where(.panel-article) > .etiquettes-article {
+  --taille-etiquette: .75rem; --decalage-etiquettes: 1rem;
+  position: absolute; top: var(--decalage-etiquettes); right: var(--decalage-etiquettes); z-index: 20;
+  max-width: calc(100% - 2 * var(--decalage-etiquettes)); max-height: 50%;
+  display: flex; flex-direction: column; flex-wrap: nowrap; align-items: flex-end; gap: .25rem;
+  overflow-y: auto; overflow-x: hidden; scrollbar-width: none; overscroll-behavior: contain;
+}
+:where(.panel-article) > .etiquettes-article .etiquette {
+  background: color-mix(in srgb, var(--couleur-etiquette) 25%, rgba(0, 0, 0, .85));
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .6); border-radius: .6rem;
+}
+
+/* Téléphone : cartes étroites, tuiles un peu plus petites */
+@media (max-width: 640px) {
+  .carte-fav .etiquettes { --decalage-etiquettes: .3rem; gap: .2rem; --taille-etiquette: .675rem; }
+  .fav-etiquettes { padding: 0 .4rem .5rem; }
+  .fav-bandeau { margin: 0 .4rem .4rem; }
+}
+@media (prefers-contrast: more), (forced-colors: active) {
+  .etiquette, .etiquette-ajout { border-style: solid; border-color: CanvasText; }
+}
+
+/* Menu « Trier » du bandeau (ordre d'ajout ou par étiquettes) */
+.bandeau-tri { display: inline-flex; align-items: center; gap: .35rem; font-size: var(--taille-etiquette); color: var(--color-light); }
+.bandeau-tri select {
+  font: inherit; color: #fff; background: #000; padding: .2rem .4rem; cursor: pointer;
+  border: 1px solid var(--color-light); border-radius: .4rem;
+}
+.bandeau-tri select:hover, .bandeau-tri select:focus-visible { border-color: var(--couleur-etiquette); outline: none; }
+.bandeau-tri select:disabled { opacity: .4; cursor: default; }
+/* Les trois sélecteurs (Trier, Média, Étiquette), côte à côte ; ils passent à la ligne ensemble sur petit écran */
+.bandeau-choix { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .4rem .8rem; }
+.bandeau-tri select { max-width: 14rem; text-overflow: ellipsis; }
+@media (max-width: 640px) {
+  .bandeau-choix { display: flex; flex-basis: 100%; order: 1; }
+  .bandeau-tri select { max-width: 11rem; }
+}
+
+/* Menu des étiquettes existantes, ouvert avec le champ de saisie (saisirEtiquette, etiquettes.js).
+   Carte de « Mes favoris » : juste au-dessus du champ (en bas au centre de la carte).
+   Carte d'article : au-dessus de la barre Précédent / ♡ / 📤 / 🏷 / Suivant. */
+.etiquette-propositions {
+  --couleur-etiquette: var(--color-fav-heart, var(--neon-coeur, #b57bff)); --taille-etiquette: .83rem;
+  position: absolute; z-index: 20; display: flex; flex-wrap: wrap; align-content: flex-start; gap: .3rem;
+  padding: .45rem; overflow-y: auto; overscroll-behavior: contain;
+  background: #0a0000; border: 1px solid var(--couleur-etiquette); border-radius: .5rem;
+  box-shadow: 0 .3rem 1rem rgba(0, 0, 0, .7);
+}
+.etiquette-propositions[hidden] { display: none; }
+.carte-fav > .etiquette-propositions {
+  left: 2px; right: 2px; bottom: 2.5rem; max-height: 55%;
+}
+:where(.panel-article) .article-nav { position: sticky; }
+:where(.panel-article) .article-nav > .etiquette-propositions {
+  left: .5rem; right: .5rem; bottom: calc(100% + .3rem); max-height: 40vh; --taille-etiquette: .85rem;
+}
+.propositions-titre { text-align: left; flex: 1 0 100%; margin: 0 0 .1rem; font-size: calc(var(--taille-etiquette) * .85); color: var(--color-light); opacity: .8; }
+.etiquette-proposition {
+  margin: 0; padding: .1rem .5rem; font: inherit; font-size: var(--taille-etiquette); line-height: 1.4; color: #fff; cursor: pointer;
+  border: 1px solid var(--couleur-etiquette); border-radius: .4rem; background: color-mix(in srgb, var(--couleur-etiquette) 22%, transparent);
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.etiquette-proposition[hidden] { display: none; }
+.etiquette-proposition:hover, .etiquette-proposition:focus-visible {
+  background: color-mix(in srgb, var(--couleur-etiquette) 55%, #000); outline: 2px solid var(--couleur-etiquette); outline-offset: 1px;
+}
+
+/* Confirmation de suppression d'une étiquette, à la place de sa tuile dans la barre : question, Oui, Non */
+.fav-etiquettes .etiquette.confirmation { border-width: 2px; background: color-mix(in srgb, var(--couleur-etiquette) 30%, #000); }
+.fav-etiquettes .etiquette.confirmation .etiquette-texte { max-width: none; white-space: normal; cursor: default; }
+.fav-etiquettes .etiquette.confirmation button { font-weight: 700; border-left: 1px solid var(--couleur-etiquette); opacity: 1; }
+.fav-etiquettes .etiquette-confirmer:hover, .fav-etiquettes .etiquette-confirmer:focus-visible { background: #b00020; color: #fff; }
+
+/* ----- Page « Mes favoris » (/menu/favoris/) : le panneau #favoris posé dans la page (accueil_favoris.js,
+   installerPageFavoris), sans cadre, sans hauteur fixe ni défilement à lui : la page défile. Cartes en
+   colonnes automatiques (la colonne du Menu est plus étroite que l'écran). */
+#favoris.favoris-page { display: flex; flex-direction: column; gap: .3rem; margin-top: 1rem; }
+#favoris.favoris-page .fav-etiquettes { padding: 0 0 .5rem; }
+#favoris.favoris-page .fav-bandeau { margin: 0 0 .4rem; }
+#favoris.favoris-page > .grille {
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: 1rem; padding: 1rem .4rem; overflow: visible;
+}
+@media (max-width: 640px) {
+  #favoris.favoris-page > .grille { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; padding: .6rem .2rem; }
+}

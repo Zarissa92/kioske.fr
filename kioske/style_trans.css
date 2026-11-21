@@ -24,15 +24,15 @@
   --sous-menu-fleche: var(--neon-halo);   /* flèche des sous-menus de Paramètres : couleur secondaire */
 }
 
-/* Titres des sous-catégories (h2.titre-panneau dans .sous-categorie) : texte blanc, bordure rose (ex-violet #ff33cc) */
-.groupe .sous-categorie > h2.titre-panneau {
+/* Titres des sous-catégories (.titre-categorie dans .sous-categorie) : texte blanc, bordure rose (ex-violet #ff33cc) */
+.groupe .sous-categorie > :is(h2, h3).titre-categorie {
   color: #FFF;
   border-color: var(--neon-halo);
 }
 
 /* Bordures des titres de panneaux : néon (repos et survol) */
-.groupe h2.titre-panneau, .groupe h3.titre-panneau { box-shadow: 0 0 6px var(--neon-coeur), 0 0 14px var(--neon-halo), inset 0 0 8px rgba(var(--neon-coeur-rgb), 0.4); }
-.groupe h2.titre-panneau:hover, .groupe h3.titre-panneau:hover { box-shadow: 0 0 10px var(--neon-coeur), 0 0 24px var(--neon-halo), inset 0 0 12px rgba(var(--neon-coeur-rgb), 0.5); }
+.groupe :is(h2, h3).titre-categorie, .groupe :is(h2, h3).titre-du-panneau { box-shadow: 0 0 6px var(--neon-coeur), 0 0 14px var(--neon-halo), inset 0 0 8px rgba(var(--neon-coeur-rgb), 0.4); }
+.groupe :is(h2, h3).titre-categorie:hover, .groupe :is(h2, h3).titre-du-panneau:hover { box-shadow: 0 0 10px var(--neon-coeur), 0 0 24px var(--neon-halo), inset 0 0 12px rgba(var(--neon-coeur-rgb), 0.5); }
 
 /* Néon des grands panneaux qui s'ouvrent : cœur bleu, halo rose (comme les titres). */
 .categorie-panneau { box-shadow: 0 0 8px var(--neon-coeur), 0 0 22px var(--neon-halo), inset 0 0 10px rgba(var(--neon-coeur-rgb), 0.25); }

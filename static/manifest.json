@@ -80,7 +80,7 @@
       "name": "Mes favoris",
       "short_name": "Favoris",
       "description": "Les articles gardés en favoris",
-      "url": "/?favoris",
+      "url": "/menu/favoris/",
       "icons": [
         {
           "src": "/icon-96.png",

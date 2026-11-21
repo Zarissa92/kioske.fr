@@ -79,6 +79,10 @@
 /* Le body couvre toute la fenêtre : il est aussi conteneur à défilement (overflow-y dans le thème), donc il
    coupait le menu ≡ à sa propre hauteur quand la page est courte (page Menu). */
 body { min-height: 100vh; }
+/* Pages texte (Mes favoris, Code de conduite…) : le panneau prend la hauteur restante, pour que le pied de page
+   soit au bas de l'écran et qu'il n'y ait pas de vide sous lui. */
+body.page-texte { display: flex; flex-direction: column; }
+body.page-texte > main.panel { flex: 1 0 auto; }
 
 /* Sur petit écran, le bouton Menu est souvent près du bord gauche (barre sur deux lignes) : ancré à droite de
    son bouton, le menu sortait de l'écran à gauche. Il part alors du bord de la barre du haut, sur la largeur de l'écran. */
@@ -120,6 +124,11 @@ body { min-height: 100vh; }
 .menu-texte figure.menu-image { margin: 1rem auto 1.2rem; text-align: center; }
 .menu-texte figure.menu-image img { display: block; margin: 0 auto; max-width: 100%; height: auto; }
 .menu-texte figure.menu-image figcaption { margin-top: 0.4rem; font-size: 0.85rem; color: var(--color-light); }
+/* Images du Menu en miniature (même celles d'un autre site) ; un clic ouvre la version en grand. */
+.menu-texte .menu-image-lien { display: inline-block; max-width: 100%; line-height: 0; cursor: zoom-in; border: 1px solid transparent; }
+.menu-texte .menu-image-lien:hover, .menu-texte .menu-image-lien:focus-visible { border-color: var(--color-text-main); outline: none; }
+.menu-texte .menu-image-lien img { display: block; width: auto; height: auto; max-width: min(100%, 14rem); max-height: 10rem; }
+.menu-texte figure.menu-image .menu-image-lien { display: block; margin: 0 auto; }
 .menu-texte li { margin: 0.25rem 0; }
 .menu-texte li > ul, .menu-texte li > ol { margin: 0.3rem 0 0.2rem 0; }   /* le retrait vient de padding-left (ci-dessus) */
 .menu-texte h2[id], .menu-texte h3[id] { scroll-margin-top: 1rem; }

@@ -7,6 +7,11 @@ function ouvrirDepuisAdresse(historique = 'remplacer') {
   const sourceKey = ancre.get('source');
   const categoryName = ancre.get('cat');
   let id = null;
+  // Panneau demandé mais articles pas encore chargés (donnees_accueil.js) : on les charge, puis on rouvre
+  if ((sourceKey || categoryName) && !(window.sourcesData && window.categoriesData)) {
+    chargerDonneesAccueil().then(() => ouvrirDepuisAdresse(historique), () => {});
+    return true;
+  }
   if (sourceKey && Object.hasOwn(window.sourcesData, sourceKey)) {
     const tag = Array.from(document.querySelectorAll('.nuage .tag'))
       .find(t => t.getAttribute('data-source-key') === sourceKey);
@@ -32,10 +37,11 @@ function ouvrirDepuisAdresse(historique = 'remplacer') {
 ouvrirDepuisAdresse();
 
 // Raccourcis de l'app installée (static/manifest.json) : /?recherche place le curseur dans la recherche,
-// /?favoris ouvre les favoris. Après DOMContentLoaded : tout le bundle est alors lu (fonctions et constantes).
+// /?favoris (ancienne adresse) mène à la page « Mes favoris ». Après DOMContentLoaded : tout le bundle est alors lu (fonctions et constantes).
 function ouvrirRaccourci() {
   const params = new URLSearchParams(location.search);
-  if (params.has('favoris') && typeof openFavoritesPanel === 'function') openFavoritesPanel();
+  // Ancienne adresse du raccourci (/?favoris, app installée avant le 2026-11-20) : vers la page « Mes favoris »
+  if (params.has('favoris')) location.replace('/menu/favoris/');
   else if (params.has('recherche') && rechercheInput) rechercheInput.focus();
 }
 if (document.readyState === 'complete') ouvrirRaccourci();

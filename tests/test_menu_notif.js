@@ -69,5 +69,28 @@ const notifsMenu = (w) => JSON.parse(w.localStorage.getItem('kioske_notifs') || 
     JSON.parse(r.w.localStorage.getItem('kioske_menu_vues') || '[]').length === anciens.length
     && JSON.parse(r.w.localStorage.getItem('kioske_menu_vues')).every(h => h.startsWith('/menu/')));
   t.verif('ancienne clé : effacée', r.w.localStorage.getItem('kioske_ressources_vues') === null);
+  // « Mises à jour » et « vie du site » sont séparées : le changelog seul n'annonce pas les documents du Menu
+  const seul = (vie) => {
+    const stockage = { kioske_notif_site: '1', kioske_notif_vie: vie, kioske_menu_vues: JSON.stringify(['/menu/ancien/']) };
+    return stockage;
+  };
+  r = chargerAvec(nouveau, seul('0'));
+  await attendre(300);
+  t.verif('mises à jour seules : un nouveau document n\'est pas annoncé', notifsMenu(r.w).length === 0);
+  t.verif('mises à jour seules : le Menu n\'est pas lu', JSON.parse(r.w.localStorage.getItem('kioske_menu_vues') || '[]').every(h => h === '/menu/ancien/'));
+  r.w.close();
+
+  r = chargerAvec(nouveau, seul('1'));
+  await attendre(300);
+  t.verif('vie du site : le nouveau document est annoncé', notifsMenu(r.w).some(n => n.lien === '/menu/nouveau-document/'));
+  r.w.close();
+
+  // Ancien réglage sans « vie du site » : elle suit l'interrupteur « changements du site » (comme avant)
+  r = chargerAvec(nouveau, { kioske_notif_site: '1', kioske_menu_vues: JSON.stringify(['/menu/ancien/']) });
+  await attendre(300);
+  t.verif('ancien réglage : la vie du site suit l\'ancien interrupteur', notifsMenu(r.w).some(n => n.lien === '/menu/nouveau-document/'));
+  t.verif('aucune erreur JavaScript (vie du site)', r.erreurs.length === 0, r.erreurs.join(' | '));
+  r.w.close();
+
   t.fin();
 })();

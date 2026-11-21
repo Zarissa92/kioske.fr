@@ -19,6 +19,11 @@
 "https://feeds.audiomeans.fr/feed/d9cd7538-7491-4873-b0c4-90ccba60ccf6.xml"  #lescouillessurlatbale
 "https://www.infolibertaire.net/feed/podcasts/"
 
+[Vidéo et radio: PeerTube]
+"https://peertube.stream/feeds/videos.xml?videoChannelId=19755" #journal des briques gwen
+"https://peertube.stream/c/analysespolitiques/videos"  #Analyse politique gwen
+"https://peertube.stream/feeds/videos.xml?videoChannelId=30513" #Gwen
+
 
 
 [Panneau: Médias Libre]
@@ -69,6 +74,7 @@
 "https://www.laquadrature.net/feed/"
 "https://framablog.org/feed/"
 "https://canard.tube/feeds/videos.xml?videoChannelId=2" #CanardRefractaire
+"https://peertube.stream/feeds/videos.xml?videoChannelId=30287" #GwenTech
 
 [Technologie: Généraliste]
 "https://next.ink/feed/"

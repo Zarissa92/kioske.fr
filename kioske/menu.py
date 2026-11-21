@@ -184,7 +184,23 @@ def _html_du_markdown(corps: str) -> str:
 
 
 def _ameliorer(html: str, base: str) -> str:
-    return _images_differees(_liens_externes(_images_relatives(html, base)))
+    return _images_cliquables(_images_differees(_liens_externes(_images_relatives(html, base))))
+
+
+def _images_cliquables(html: str) -> str:
+    """Chaque image du Menu (y compris celles d'un autre site) est un lien vers sa version en grand, dans un
+    nouvel onglet. Elle s'affiche en miniature (style_menu.css, .menu-image-lien). Une image déjà dans un lien
+    reste telle quelle."""
+    def lien(m: re.Match) -> str:
+        if m.group(1):
+            return m.group(0)
+        image = m.group(2)
+        src = re.search(r'\bsrc="([^"]+)"', image)
+        if not src:
+            return image
+        return (f'<a class="menu-image-lien" href="{src.group(1)}" target="_blank" rel="noopener noreferrer" '
+                f'title="Voir l\'image en grand">{image}</a>')
+    return re.sub(r'(<a\b[^>]*>\s*)?(<img\b[^>]*>)', lien, html)
 
 
 def _images_relatives(html: str, base: str) -> str:

@@ -4,6 +4,8 @@ Le squelette des pages est dans kioske/gabarits/ (accueil.html, rss.html), le CS
 et le JavaScript dans kioske/js/. Ce module fabrique les morceaux qui dépendent des articles."""
 from __future__ import annotations
 
+import json
+
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -145,6 +147,8 @@ def render_galerie_plus_lus(classement: list[tuple[dict, int]], previews: dict[s
 
 
 # GALERIE_VISIBLES, GALERIE_CANDIDATS et NB_GALERIE_BLOC viennent de kioske.cfg (kioske/config.py).
+FICHIER_DONNEES_PANNEAUX = "donnees-accueil.json"   # articles des panneaux de l'accueil (build/)
+CARTES_IMMEDIATES = 5   # cartes de la grande galerie chargées sans attendre (visibles à l'ouverture)
 
 
 def render_galerie(items: list[dict], previews: dict[str, dict]) -> str:
@@ -175,9 +179,12 @@ def render_galerie(items: list[dict], previews: dict[str, dict]) -> str:
           date_paris = date.astimezone(ZoneInfo("Europe/Paris")) if date else None
           date_time_str = date_paris.strftime("%d/%m/%Y<br>%H:%M") if date_paris else ""
 
+          # Premières cartes : visibles dès l'ouverture, chargées tout de suite (en différé, elles arrivaient
+          # en dernier et retardaient l'affichage du contenu principal, le LCP). Les suivantes : en différé.
+          chargement = 'fetchpriority="high" ' if rang == 0 else ('' if rang < CARTES_IMMEDIATES else 'loading="lazy" ')
           media = (
               f'<img src="{esc(image)}" alt="{esc(title)}" '
-              'loading="lazy" referrerpolicy="no-referrer" data-repli="retirer">'
+              f'{chargement}referrerpolicy="no-referrer" data-repli="retirer">'
           )
 
           # Lien vers la page d'article
@@ -253,6 +260,24 @@ def render_code_de_conduite(nb_articles: int, nb_sources: int) -> str:
                          corps=f'<h1>Code de conduite</h1><div class="menu-texte">{_code_de_conduite()}</div>')
 
 
+# Page « Mes favoris » : à part du Menu (pas de sommaire, pas dans la liste du Menu), une seule colonne. L'adresse
+# reste sous /menu/ : elle est déjà dans la liste blanche nginx. Le contenu (favoris du navigateur) est posé par
+# accueil_favoris.js dans <div id="page-favoris"> ; sans JavaScript, un message l'explique.
+ADRESSE_FAVORIS = "/menu/favoris/"
+
+
+def render_page_favoris(nb_articles: int, nb_sources: int) -> str:
+    """Page statique « Mes favoris » (build/menu/favoris/index.html)."""
+    corps = ('<h1>Mes favoris</h1>'
+             '<p class="menu-description">Tes favoris restent dans ton navigateur : rien n\'est envoyé au site. '
+             'Pense à les télécharger de temps en temps pour les garder.</p>'
+             '<div id="page-favoris"><noscript><p>Il faut JavaScript pour afficher tes favoris : ils sont gardés '
+             'par ton navigateur, pas par le site.</p></noscript></div>')
+    return page_statique("texte.html", nb_articles, nb_sources, titre=f"Mes favoris — {NOM_SITE}",
+                         description="Tes articles gardés en favoris, avec leurs étiquettes",
+                         adresse=ADRESSE_FAVORIS, corps=corps)
+
+
 def valeurs_barre(nb_articles: int = 0, nb_sources: int = 0) -> dict[str, str]:
     """Tout ce que les gabarits reçoivent pour la barre du haut partagée (accueil, Menu, article,
     catégorie, RSS) : le HTML de la barre et des panneaux, les données vides attendues par les scripts
@@ -263,7 +288,14 @@ def valeurs_barre(nb_articles: int = 0, nb_sources: int = 0) -> dict[str, str]:
         "panneaux_communs": panneaux,
         "donnees_json": json_pour_page({"sources": {}, "categories": {}, "sources_metadata": {}, "galerie_panneau": 0}),
         "css_barre": CSS_FAVORIS + "\n" + CSS_MENU,
+        "pied_page": pied_de_page(),
     }
+
+
+def pied_de_page() -> str:
+    """Pied de page commun à toutes les pages visibles (mentions, GitHub, Dispositions légales, date)."""
+    return remplir("partiels/pied_page.html",
+                   date_maj=datetime.now(ZoneInfo("Europe/Paris")).strftime("%d/%m/%Y"))
 
 
 def barre_et_panneaux(nb_articles: int, nb_sources: int) -> tuple[str, str]:
@@ -279,8 +311,10 @@ def barre_et_panneaux(nb_articles: int, nb_sources: int) -> tuple[str, str]:
 def render_page(items: list[dict], previews: dict[str, dict],
                 categories: dict[str, str] | None = None,
                 panneaux: dict[str, str] | None = None,
-                plus_lus: list[tuple[dict, int]] | None = None, jours_plus_lus: int = 7) -> str:
-    """La page d'accueil complète (le KiosKe) : étiquettes par panneau/catégorie, fenêtres et articles."""
+                plus_lus: list[tuple[dict, int]] | None = None, jours_plus_lus: int = 7) -> tuple[str, str]:
+    """La page d'accueil (le KiosKe) et les données de ses panneaux, à écrire dans FICHIER_DONNEES_PANNEAUX.
+    Les articles des panneaux (par source et par catégorie, plusieurs Mo) ne sont plus dans la page : le
+    navigateur les télécharge au premier panneau ouvert (chargerDonneesAccueil, donnees_accueil.js)."""
     categories = categories or {}
     panneaux = panneaux or {}
 
@@ -332,7 +366,7 @@ def render_page(items: list[dict], previews: dict[str, dict],
 
         if panneau_nom:
             # Panneau avec sous-catégories
-            blocs += f'<section class="groupe panneau"><h3 class="titre-panneau" data-category-name="{esc(panneau_nom)}">{esc(panneau_nom)}</h3>'
+            blocs += f'<section class="groupe panneau"><h2 class="titre-panneau titre-du-panneau" data-category-name="{esc(panneau_nom)}">{esc(panneau_nom)}</h2>'
             categories_du_panneau = dans_ordre_du_fichier([c for c in categories_panneau.keys() if c != AUTRES], ordre_fichier_categories)
 
             for categorie in categories_du_panneau:
@@ -351,18 +385,20 @@ def render_page(items: list[dict], previews: dict[str, dict],
                     )
                     articles_cat.extend(articles)
 
-                # Si la catégorie porte le même nom que le panneau : masquer le h2 visuellement
+                # Si la catégorie porte le même nom que le panneau : masquer son titre (h3) visuellement.
+                # Hiérarchie : h1 (page) > h2 (galeries, panneaux, catégories hors panneau) > h3 (catégories d'un panneau).
+                # Le CSS et le JS repèrent les titres par leur rôle (titre-du-panneau, titre-categorie), pas par la balise.
                 galerie_bloc = render_galerie_bloc(categorie, articles_cat, previews) if GALERIE_PANNEAU else ""
                 if categorie == panneau_nom:
                     blocs += (
-                        f'<h2 class="titre-panneau" style="display: none;" data-category-name="{esc(categorie)}"><span class="compte">({len(sources_keys)})</span></h2>'
+                        f'<h3 class="titre-panneau titre-categorie" style="display: none;" data-category-name="{esc(categorie)}"><span class="compte">({len(sources_keys)})</span></h3>'
                         f'{galerie_bloc}'
                         f'<div class="nuage" aria-label="{esc(categorie)}">{"".join(tags)}</div>'
                     )
                 else:
                     blocs += (
                         f'<div class="sous-categorie">'
-                        f'<h2 class="titre-panneau" data-category-name="{esc(categorie)}">{esc(categorie)} <span class="compte">({len(sources_keys)})</span></h2>'
+                        f'<h3 class="titre-panneau titre-categorie" data-category-name="{esc(categorie)}">{esc(categorie)} <span class="compte">({len(sources_keys)})</span></h3>'
                         f'{galerie_bloc}'
                         f'<div class="nuage" aria-label="{esc(categorie)}">{"".join(tags)}</div></div>'
                     )
@@ -389,7 +425,7 @@ def render_page(items: list[dict], previews: dict[str, dict],
                 galerie_bloc = render_galerie_bloc(categorie, articles_cat, previews) if GALERIE_PANNEAU else ""
                 blocs += (
                     f'<section class="groupe">'
-                    f'<h2 class="titre-panneau" data-category-name="{esc(categorie)}">{esc(categorie)} <span class="compte">({len(sources_keys)})</span></h2>'
+                    f'<h2 class="titre-panneau titre-categorie" data-category-name="{esc(categorie)}">{esc(categorie)} <span class="compte">({len(sources_keys)})</span></h2>'
                     f'{galerie_bloc}'
                     f'<div class="nuage" aria-label="{esc(categorie)}">{"".join(tags)}</div></section>'
                 )
@@ -397,8 +433,10 @@ def render_page(items: list[dict], previews: dict[str, dict],
 
     galerie_html = render_galerie(items, previews) + render_galerie_plus_lus(plus_lus or [], previews, jours_plus_lus)
     # Référencement : le titre et la description décrivent le contenu réel (sources et catégories du jour).
-    titre_page = NOM_SITE
-    description = "Le KiosKe : une veille automatique des médias indépendants, des luttes et des voix LGBTQIA+. Une seule page statique (HTML5, CSS et JavaScript minimal), reconstruite toutes les 30 minutes sur le serveur à partir de flux RSS et de chaînes Twitch. Les images sont hébergées par le site : la page ne charge rien d'un autre site, sans publicité ni pistage."
+    # Longueurs visées par les moteurs : titre 50-60 caractères, description 100-130 (coupée au-delà dans les résultats).
+    titre_page = f"{NOM_SITE} : veille des médias indépendants et des luttes"
+    description = ("Veille des médias indépendants, des luttes et des voix LGBTQIA+, mise à jour toutes les 30 minutes. "
+                   "Sans publicité ni pistage.")
     keywords = ("kioske, veille, médias indépendants, LGBTQIA+, Mélenchon, RSS, Twitch, informatique libre, "
                 "gauchiasses, gauche, 2027, votez, La France insoumise, Rima Hassan, élections, "
                 "Melenchon2027, gauchiasse, fuck le rn")
@@ -432,38 +470,22 @@ def render_page(items: list[dict], previews: dict[str, dict],
             })
         groupes_json[cle] = articles_data
 
-    # Préparer les données des catégories pour le JavaScript
+    # Préparer les données des catégories pour le JavaScript. Chaque article est déjà dans groupes_json (par
+    # source) : une catégorie ne garde que des références [rang de la source, rang de l'article], que
+    # donnees_accueil.js remplace par les articles eux-mêmes. Sans cela, chaque article était recopié en entier
+    # dans sa catégorie et dans son panneau (fichier trois fois plus lourd).
+    rang_source = {cle: n for n, cle in enumerate(groupes_json)}
     categories_json = {}
     for categorie in ordre_categories:
         articles_data = []
         for cle in par_categorie[categorie]:
-            for item in groupes[cle]:
-                title = previews.get(item["link"], {}).get("title") or item["title"]
-                image = previews.get(item["link"], {}).get("image") or item["image"] or ""
-                summary = item["summary"] or previews.get(item["link"], {}).get("description", "")
-                date = item["date"]
-                host = urlparse(item["link"]).netloc.removeprefix("www.")
-                date_paris = date.astimezone(ZoneInfo("Europe/Paris")) if date else None
-                date_str = date_paris.strftime("%d/%m/%Y") if date_paris else ""
-
-                art_id = article_id(item["link"])
-                art_slug = slug_article(title, item["link"])
-                article_url = f"/articles/{art_id}-{art_slug}/"
-
-                articles_data.append({
-                    "id": art_id,
-                    "title": title,
-                    "image": image,
-                    "summary": summary,
-                    "date": date_str,
-                    "host": host,
-                    "url": article_url,
-                    "source": item["source"],
-                    "_tri": date or epoque
-                })
+            if cle not in rang_source:
+                continue
+            for i, item in enumerate(groupes[cle]):   # même ordre que groupes_json[cle]
+                articles_data.append([rang_source[cle], i, item["date"] or epoque])
         # Trier par date (plus récents d'abord) ; le texte « jj/mm/aaaa » ne se trie pas
-        articles_data.sort(key=lambda a: a.pop("_tri"), reverse=True)
-        categories_json[categorie] = articles_data
+        articles_data.sort(key=lambda a: a[2], reverse=True)
+        categories_json[categorie] = [[s, i] for s, i, _ in articles_data]
 
     # Ajouter les panneaux à categories_json : regrouper tous les articles des sous-catégories
     for panneau_nom, categories_panneau in par_panneau.items():
@@ -484,15 +506,30 @@ def render_page(items: list[dict], previews: dict[str, dict],
             "category": category
         }
 
-    # Données lues par kioske/js/donnees_accueil.js
+    # Données lues par kioske/js/donnees_accueil.js : dans la page, seulement ce qui sert dès l'ouverture
+    # (métadonnées des sources : flux personnalisé, notifications). Les articles des panneaux : fichier à part.
     donnees_json = json_pour_page(
-        {"sources": groupes_json, "categories": categories_json,
-         "sources_metadata": sources_metadata, "galerie_panneau": 0})
+        {"sources_metadata": sources_metadata, "galerie_panneau": 0,
+         "donnees_panneaux": "/" + FICHIER_DONNEES_PANNEAUX})
+    donnees_panneaux = json.dumps({"sources": groupes_json, "categories": categories_json, "references": 1},
+                                  ensure_ascii=False, separators=(",", ":"))
+
+    # Données structurées (schema.org) : le site et qui le publie, lus par les moteurs de recherche
+    donnees_structurees = json_pour_page({
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": NOM_SITE,
+        "url": f"{URL_SITE}/",
+        "description": description,
+        "inLanguage": "fr",
+        "publisher": {"@type": "Organization", "name": NOM_SITE, "url": f"{URL_SITE}/",
+                      "logo": f"{URL_SITE}/icon-512.png"},
+    })
 
     # Barre du haut et panneaux communs : les mêmes que sur la page Menu
     barre_haut, panneaux_communs = barre_et_panneaux(len(items), len(groupes))
 
-    return remplir(
+    page = remplir(
         "accueil.html",
         attributs_html=ATTRIBUTS_HTML,
         variables_html=VARIABLES_HTML,
@@ -502,15 +539,17 @@ def render_page(items: list[dict], previews: dict[str, dict],
         url_site=URL_SITE,
         nom_site=esc(NOM_SITE),
         domaine=DOMAINE,
-        date_maj=datetime.now(ZoneInfo("Europe/Paris")).strftime("%d/%m/%Y"),
+        pied_page=pied_de_page(),
         css=CSS + "\n" + CSS_FAVORIS + "\n" + CSS_MENU,
         script_theme=SCRIPT_THEME,
         donnees_json=donnees_json,
+        donnees_structurees=donnees_structurees,
         barre_haut=barre_haut,
         panneaux_communs=panneaux_communs,
         galerie=galerie_html,
         nuage=nuage,
     )
+    return page, donnees_panneaux
 
 
 def render_rss_page(categories: dict[str, str] | None = None, items: list[dict] | None = None) -> str:
